@@ -1,0 +1,1860 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Bioluminescent Tide — Procedural Fluid & Contour ASCII</title>
+<style>
+  :root {
+    --abyss-0: #040A10;
+    --abyss-1: #081A26;
+    --abyss-2: #0D3242;
+    --abyss-3: #135263;
+    --abyss-4: #1B7A85;
+    --abyss-5: #38A9A8;
+    --abyss-6: #7CD8CC;
+    --abyss-7: #E2FFF9;
+    --dzs: 8px;
+  }
+
+  *, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: var(--abyss-0);
+    color: var(--abyss-7);
+    font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    user-select: none;
+    touch-action: none;
+  }
+
+  .stage {
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+    background: var(--abyss-0);
+  }
+
+  #ascii-canvas,
+  #life-canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    display: block;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+  }
+
+  #ascii-canvas {
+    z-index: 1;
+  }
+
+  #life-canvas {
+    z-index: 2;
+    pointer-events: none;
+  }
+
+  .editorial {
+    position: fixed;
+    top: 24px;
+    left: 28px;
+    z-index: 4;
+    pointer-events: none;
+    max-width: min(360px, calc(100vw - 40px));
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .eyebrow {
+    font-family: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--abyss-6);
+    opacity: 0.92;
+    line-height: 1.3;
+    text-shadow: 0 1px 10px rgba(4, 10, 16, 0.95);
+    width: fit-content;
+  }
+
+  .title {
+    font-size: clamp(22px, 2.35vw, 31px);
+    font-weight: 500;
+    letter-spacing: -0.025em;
+    line-height: 1.08;
+    color: var(--abyss-7);
+    text-shadow: 0 1px 16px rgba(4, 10, 16, 0.95);
+    width: fit-content;
+  }
+
+  .hint {
+    font-family: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+    font-size: 11px;
+    letter-spacing: 0.02em;
+    color: rgba(226, 255, 249, 0.74);
+    line-height: 1.4;
+    margin-top: 2px;
+    text-shadow: 0 1px 12px rgba(4, 10, 16, 0.98);
+    width: fit-content;
+  }
+
+  .kin .w {
+    display: inline-block;
+    opacity: 0;
+    padding-block: 0.18em;
+    margin-block: -0.18em;
+    -webkit-mask-size: var(--dzs, 8px) var(--dzs, 8px);
+    mask-size: var(--dzs, 8px) var(--dzs, 8px);
+  }
+
+  .kin.in .w {
+    opacity: 1;
+    animation: dz 480ms step-end both, dzr 680ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation-delay: calc(var(--bd, 0ms) + var(--i, 0) * 40ms);
+  }
+
+  @keyframes dz {
+    0%   { opacity: 0; }
+    6%   { opacity: 1; -webkit-mask-image: var(--dz1); mask-image: var(--dz1); }
+    20%  { opacity: 1; -webkit-mask-image: var(--dz2); mask-image: var(--dz2); }
+    34%  { opacity: 1; -webkit-mask-image: var(--dz3); mask-image: var(--dz3); }
+    48%  { opacity: 1; -webkit-mask-image: var(--dz4); mask-image: var(--dz4); }
+    62%  { opacity: 1; -webkit-mask-image: var(--dz5); mask-image: var(--dz5); }
+    76%  { opacity: 1; -webkit-mask-image: var(--dz6); mask-image: var(--dz6); }
+    88%  { opacity: 1; -webkit-mask-image: var(--dz7); mask-image: var(--dz7); }
+    100% { opacity: 1; -webkit-mask-image: none; mask-image: none; }
+  }
+
+  @keyframes dzr {
+    from { transform: translateY(0.12em); }
+  }
+
+  .dock-wrap {
+    position: fixed;
+    left: 50%;
+    bottom: max(18px, env(safe-area-inset-bottom, 18px));
+    transform: translateX(-50%);
+    z-index: 5;
+    max-width: calc(100vw - 20px);
+  }
+
+  .dock {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    padding: 4px;
+    border-radius: 999px;
+    background: rgba(4, 10, 16, 0.78);
+    border: 1px solid rgba(56, 169, 168, 0.28);
+    box-shadow: 0 8px 30px rgba(4, 10, 16, 0.65), inset 0 1px 0 rgba(226, 255, 249, 0.06);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  .dock-btn {
+    appearance: none;
+    border: 1px solid transparent;
+    background: transparent;
+    color: rgba(124, 216, 204, 0.78);
+    font-family: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+    font-size: 11.5px;
+    letter-spacing: 0.02em;
+    line-height: 1;
+    padding: 8px 12px;
+    border-radius: 999px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+    transition: color 160ms ease, background-color 160ms ease, border-color 160ms ease;
+  }
+
+  .dock-btn:hover {
+    color: var(--abyss-7);
+    background: rgba(27, 122, 133, 0.2);
+  }
+
+  .dock-btn:focus-visible {
+    outline: 1.5px solid var(--abyss-6);
+    outline-offset: 2px;
+  }
+
+  .dock-btn[aria-pressed="true"] {
+    color: var(--abyss-7);
+    background: rgba(27, 122, 133, 0.36);
+    border-color: rgba(124, 216, 204, 0.42);
+  }
+
+  .dock-key {
+    font-size: 10px;
+    opacity: 0.56;
+  }
+
+  .dock-sep {
+    width: 1px;
+    height: 16px;
+    background: rgba(56, 169, 168, 0.24);
+    margin: 0 3px;
+    flex-shrink: 0;
+  }
+
+  .mode-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--abyss-5);
+    box-shadow: 0 0 8px rgba(124, 216, 204, 0.65);
+    flex-shrink: 0;
+  }
+
+  .dock-btn[data-render-mode="bayer"] .mode-dot {
+    background: var(--abyss-7);
+    box-shadow: 0 0 10px rgba(226, 255, 249, 0.9);
+  }
+
+  @media (max-width: 640px) {
+    .editorial {
+      top: 16px;
+      left: 16px;
+      gap: 4px;
+    }
+
+    .eyebrow {
+      font-size: 9.5px;
+    }
+
+    .title {
+      font-size: 21px;
+    }
+
+    .hint {
+      font-size: 10px;
+    }
+
+    .dock {
+      border-radius: 999px;
+      flex-wrap: nowrap;
+      justify-content: center;
+      padding: 3px;
+      gap: 2px;
+    }
+
+    .dock-btn {
+      padding: 7px 8px;
+      font-size: 10px;
+      letter-spacing: 0;
+      gap: 4px;
+    }
+
+    .dock-key {
+      display: none;
+    }
+
+    .dock-sep {
+      height: 12px;
+      margin: 0 1px;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .kin .w {
+      opacity: 1 !important;
+      animation: none !important;
+      -webkit-mask-image: none !important;
+      mask-image: none !important;
+      transform: none !important;
+    }
+  }
+</style>
+</head>
+<body>
+  <div class="stage">
+    <canvas id="ascii-canvas" aria-label="Bioluminescent Tide procedural ASCII ocean"></canvas>
+    <canvas id="life-canvas" aria-hidden="true"></canvas>
+  </div>
+
+  <header class="editorial">
+    <div class="eyebrow kin" data-dim style="--bd: 0ms">03 / Abyssal Field</div>
+    <h1 class="title kin" data-dim style="--bd: 80ms">Bioluminescent Tide</h1>
+    <p class="hint kin" data-dim style="--bd: 160ms">Move to stir currents · Click to pulse</p>
+  </header>
+
+  <nav class="dock-wrap" aria-label="Ocean field controls">
+    <div class="dock" role="toolbar" aria-label="Regime and render mode">
+      <button type="button" class="dock-btn" data-regime="0" aria-pressed="true">
+        <span class="dock-key">1</span><span>Currents</span>
+      </button>
+      <button type="button" class="dock-btn" data-regime="1" aria-pressed="false">
+        <span class="dock-key">2</span><span>Contours</span>
+      </button>
+      <button type="button" class="dock-btn" data-regime="2" aria-pressed="false">
+        <span class="dock-key">3</span><span>Interference</span>
+      </button>
+      <span class="dock-sep" aria-hidden="true"></span>
+      <button type="button" class="dock-btn" data-render-toggle data-render-mode="ascii" aria-pressed="false" title="Toggle Full ASCII vs Bayer Field + ASCII Lens (M)">
+        <span class="mode-dot" aria-hidden="true"></span>
+        <span data-render-label>Full ASCII</span>
+      </button>
+    </div>
+  </nav>
+
+<script>
+(() => {
+  'use strict';
+
+  const LADDER_HEX = [
+    '#040A10',
+    '#081A26',
+    '#0D3242',
+    '#135263',
+    '#1B7A85',
+    '#38A9A8',
+    '#7CD8CC',
+    '#E2FFF9',
+  ];
+
+  const LADDER_RGB = LADDER_HEX.map((hex) => [
+    parseInt(hex.slice(1, 3), 16),
+    parseInt(hex.slice(3, 5), 16),
+    parseInt(hex.slice(5, 7), 16),
+  ]);
+
+  const LADDER_GL = new Float32Array(
+    LADDER_RGB.flatMap(([r, g, b]) => [r / 255, g / 255, b / 255])
+  );
+
+  const BAYER_INT = [
+    0, 8, 2, 10,
+    12, 4, 14, 6,
+    3, 11, 1, 9,
+    15, 7, 13, 5,
+  ];
+  const BAYER_TH = BAYER_INT.map((v) => (v + 0.5) / 16);
+
+  // Wave-calibrated 12-glyph 5x7 bitmap ramp: " .,:~-=+*#%@"
+  const GLYPH_WORDS = [
+    0, 0,           // 0: ' '
+    0, 128,         // 1: '.'
+    0, 4232,        // 2: ','
+    128, 128,       // 3: ':'
+    310, 0,         // 4: '~'
+    14, 0,          // 5: '-'
+    992, 31744,     // 6: '='
+    4255, 4224,     // 7: '+'
+    4782, 21632,    // 8: '*'
+    338922, 32074,  // 9: '#'
+    847052, 28256,  // 10: '%'
+    476917, 24078,  // 11: '@'
+  ];
+
+  const RAMP_THRESH = [0.42, 0.95, 1.55, 2.20, 2.85, 3.55, 4.25, 4.95, 5.55, 6.10, 6.58];
+  const MAX_PIXELS = 3840 * 2400;
+  const MAX_RIPPLES = 6;
+  const MAX_WAKE = 6;
+  const MAX_DIM = 8;
+
+  const rmQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+  let reducedMotion = rmQuery.matches;
+
+  const state = {
+    vw: 1440,
+    vh: 900,
+    dpr: 1,
+    cellCss: 2,
+    cellDev: 2,
+    cell: 2,
+    dw: 1440,
+    dh: 900,
+    gw: 720,
+    gh: 450,
+    lw: 120,
+    lh: 50,
+    regime: 0,
+    fullAscii: true,
+    time: 14.5,
+    hidden: document.hidden,
+    dirty: true,
+    contextLost: false,
+    ptrTargetX: 720,
+    ptrTargetY: 450,
+    ptrX: 720,
+    ptrY: 450,
+    ptrSpeed: 0,
+    ptrEnergy: 0,
+    ptrInside: false,
+    ptrDown: false,
+    lensX: 780,
+    lensY: 430,
+    lensFade: 0,
+    dimN: 0,
+    dimRects: new Float32Array(MAX_DIM * 4),
+    ripples: new Float32Array(MAX_RIPPLES * 4), // x, y, ageSec, amp
+    rippleCursor: 0,
+    wake: new Float32Array(MAX_WAKE * 4), // x, y, strength, radius
+    wakeCursor: 0,
+    lastWakeX: -999,
+    lastWakeY: -999,
+  };
+
+  function buildDitherTiles(cell) {
+    const cSize = Math.max(2, Math.round(cell || 2));
+    const u = cSize * Math.min(3, Math.ceil(window.devicePixelRatio || 1));
+    const cv = document.createElement('canvas');
+    cv.width = cv.height = u * 4;
+    const g = cv.getContext('2d');
+    if (!g) return;
+    const root = document.documentElement.style;
+    g.fillStyle = '#fff';
+    for (let k = 1; k <= 7; k++) {
+      g.clearRect(0, 0, u * 4, u * 4);
+      for (let i = 0; i < 16; i++) {
+        if (BAYER_TH[i] < k / 8) g.fillRect((i & 3) * u, (i >> 2) * u, u, u);
+      }
+      root.setProperty('--dz' + k, `url(${cv.toDataURL()})`);
+    }
+    root.setProperty('--dzs', (cSize * 4) + 'px');
+  }
+
+  function initKineticCopy() {
+    document.querySelectorAll('.kin').forEach((el) => {
+      const words = (el.textContent || '').trim().split(/\s+/);
+      el.textContent = '';
+      words.forEach((word, idx) => {
+        const span = document.createElement('span');
+        span.className = 'w';
+        span.style.setProperty('--i', String(idx));
+        span.textContent = word;
+        el.appendChild(span);
+        if (idx < words.length - 1) el.appendChild(document.createTextNode(' '));
+      });
+      if (reducedMotion) {
+        el.classList.add('in');
+      } else {
+        requestAnimationFrame(() => el.classList.add('in'));
+      }
+    });
+  }
+
+  const dimElements = Array.from(document.querySelectorAll('[data-dim]'));
+
+  function sampleDimRects() {
+    let n = 0;
+    for (let i = 0; i < dimElements.length && n < MAX_DIM; i++) {
+      const r = dimElements[i].getBoundingClientRect();
+      if (r.width <= 0 || r.height <= 0) continue;
+      const o = n * 4;
+      state.dimRects[o] = r.left - 14;
+      state.dimRects[o + 1] = r.top - 10;
+      state.dimRects[o + 2] = r.right + 18;
+      state.dimRects[o + 3] = r.bottom + 12;
+      n++;
+    }
+    state.dimN = n;
+  }
+
+  // ==================== WebGL2 3-Pass Engine ====================
+
+  const VERT_SRC = `#version 300 es
+void main() {
+  vec2 p = vec2(float((gl_VertexID << 1) & 2), float(gl_VertexID & 2));
+  gl_Position = vec4(p * 2.0 - 1.0, 0.0, 1.0);
+}`;
+
+  const FIELD_FRAG_SRC = `#version 300 es
+precision highp float;
+precision highp int;
+
+uniform vec2 uRes;
+uniform float uCell;
+uniform float uTime;
+uniform int uRegime;
+uniform vec4 uPtr;          // x, y, energy, unused
+uniform vec4 uWake[6];      // x, y, strength, radius
+uniform vec4 uRipples[6];   // x, y, age, amp
+uniform int uDimN;
+uniform vec4 uDim[8];
+uniform vec3 uTone[8];
+
+out vec4 oc;
+
+const int BAYER[16] = int[16](0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5);
+const mat2 OCT = mat2(1.62, 1.18, -1.18, 1.62);
+
+uint pcg2(uvec2 v) {
+  v = v * 1664525u + 1013904223u;
+  v.x += v.y * 1664525u;
+  v.y += v.x * 1664525u;
+  v ^= v >> 16u;
+  v.x += v.y * 1664525u;
+  v.y += v.x * 1664525u;
+  v ^= v >> 16u;
+  return v.x ^ v.y;
+}
+
+float rnd(ivec2 p, uint salt) {
+  return float(pcg2(uvec2(p) + uvec2(salt, salt * 7919u))) * (1.0 / 4294967296.0);
+}
+
+vec2 grad(ivec2 p) {
+  float a = rnd(p, 0u) * 6.2831853;
+  return vec2(cos(a), sin(a));
+}
+
+float noise(vec2 p) {
+  vec2 i = floor(p);
+  vec2 f = p - i;
+  ivec2 q = ivec2(i);
+  vec2 u = f * f * f * (f * (f * 6.0 - 15.0) + 10.0);
+  float a = dot(grad(q), f);
+  float b = dot(grad(q + ivec2(1, 0)), f - vec2(1.0, 0.0));
+  float c = dot(grad(q + ivec2(0, 1)), f - vec2(0.0, 1.0));
+  float d = dot(grad(q + ivec2(1, 1)), f - vec2(1.0, 1.0));
+  return mix(mix(a, b, u.x), mix(c, d, u.x), u.y) * 1.45;
+}
+
+float fbm(vec2 p, int n) {
+  float s = 0.0, a = 0.5, w = 0.0;
+  for (int i = 0; i < 5; i++) {
+    if (i >= n) break;
+    s += a * noise(p);
+    w += a;
+    p = OCT * p + vec2(17.31, 9.17);
+    a *= 0.5;
+  }
+  return s / w;
+}
+
+void main() {
+  ivec2 ic = ivec2(gl_FragCoord.xy);
+  vec2 P = (vec2(ic) + 0.5) * uCell;
+  float minDim = max(min(uRes.x, uRes.y), 1.0);
+  vec2 uv = (P - 0.5 * uRes) / minDim;
+  float t = uTime;
+
+  // Interactive pointer vortex swirl + spiral bioluminescent excitation
+  vec2 dp = P - uPtr.xy;
+  float pDist = length(dp);
+  float pRad = max(128.0, minDim * 0.19);
+  float r2 = dot(dp, dp) / (pRad * pRad);
+  float vEnv = exp(-r2) * uPtr.z;
+  vec2 swirl = vec2(-dp.y, dp.x) * (vEnv / pRad) * 1.75;
+  float pAng = atan(dp.y, dp.x);
+  float vortexArms = 0.55 + 0.45 * sin(pAng * 3.0 + pDist * 0.055 - t * 3.4);
+  float ptrGlow = exp(-r2 * 1.35) * uPtr.z * (1.55 + 1.55 * vortexArms);
+
+  // Trailing cursor wake ribbon
+  float wakeGlow = 0.0;
+  vec2 wakeSwirl = vec2(0.0);
+  for (int i = 0; i < 6; i++) {
+    float ws = uWake[i].z;
+    if (ws <= 0.004) continue;
+    vec2 wd = P - uWake[i].xy;
+    float wr = max(uWake[i].w, 24.0);
+    float wr2 = dot(wd, wd) / (wr * wr);
+    float we = exp(-wr2) * ws;
+    wakeGlow += we * 1.85;
+    wakeSwirl += vec2(-wd.y, wd.x) * (we / wr) * 0.85;
+  }
+
+  // Click / drag expanding circular shockwave ripples
+  float ripVal = 0.0;
+  vec2 ripPush = vec2(0.0);
+  for (int i = 0; i < 6; i++) {
+    float amp = uRipples[i].w;
+    if (amp <= 0.004) continue;
+    float age = uRipples[i].z;
+    vec2 rd = P - uRipples[i].xy;
+    float dist = length(rd);
+    float radius = age * 255.0;
+    float band = dist - radius;
+    float env = exp(-(band * band) / (36.0 * 36.0)) * exp(-age * 0.72) * amp;
+    float wave = cos(band * 0.16) * env;
+    ripVal += max(0.0, wave) * 4.2 + env * 1.05;
+    ripPush += (rd / max(dist, 1.0)) * wave * 0.055;
+  }
+
+  float L = 0.0;
+
+  if (uRegime == 0) {
+    // Regime 1: Divergence-free 2D curl-noise bioluminescent currents (high figure-ground contrast)
+    vec2 p = uv * 1.95 + swirl * 0.52 + wakeSwirl * 0.40 + ripPush + vec2(t * 0.052, -t * 0.022);
+    float eps = 0.028;
+    vec2 ps = p * 0.78 + vec2(t * 0.032, t * 0.020);
+    float n1 = fbm(ps + vec2(0.0, eps), 3);
+    float n2 = fbm(ps - vec2(0.0, eps), 3);
+    float n3 = fbm(ps + vec2(eps, 0.0), 3);
+    float n4 = fbm(ps - vec2(eps, 0.0), 3);
+    vec2 curl = vec2(n1 - n2, -(n3 - n4)) / (2.0 * eps);
+
+    // Sculpted ribbon filaments carving cleanly through deep abyssal indigo troughs
+    vec2 q1 = p + curl * 0.44 + vec2(0.0, t * 0.038);
+    float f1 = fbm(q1, 4);
+    float ridge1 = pow(smoothstep(0.54, 0.99, 1.0 - abs(f1 * 1.85)), 2.45);
+
+    vec2 q2 = p * 1.55 - curl * 0.30 + vec2(-t * 0.055, t * 0.030);
+    float f2 = fbm(q2, 3);
+    float ridge2 = pow(smoothstep(0.64, 0.99, 1.0 - abs(f2 * 1.95)), 2.85);
+
+    // Subtle deep-water swell modulates where currents bloom vs open abyssal void
+    float bloomMask = smoothstep(-0.22, 0.48, fbm(p * 0.52 + curl * 0.14, 3));
+    float shear = clamp(length(curl) * 0.45, 0.0, 1.0);
+    float bio = ridge1 * (0.68 + 0.55 * shear) * (0.45 + 0.65 * bloomMask) + ridge2 * 0.42 * (0.35 + 0.65 * bloomMask);
+
+    float swellFloor = smoothstep(0.28, 0.85, bloomMask) * 0.78;
+    L = swellFloor + pow(clamp(bio, 0.0, 1.35), 1.05) * 6.35 - 0.36;
+    L = max(0.0, L);
+
+    // Sparse single-cell bioluminescent plankton sparks along current shears
+    ivec2 sp = ic + ivec2(int(floor(t * 1.4)), int(floor(-t * 0.6)));
+    float spRnd = rnd(sp, 71u);
+    if (spRnd < 0.0014 * (0.18 + bio * 1.5)) {
+      float tw = 0.55 + 0.45 * sin(t * 2.4 + rnd(sp, 19u) * 6.2831853);
+      L = max(L, 4.4 + tw * 2.3);
+    }
+  } else if (uRegime == 1) {
+    // Regime 2: Bathymetric seabed topography with razor-sharp major/minor iso-contours
+    vec2 bp = uv * 1.68 + swirl * 0.24 + wakeSwirl * 0.18 + ripPush;
+    vec2 drift = vec2(t * 0.018, -t * 0.011);
+    vec2 warp = vec2(
+      fbm(bp * 0.70 + vec2(t * 0.022, 3.17), 3),
+      fbm(bp * 0.70 + vec2(-2.41, t * 0.019), 3)
+    );
+    vec2 sp = bp + warp * 0.44 + drift;
+    float he = 0.009;
+    float h0 = fbm(sp, 4) * 0.58 + 0.52 + 0.14 * cos(uv.x * 3.0 + t * 0.07) * cos(uv.y * 2.7 - t * 0.05);
+    float hx = fbm(sp + vec2(he, 0.0), 4) * 0.58 + 0.52 + 0.14 * cos((uv.x + he / 1.68) * 3.0 + t * 0.07) * cos(uv.y * 2.7 - t * 0.05);
+    float hy = fbm(sp + vec2(0.0, he), 4) * 0.58 + 0.52 + 0.14 * cos(uv.x * 3.0 + t * 0.07) * cos((uv.y + he / 1.68) * 2.7 - t * 0.05);
+    float gradLen = max(length(vec2(hx - h0, hy - h0)) / he, 0.28);
+    float h = clamp(h0, 0.0, 1.25);
+
+    float fMinor = fract(h * 11.0);
+    float dMinor = min(fMinor, 1.0 - fMinor) / (gradLen * 0.92);
+    float minorLine = smoothstep(0.072, 0.009, dMinor);
+
+    float fMajor = fract(h * 2.75);
+    float dMajor = min(fMajor, 1.0 - fMajor) / (gradLen * 0.92);
+    float majorLine = smoothstep(0.058, 0.007, dMajor);
+
+    float sheenPhase = dot(uv, vec2(0.82, 0.57)) * 4.4 - t * 0.58 + fbm(bp * 1.35, 2) * 0.55;
+    float tidalSheen = pow(0.5 + 0.5 * sin(sheenPhase), 4.0) * smoothstep(0.24, 0.88, h);
+
+    float terrace = smoothstep(0.36, 0.98, h) * 1.05;
+    L = terrace + minorLine * (2.55 + 1.05 * h) + majorLine * (4.15 + 1.45 * tidalSheen) + tidalSheen * 0.95 - 0.18;
+    L = max(0.0, L);
+  } else {
+    // Regime 3: Orbiting harmonic tide emitters with interference caustics
+    vec2 wp = uv + swirl * 0.16 + wakeSwirl * 0.12 + ripPush;
+    vec2 e0 = vec2(cos(t * 0.23) * 0.34, sin(t * 0.19) * 0.23);
+    vec2 e1 = vec2(cos(t * 0.17 + 2.094) * 0.37, sin(t * 0.25 + 1.31) * 0.27);
+    vec2 e2 = vec2(cos(t * 0.21 + 4.188) * 0.27, sin(t * 0.16 + 3.77) * 0.29);
+
+    float d0 = length(wp - e0);
+    float d1 = length(wp - e1);
+    float d2 = length(wp - e2);
+
+    float w0 = sin(d0 * 28.0 - t * 2.05) * exp(-d0 * 0.78);
+    float w1 = sin(d1 * 24.0 - t * 1.82 + 1.1) * exp(-d1 * 0.74);
+    float w2 = sin(d2 * 31.0 - t * 2.32 + 2.4) * exp(-d2 * 0.84);
+
+    float sumW = (w0 + w1 + w2) * 0.48;
+    float crest = pow(max(0.0, sumW), 1.22);
+    float caustic = pow(max(0.0, 1.0 - abs(sumW - 0.38) * 3.1), 2.2) * smoothstep(0.08, 0.52, sumW);
+    float cores = (exp(-d0 * d0 * 145.0) + exp(-d1 * d1 * 145.0) + exp(-d2 * d2 * 145.0)) * 2.85;
+    float troughHint = max(0.0, -sumW) * 0.22;
+
+    L = troughHint + crest * 6.45 + caustic * 2.65 + cores;
+  }
+
+  L += ptrGlow + wakeGlow + ripVal;
+
+  // Content-aware [data-dim] legibility protection down the tone ladder
+  float dim = 0.0;
+  for (int k = 0; k < 8; k++) {
+    if (k >= uDimN) break;
+    vec4 r = uDim[k];
+    vec2 a = max(max(r.xy - P, P - r.zw), 0.0);
+    dim = max(dim, exp(-dot(a, a) * (1.0 / 4800.0)));
+  }
+  if (dim > 0.001) {
+    float nL = L / 7.0;
+    float knee = 0.065;
+    float capped = nL > knee ? knee + (nL - knee) * 0.08 : nL * 0.35;
+    L = mix(L, capped * 7.0, dim * 0.96);
+  }
+
+  L = clamp(L, 0.0, 7.0);
+
+  // Ordered 4x4 Bayer quantization onto the 8-step Abyssal Bioluminescence OKLab ladder
+  float th = (float(BAYER[((ic.y & 3) << 2) | (ic.x & 3)]) + 0.5) / 16.0;
+  float lo = floor(L);
+  int idx = clamp(int(lo) + ((L - lo) > th ? 1 : 0), 0, 7);
+  oc = vec4(uTone[idx], (1.0 + L * 36.0) / 255.0);
+}`;
+
+  const GLYPH_FRAG_SRC = `#version 300 es
+precision highp float;
+precision highp int;
+
+uniform highp sampler2D uTex;
+uniform vec4 uLens;     // cx, cy, radius (in cells), fade (0..1)
+uniform ivec2 uGrid;
+uniform int uFullAscii;
+
+out vec4 oc;
+
+const int BAYER[16] = int[16](0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5);
+const float RAMP[11] = float[11](0.42, 0.95, 1.55, 2.20, 2.85, 3.55, 4.25, 4.95, 5.55, 6.10, 6.58);
+
+void main() {
+  ivec2 gc = ivec2(gl_FragCoord.xy);
+  ivec2 c0 = gc * ivec2(6, 9);
+  if (uFullAscii == 0 && length(vec2(c0) + vec2(3.0, 4.5) - uLens.xy) > uLens.z + 10.0) {
+    oc = vec4(0.0);
+    return;
+  }
+
+  float sum = 0.0, mx = 0.0, n = 0.0;
+  for (int y = 0; y < 9; y++) {
+    for (int x = 0; x < 6; x++) {
+      vec4 s = texelFetch(uTex, min(c0 + ivec2(x, y), uGrid - 1), 0);
+      if (s.a <= 0.0) continue;
+      float L = (s.a * 255.0 - 1.0) / 36.0;
+      sum += L;
+      mx = max(mx, L);
+      n += 1.0;
+    }
+  }
+  if (n < 1.0) {
+    oc = vec4(0.0);
+    return;
+  }
+
+  float m = sum / n;
+  float th = (float(BAYER[((gc.y & 3) << 2) | (gc.x & 3)]) + 0.5) / 16.0;
+
+  // Law 3: Clean void gating (m > 0.08) so deep abyssal troughs stay pure void
+  float md = m > 0.08 ? m + (th - 0.5) * 0.82 : 0.0;
+  int gi = 0;
+  for (int i = 0; i < 11; i++) gi += md > RAMP[i] ? 1 : 0;
+
+  int T = clamp(int(floor(m + 0.5)), 0, 7);
+  int lt = min(T + (T < 5 ? 2 : 1), 7);
+  int ut = 0;
+
+  // Law 5: Preserve isolated micro-highlights as '*' (8) or '+' (7)
+  if (mx - m > 1.8 && m < 3.2 && mx > 3.4) {
+    gi = mx > 5.4 ? 8 : 7;
+    lt = min(int(mx) + 1, 7);
+  }
+
+  oc = vec4(float(gi), float(lt), float(ut), 0.0) / 255.0;
+}`;
+
+  const BLIT_FRAG_SRC = `#version 300 es
+precision highp float;
+precision highp int;
+
+uniform highp sampler2D uSky;
+uniform highp sampler2D uGly;
+uniform int uCellDev;
+uniform int uTop;
+uniform ivec2 uGrid;
+uniform ivec2 uGlyGrid;
+uniform vec4 uLens;
+uniform int uFullAscii;
+uniform vec3 uTone[8];
+
+out vec4 oc;
+
+const int BAYER[16] = int[16](0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5);
+const uint GLYPH[24] = uint[24](
+  0u, 0u,
+  0u, 128u,
+  0u, 4232u,
+  128u, 128u,
+  310u, 0u,
+  14u, 0u,
+  992u, 31744u,
+  4255u, 4224u,
+  4782u, 21632u,
+  338922u, 32074u,
+  847052u, 28256u,
+  476917u, 24078u
+);
+
+void main() {
+  ivec2 f = ivec2(gl_FragCoord.xy);
+  // Flip Y strictly once here to map WebGL bottom-up screen to top-down FBOs
+  ivec2 c = ivec2(f.x / uCellDev, (uTop - 1 - f.y) / uCellDev);
+  c = clamp(c, ivec2(0), uGrid - 1);
+
+  bool useAscii = uFullAscii == 1;
+  if (!useAscii && uLens.z > 0.0 && uLens.w > 0.01) {
+    float dist = length(vec2(c) + 0.5 - uLens.xy);
+    float r = dist / uLens.z;
+    float th = (float(BAYER[((c.y & 3) << 2) | (c.x & 3)]) + 0.5) / 16.0;
+    useAscii = (r < 1.0 - (5.0 / uLens.z) * th) && (uLens.w >= th);
+    if (!useAscii && abs(dist - uLens.z) < 1.35 && uLens.w >= th && th > 0.42) {
+      oc = vec4(uTone[5], 1.0);
+      return;
+    }
+  }
+
+  if (useAscii) {
+    ivec2 gc = min(c / ivec2(6, 9), uGlyGrid - 1);
+    ivec2 q = c - gc * ivec2(6, 9);
+    ivec4 g = ivec4(texelFetch(uGly, gc, 0) * 255.0 + 0.5);
+    bool on = false;
+    if (q.x < 5 && q.y < 7) {
+      int b = q.y * 5 + q.x;
+      int gIdx = clamp(g.x, 0, 11);
+      uint wd = b < 20 ? GLYPH[gIdx * 2] : GLYPH[gIdx * 2 + 1];
+      on = ((wd >> uint(b < 20 ? 19 - b : 34 - b)) & 1u) == 1u;
+    }
+    int fg = clamp(g.y, 0, 7);
+    int bg = clamp(g.z, 0, 7);
+    oc = vec4(on ? uTone[fg] : uTone[bg], 1.0);
+  } else {
+    vec4 s = texelFetch(uSky, c, 0);
+    oc = vec4(s.rgb, 1.0);
+  }
+}`;
+
+  function compileShader(gl, type, src, label) {
+    const sh = gl.createShader(type);
+    gl.shaderSource(sh, src);
+    gl.compileShader(sh);
+    if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) {
+      const log = gl.getShaderInfoLog(sh) || 'Unknown shader error';
+      console.error(`[bioluminescent-tide] Shader compile failed (${label}):`, log);
+      gl.deleteShader(sh);
+      throw new Error(`Shader compile failed (${label}): ${log}`);
+    }
+    return sh;
+  }
+
+  function linkProgram(gl, vs, fs, label) {
+    const prog = gl.createProgram();
+    gl.attachShader(prog, vs);
+    gl.attachShader(prog, fs);
+    gl.linkProgram(prog);
+    if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
+      const log = gl.getProgramInfoLog(prog) || 'Unknown link error';
+      console.error(`[bioluminescent-tide] Program link failed (${label}):`, log);
+      gl.deleteProgram(prog);
+      throw new Error(`Program link failed (${label}): ${log}`);
+    }
+    return prog;
+  }
+
+  function makeFbo(gl, w, h) {
+    const tex = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, tex);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, w, h, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+    const fbo = gl.createFramebuffer();
+    gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, tex, 0);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    return { fbo, tex, w, h };
+  }
+
+  function initGL(canvas) {
+    const gl = canvas.getContext('webgl2', {
+      alpha: false,
+      antialias: false,
+      depth: false,
+      stencil: false,
+      powerPreference: 'high-performance',
+      preserveDrawingBuffer: false,
+    });
+    if (!gl) return null;
+
+    const vs = compileShader(gl, gl.VERTEX_SHADER, VERT_SRC, 'vertex');
+    const fieldFs = compileShader(gl, gl.FRAGMENT_SHADER, FIELD_FRAG_SRC, 'field');
+    const glyphFs = compileShader(gl, gl.FRAGMENT_SHADER, GLYPH_FRAG_SRC, 'glyph');
+    const blitFs = compileShader(gl, gl.FRAGMENT_SHADER, BLIT_FRAG_SRC, 'blit');
+
+    const pField = linkProgram(gl, vs, fieldFs, 'field');
+    const pGlyph = linkProgram(gl, vs, glyphFs, 'glyph');
+    const pBlit = linkProgram(gl, vs, blitFs, 'blit');
+
+    const vao = gl.createVertexArray();
+    gl.bindVertexArray(vao);
+
+    const uField = {
+      uRes: gl.getUniformLocation(pField, 'uRes'),
+      uCell: gl.getUniformLocation(pField, 'uCell'),
+      uTime: gl.getUniformLocation(pField, 'uTime'),
+      uRegime: gl.getUniformLocation(pField, 'uRegime'),
+      uPtr: gl.getUniformLocation(pField, 'uPtr'),
+      uWake: gl.getUniformLocation(pField, 'uWake[0]'),
+      uRipples: gl.getUniformLocation(pField, 'uRipples[0]'),
+      uDimN: gl.getUniformLocation(pField, 'uDimN'),
+      uDim: gl.getUniformLocation(pField, 'uDim[0]'),
+      uTone: gl.getUniformLocation(pField, 'uTone[0]'),
+    };
+    const uGlyph = {
+      uTex: gl.getUniformLocation(pGlyph, 'uTex'),
+      uLens: gl.getUniformLocation(pGlyph, 'uLens'),
+      uGrid: gl.getUniformLocation(pGlyph, 'uGrid'),
+      uFullAscii: gl.getUniformLocation(pGlyph, 'uFullAscii'),
+    };
+    const uBlit = {
+      uSky: gl.getUniformLocation(pBlit, 'uSky'),
+      uGly: gl.getUniformLocation(pBlit, 'uGly'),
+      uCellDev: gl.getUniformLocation(pBlit, 'uCellDev'),
+      uTop: gl.getUniformLocation(pBlit, 'uTop'),
+      uGrid: gl.getUniformLocation(pBlit, 'uGrid'),
+      uGlyGrid: gl.getUniformLocation(pBlit, 'uGlyGrid'),
+      uLens: gl.getUniformLocation(pBlit, 'uLens'),
+      uFullAscii: gl.getUniformLocation(pBlit, 'uFullAscii'),
+      uTone: gl.getUniformLocation(pBlit, 'uTone[0]'),
+    };
+
+    let skyFbo = null;
+    let glyFbo = null;
+
+    function destroyFbos() {
+      if (skyFbo) { gl.deleteFramebuffer(skyFbo.fbo); gl.deleteTexture(skyFbo.tex); skyFbo = null; }
+      if (glyFbo) { gl.deleteFramebuffer(glyFbo.fbo); gl.deleteTexture(glyFbo.tex); glyFbo = null; }
+    }
+
+    function resizeTargets() {
+      destroyFbos();
+      skyFbo = makeFbo(gl, state.gw, state.gh);
+      glyFbo = makeFbo(gl, state.lw, state.lh);
+    }
+
+    function render() {
+      if (state.contextLost || !skyFbo || !glyFbo) return;
+
+      const lensRadCells = Math.max(46, Math.min(state.gw, state.gh) * 0.25) / state.cell * (state.cellCss);
+      const lensRadius = Math.max(52, Math.min(state.vw, state.vh) * 0.165) / state.cell;
+      const lensCx = state.lensX / state.cell;
+      const lensCy = state.lensY / state.cell;
+      const fullInt = state.fullAscii ? 1 : 0;
+
+      gl.bindVertexArray(vao);
+
+      // Pass 1: FIELD -> skyFbo (gw x gh, top-down)
+      gl.bindFramebuffer(gl.FRAMEBUFFER, skyFbo.fbo);
+      gl.viewport(0, 0, state.gw, state.gh);
+      gl.useProgram(pField);
+      gl.uniform2f(uField.uRes, state.vw, state.vh);
+      gl.uniform1f(uField.uCell, state.cell);
+      gl.uniform1f(uField.uTime, state.time);
+      gl.uniform1i(uField.uRegime, state.regime);
+      gl.uniform4f(uField.uPtr, state.ptrX, state.ptrY, state.ptrEnergy, 0);
+      gl.uniform4fv(uField.uWake, state.wake);
+      gl.uniform4fv(uField.uRipples, state.ripples);
+      gl.uniform1i(uField.uDimN, state.dimN);
+      gl.uniform4fv(uField.uDim, state.dimRects);
+      gl.uniform3fv(uField.uTone, LADDER_GL);
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
+
+      // Pass 2: GLYPHPASS -> glyFbo (lw x lh, top-down)
+      gl.bindFramebuffer(gl.FRAMEBUFFER, glyFbo.fbo);
+      gl.viewport(0, 0, state.lw, state.lh);
+      gl.useProgram(pGlyph);
+      gl.activeTexture(gl.TEXTURE0);
+      gl.bindTexture(gl.TEXTURE_2D, skyFbo.tex);
+      gl.uniform1i(uGlyph.uTex, 0);
+      gl.uniform4f(uGlyph.uLens, lensCx, lensCy, lensRadius, state.lensFade);
+      gl.uniform2i(uGlyph.uGrid, state.gw, state.gh);
+      gl.uniform1i(uGlyph.uFullAscii, fullInt);
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
+
+      // Pass 3: BLIT -> default framebuffer (dw x dh, single Y flip)
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+      gl.viewport(0, 0, state.dw, state.dh);
+      gl.useProgram(pBlit);
+      gl.activeTexture(gl.TEXTURE0);
+      gl.bindTexture(gl.TEXTURE_2D, skyFbo.tex);
+      gl.uniform1i(uBlit.uSky, 0);
+      gl.activeTexture(gl.TEXTURE1);
+      gl.bindTexture(gl.TEXTURE_2D, glyFbo.tex);
+      gl.uniform1i(uBlit.uGly, 1);
+      gl.uniform1i(uBlit.uCellDev, state.cellDev);
+      gl.uniform1i(uBlit.uTop, state.dh);
+      gl.uniform2i(uBlit.uGrid, state.gw, state.gh);
+      gl.uniform2i(uBlit.uGlyGrid, state.lw, state.lh);
+      gl.uniform4f(uBlit.uLens, lensCx, lensCy, lensRadius, state.lensFade);
+      gl.uniform1i(uBlit.uFullAscii, fullInt);
+      gl.uniform3fv(uBlit.uTone, LADDER_GL);
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
+      void lensRadCells;
+    }
+
+    canvas.addEventListener('webglcontextlost', (e) => {
+      e.preventDefault();
+      state.contextLost = true;
+    });
+    canvas.addEventListener('webglcontextrestored', () => {
+      state.contextLost = false;
+      resizeTargets();
+      state.dirty = true;
+    });
+
+    return { resizeTargets, render };
+  }
+
+  // ==================== Safe 2D Canvas Fallback (Exact Same Grid & 5x7 Glyphs) ====================
+
+  function init2D(canvas) {
+    const ctx = canvas.getContext('2d', { alpha: false });
+    const LUT_N = 256;
+    const lut = new Float32Array(LUT_N * LUT_N);
+
+    const hash2 = (x, y) => {
+      let h = (x * 374761393 + y * 668265263) | 0;
+      h = Math.imul(h ^ (h >>> 13), 1274126177);
+      return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
+    };
+
+    const pNoise = (x, y, per) => {
+      const xi = Math.floor(x), yi = Math.floor(y);
+      const xf = x - xi, yf = y - yi;
+      const u = xf * xf * (3 - 2 * xf), v = yf * yf * (3 - 2 * yf);
+      const x0 = ((xi % per) + per) % per, x1 = (x0 + 1) % per;
+      const y0 = ((yi % per) + per) % per, y1 = (y0 + 1) % per;
+      const a = hash2(x0, y0) * 2 - 1, b = hash2(x1, y0) * 2 - 1;
+      const c = hash2(x0, y1) * 2 - 1, d = hash2(x1, y1) * 2 - 1;
+      return (a + (b - a) * u) + ((c + (d - c) * u) - (a + (b - a) * u)) * v;
+    };
+
+    for (let y = 0; y < LUT_N; y++) {
+      for (let x = 0; x < LUT_N; x++) {
+        const nx = x / LUT_N, ny = y / LUT_N;
+        const val =
+          0.52 * pNoise(nx * 4, ny * 4, 4) +
+          0.28 * pNoise(nx * 8 + 3.1, ny * 8 + 1.7, 8) +
+          0.14 * pNoise(nx * 16 + 7.3, ny * 16 + 5.2, 16) +
+          0.06 * pNoise(nx * 32, ny * 32, 32);
+        lut[y * LUT_N + x] = val;
+      }
+    }
+
+    const sampleLut = (u, v) => {
+      const fx = (((u % 1) + 1) % 1) * LUT_N;
+      const fy = (((v % 1) + 1) % 1) * LUT_N;
+      const x0 = fx | 0, y0 = fy | 0;
+      const x1 = (x0 + 1) & 255, y1 = (y0 + 1) & 255;
+      const tx = fx - x0, ty = fy - y0;
+      const a = lut[y0 * LUT_N + x0], b = lut[y0 * LUT_N + x1];
+      const c = lut[y1 * LUT_N + x0], d = lut[y1 * LUT_N + x1];
+      return (a + (b - a) * tx) * (1 - ty) + (c + (d - c) * tx) * ty;
+    };
+
+    let img = null;
+    let fieldBuf = null;
+    let dimX = new Float32Array(1);
+    let dimY = new Float32Array(1);
+
+    function resizeTargets() {
+      canvas.width = state.gw;
+      canvas.height = state.gh;
+      img = ctx.createImageData(state.gw, state.gh);
+      fieldBuf = new Float32Array(state.gw * state.gh);
+      dimX = new Float32Array(state.gw);
+      dimY = new Float32Array(state.gh);
+    }
+
+    function render() {
+      if (!img || !fieldBuf) return;
+      const { gw, gh, vw, vh, cell, time: t, regime, fullAscii } = state;
+      const minDim = Math.max(Math.min(vw, vh), 1);
+      const data = img.data;
+
+      // Separable [data-dim] Gaussian attenuation
+      dimX.fill(0);
+      dimY.fill(0);
+      for (let k = 0; k < state.dimN; k++) {
+        const o = k * 4;
+        const l = state.dimRects[o], top = state.dimRects[o + 1];
+        const r = state.dimRects[o + 2], bot = state.dimRects[o + 3];
+        for (let x = 0; x < gw; x++) {
+          const px = (x + 0.5) * cell;
+          const dx = px < l ? l - px : px > r ? px - r : 0;
+          const v = Math.exp(-(dx * dx) / 3000);
+          if (v > dimX[x]) dimX[x] = v;
+        }
+        for (let y = 0; y < gh; y++) {
+          const py = (y + 0.5) * cell;
+          const dy = py < top ? top - py : py > bot ? py - bot : 0;
+          const v = Math.exp(-(dy * dy) / 3000);
+          if (v > dimY[y]) dimY[y] = v;
+        }
+      }
+
+      const pRad = Math.max(132, minDim * 0.21);
+      const invPRad2 = 1 / (pRad * pRad);
+      const lensRad = Math.max(52, minDim * 0.165) / cell;
+      const lensCx = state.lensX / cell;
+      const lensCy = state.lensY / cell;
+
+      for (let y = 0; y < gh; y++) {
+        const py = (y + 0.5) * cell;
+        const uvy = (py - 0.5 * vh) / minDim;
+        const dyDim = dimY[y];
+        for (let x = 0; x < gw; x++) {
+          const px = (x + 0.5) * cell;
+          const uvx = (px - 0.5 * vw) / minDim;
+
+          const dpx = px - state.ptrX;
+          const dpy = py - state.ptrY;
+          const r2 = (dpx * dpx + dpy * dpy) * invPRad2;
+          const vEnv = Math.exp(-r2) * state.ptrEnergy;
+          const sx = (-dpy / pRad) * vEnv * 0.55;
+          const sy = (dpx / pRad) * vEnv * 0.55;
+          let extra = Math.exp(-r2 * 1.45) * state.ptrEnergy * 2.2;
+
+          for (let i = 0; i < MAX_RIPPLES; i++) {
+            const o = i * 4;
+            const amp = state.ripples[o + 3];
+            if (amp <= 0.004) continue;
+            const age = state.ripples[o + 2];
+            const dist = Math.hypot(px - state.ripples[o], py - state.ripples[o + 1]);
+            const band = dist - age * 255;
+            const env = Math.exp(-(band * band) / 1936) * Math.exp(-age * 0.78) * amp;
+            extra += Math.max(0, Math.cos(band * 0.145) * env) * 3.2 + env * 0.8;
+          }
+
+          let L = 0;
+          if (regime === 0) {
+            const u = (uvx + sx) * 0.52 + t * 0.015;
+            const v = (uvy + sy) * 0.52 - t * 0.008;
+            const c1 = sampleLut(u + 0.01, v) - sampleLut(u - 0.01, v);
+            const c2 = sampleLut(u, v + 0.01) - sampleLut(u, v - 0.01);
+            const f1 = sampleLut(u + c2 * 0.9, v - c1 * 0.9 + t * 0.01);
+            const r1 = Math.max(0, 1 - Math.abs(f1 * 2.2));
+            L = Math.max(0, Math.pow(r1, 2.2) * 6.2 - 0.45);
+          } else if (regime === 1) {
+            const h = sampleLut((uvx + sx) * 0.42 + t * 0.006, (uvy + sy) * 0.42 - t * 0.004) * 0.55 + 0.52;
+            const fm = ((h * 10) % 1 + 1) % 1;
+            const fM = ((h * 2.5) % 1 + 1) % 1;
+            const minor = Math.min(fm, 1 - fm) < 0.06 ? 3.2 : 0;
+            const major = Math.min(fM, 1 - fM) < 0.04 ? 4.2 : 0;
+            L = Math.max(0, h * 1.4 + minor + major - 0.2);
+          } else {
+            const d0 = Math.hypot(uvx - Math.cos(t * 0.23) * 0.34, uvy - Math.sin(t * 0.19) * 0.23);
+            const d1 = Math.hypot(uvx - Math.cos(t * 0.17 + 2.1) * 0.37, uvy - Math.sin(t * 0.25 + 1.3) * 0.27);
+            const d2 = Math.hypot(uvx - Math.cos(t * 0.21 + 4.2) * 0.27, uvy - Math.sin(t * 0.16 + 3.8) * 0.29);
+            const sw = (Math.sin(d0 * 28 - t * 2) * Math.exp(-d0 * 0.8) +
+                        Math.sin(d1 * 24 - t * 1.8) * Math.exp(-d1 * 0.8) +
+                        Math.sin(d2 * 31 - t * 2.3) * Math.exp(-d2 * 0.85)) * 0.43;
+            L = Math.max(0, sw) * 6.2;
+          }
+
+          L += extra;
+          const dim = dimX[x] * dyDim;
+          if (dim > 0.001) {
+            const nL = L / 7;
+            const cap = nL > 0.065 ? 0.065 + (nL - 0.065) * 0.08 : nL * 0.35;
+            L = L + (cap * 7 - L) * dim * 0.96;
+          }
+          if (L < 0) L = 0;
+          else if (L > 7) L = 7;
+          fieldBuf[y * gw + x] = L;
+
+          const th = BAYER_TH[((y & 3) << 2) | (x & 3)];
+          const lo = L | 0;
+          const idx = Math.min(7, lo + (L - lo > th ? 1 : 0));
+          const col = LADDER_RGB[idx];
+          const p = (y * gw + x) * 4;
+          data[p] = col[0];
+          data[p + 1] = col[1];
+          data[p + 2] = col[2];
+          data[p + 3] = 255;
+        }
+      }
+
+      // Stamp crisp 5x7 glyphs for Full ASCII or inside circular Bayer-rimmed Lens
+      const lw = state.lw, lh = state.lh;
+      for (let gy = 0; gy < lh; gy++) {
+        const y0 = gy * 9;
+        for (let gx = 0; gx < lw; gx++) {
+          const x0 = gx * 6;
+          if (!fullAscii) {
+            const dist = Math.hypot(x0 + 3 - lensCx, y0 + 4.5 - lensCy);
+            if (dist > lensRad + 8) continue;
+          }
+          let sum = 0, mx = 0, cnt = 0;
+          const yMax = Math.min(gh, y0 + 9), xMax = Math.min(gw, x0 + 6);
+          for (let y = y0; y < yMax; y++) {
+            const row = y * gw;
+            for (let x = x0; x < xMax; x++) {
+              const v = fieldBuf[row + x];
+              sum += v;
+              if (v > mx) mx = v;
+              cnt++;
+            }
+          }
+          const m = cnt ? sum / cnt : 0;
+          const gth = BAYER_TH[((gy & 3) << 2) | (gx & 3)];
+          const md = m > 0.08 ? m + (gth - 0.5) * 0.82 : 0;
+          let gi = 0;
+          for (let i = 0; i < 11; i++) if (md > RAMP_THRESH[i]) gi++;
+          const T = Math.min(7, Math.floor(m + 0.5));
+          let lt = Math.min(7, T + (T < 5 ? 2 : 1));
+          if (mx - m > 1.8 && m < 3.2 && mx > 3.4) {
+            gi = mx > 5.4 ? 8 : 7;
+            lt = Math.min(7, (mx | 0) + 1);
+          }
+          const w0 = GLYPH_WORDS[gi * 2];
+          const w1 = GLYPH_WORDS[gi * 2 + 1];
+          const fg = LADDER_RGB[lt];
+          const bg = LADDER_RGB[0];
+
+          for (let qy = 0; qy < 9 && y0 + qy < gh; qy++) {
+            const py = y0 + qy;
+            for (let qx = 0; qx < 6 && x0 + qx < gw; qx++) {
+              const px = x0 + qx;
+              if (!fullAscii) {
+                const dist = Math.hypot(px + 0.5 - lensCx, py + 0.5 - lensCy);
+                const th = BAYER_TH[((py & 3) << 2) | (px & 3)];
+                if (dist / lensRad >= 1 - (5 / lensRad) * th || state.lensFade < th) continue;
+              }
+              let on = false;
+              if (qx < 5 && qy < 7) {
+                const b = qy * 5 + qx;
+                const wd = b < 20 ? w0 : w1;
+                on = ((wd >>> (b < 20 ? 19 - b : 34 - b)) & 1) === 1;
+              }
+              const col = on ? fg : bg;
+              const p = (py * gw + px) * 4;
+              data[p] = col[0];
+              data[p + 1] = col[1];
+              data[p + 2] = col[2];
+            }
+          }
+        }
+      }
+
+      ctx.putImageData(img, 0, 0);
+    }
+
+    return { resizeTargets, render };
+  }
+
+  function initWithFallback(canvas, glInit, d2Init) {
+    let glCtrl = null;
+    try {
+      glCtrl = glInit(canvas);
+    } catch (err) {
+      console.error('[bioluminescent-tide] WebGL2 init failed, falling back to 2D:', err);
+      glCtrl = null;
+    }
+    if (glCtrl) return { ctrl: glCtrl, canvas, mode: 'webgl2' };
+
+    const fresh = canvas.cloneNode(false);
+    canvas.replaceWith(fresh);
+    return { ctrl: d2Init(fresh), canvas: fresh, mode: '2d' };
+  }
+
+  // ==================== Living Cell-Grid Bioluminescent Schools (Zero-GC Pools) ====================
+
+  const lifeCanvas = document.getElementById('life-canvas');
+  const lifeCtx = lifeCanvas.getContext('2d');
+
+  // 3-frame pixel-grid fish sprites (facing right; '#' = bright lantern head, 'X' = body)
+  const FISH_7 = [
+    ['X..XXX.', '.XXXXX#', '.....X.'],
+    ['....XX.', 'XXXXXX#', '....XX.'],
+    ['.....X.', '.XXXXX#', 'X..XXX.'],
+  ];
+  const FISH_5 = [
+    ['X.XX.', '.XXX#', '.....'],
+    ['...X.', 'XXXX#', '...X.'],
+    ['.....', '.XXX#', 'X.XX.'],
+  ];
+  const SWIM_SEQ = [0, 1, 2, 1];
+
+  const NUM_SCHOOLS = 3;
+  const FISH_PER_SCHOOL = 9;
+  const MAX_FISH = NUM_SCHOOLS * FISH_PER_SCHOOL;
+  const TRAIL_LEN = 20;
+  const MAX_SPORES = 30;
+
+  // Flat typed pools (zero per-frame allocations)
+  const fX = new Float32Array(MAX_FISH);
+  const fY = new Float32Array(MAX_FISH);
+  const fVx = new Float32Array(MAX_FISH);
+  const fVy = new Float32Array(MAX_FISH);
+  const fOx = new Float32Array(MAX_FISH);
+  const fOy = new Float32Array(MAX_FISH);
+  const fPh = new Float32Array(MAX_FISH);
+  const fBoost = new Float32Array(MAX_FISH);
+  const fSchool = new Uint8Array(MAX_FISH);
+  const fLarge = new Uint8Array(MAX_FISH);
+
+  // Trail ring buffers for the 3 school leaders + 3 wingmen (6 trailed swimmers)
+  const TRAILED_COUNT = 6;
+  const trailedIdx = new Uint8Array([0, 2, 9, 11, 18, 20]);
+  const trX = new Float32Array(TRAILED_COUNT * TRAIL_LEN);
+  const trY = new Float32Array(TRAILED_COUNT * TRAIL_LEN);
+  const trHead = new Uint8Array(TRAILED_COUNT);
+  const trFill = new Uint8Array(TRAILED_COUNT);
+
+  // School anchors
+  const sX = new Float32Array(NUM_SCHOOLS);
+  const sY = new Float32Array(NUM_SCHOOLS);
+  const sVx = new Float32Array(NUM_SCHOOLS);
+  const sVy = new Float32Array(NUM_SCHOOLS);
+  const sDir = new Float32Array([1, -1, 1]);
+  const sBaseY = new Float32Array([0.36, 0.58, 0.72]);
+  const sAmpY = new Float32Array([0.09, 0.08, 0.07]);
+  const sSpeed = new Float32Array([46, 38, 42]);
+  const sPhase = new Float32Array([0.4, 2.3, 4.7]);
+
+  // Spore plankton pool
+  const spX = new Float32Array(MAX_SPORES);
+  const spY = new Float32Array(MAX_SPORES);
+  const spVx = new Float32Array(MAX_SPORES);
+  const spVy = new Float32Array(MAX_SPORES);
+  const spPh = new Float32Array(MAX_SPORES);
+
+  let swimAccumMs = 0;
+  let swimStep = 0;
+  let trailAccumMs = 0;
+
+  function seeded(i) {
+    const x = Math.sin(i * 127.1 + 311.7) * 43758.5453123;
+    return x - Math.floor(x);
+  }
+
+  function resetSchools(vw, vh) {
+    const anchorsInitX = [vw * 0.28, vw * 0.74, vw * 0.52];
+    for (let s = 0; s < NUM_SCHOOLS; s++) {
+      sX[s] = anchorsInitX[s];
+      sY[s] = vh * sBaseY[s] + Math.sin(state.time * 0.55 + sPhase[s]) * vh * sAmpY[s];
+      sVx[s] = sDir[s] * sSpeed[s];
+      sVy[s] = 0;
+    }
+
+    for (let i = 0; i < MAX_FISH; i++) {
+      const s = Math.floor(i / FISH_PER_SCHOOL);
+      const local = i % FISH_PER_SCHOOL;
+      fSchool[i] = s;
+      fLarge[i] = local < 3 ? 1 : 0;
+      const rank = Math.ceil(local / 2);
+      const side = local === 0 ? 0 : (local % 2 === 1 ? -1 : 1);
+      const spread = vw < 640 ? 15 : 22;
+      fOx[i] = -sDir[s] * rank * spread * (0.95 + seeded(i + 5) * 0.25);
+      fOy[i] = side * rank * spread * (0.58 + seeded(i + 17) * 0.24) + (seeded(i + 31) - 0.5) * 8;
+      fX[i] = sX[s] + fOx[i];
+      fY[i] = sY[s] + fOy[i];
+      fVx[i] = sVx[s];
+      fVy[i] = 0;
+      fPh[i] = seeded(i + 91) * 6.283;
+      fBoost[i] = 0;
+    }
+
+    for (let k = 0; k < TRAILED_COUNT; k++) {
+      const fi = trailedIdx[k];
+      const base = k * TRAIL_LEN;
+      trHead[k] = 0;
+      trFill[k] = TRAIL_LEN;
+      for (let j = 0; j < TRAIL_LEN; j++) {
+        trX[base + j] = fX[fi] - sDir[fSchool[fi]] * j * 4.5;
+        trY[base + j] = fY[fi] + Math.sin(j * 0.35) * 1.6;
+      }
+    }
+
+    for (let i = 0; i < MAX_SPORES; i++) {
+      spX[i] = seeded(i * 3 + 11) * vw;
+      spY[i] = (0.14 + seeded(i * 3 + 29) * 0.76) * vh;
+      spVx[i] = (seeded(i * 3 + 47) - 0.5) * 10;
+      spVy[i] = -4 - seeded(i * 3 + 61) * 8;
+      spPh[i] = seeded(i * 3 + 83) * 6.283;
+    }
+  }
+
+  function scatterSchools(cx, cy) {
+    const rad = 340;
+    for (let i = 0; i < MAX_FISH; i++) {
+      const dx = fX[i] - cx;
+      const dy = fY[i] - cy;
+      const dist = Math.hypot(dx, dy);
+      if (dist < rad) {
+        const w = 1 - dist / rad;
+        const nx = dist > 1 ? dx / dist : Math.cos(fPh[i]);
+        const ny = dist > 1 ? dy / dist : Math.sin(fPh[i]);
+        const impulse = (185 + w * 230);
+        fVx[i] += nx * impulse;
+        fVy[i] += ny * impulse;
+        fBoost[i] = Math.min(1.0, fBoost[i] + 0.65 + w * 0.55);
+      }
+    }
+  }
+
+  function stepSchools(dt) {
+    const { vw, vh, time } = state;
+    const margin = 95;
+
+    for (let s = 0; s < NUM_SCHOOLS; s++) {
+      sX[s] += sDir[s] * sSpeed[s] * dt;
+      if (sDir[s] > 0 && sX[s] > vw + margin) {
+        sX[s] = -margin;
+        for (let i = s * FISH_PER_SCHOOL; i < (s + 1) * FISH_PER_SCHOOL; i++) fX[i] -= (vw + margin * 2);
+      } else if (sDir[s] < 0 && sX[s] < -margin) {
+        sX[s] = vw + margin;
+        for (let i = s * FISH_PER_SCHOOL; i < (s + 1) * FISH_PER_SCHOOL; i++) fX[i] += (vw + margin * 2);
+      }
+      const targetY = vh * sBaseY[s] + Math.sin(time * (0.48 + s * 0.08) + sPhase[s]) * vh * sAmpY[s];
+      sVy[s] = (targetY - sY[s]) * 2.2;
+      sY[s] += sVy[s] * dt;
+      sVx[s] = sDir[s] * sSpeed[s];
+    }
+
+    const veerR = 148;
+    for (let i = 0; i < MAX_FISH; i++) {
+      const s = fSchool[i];
+      const breathe = Math.sin(time * 1.4 + fPh[i]) * 5.5;
+      const tx = sX[s] + fOx[i] + Math.cos(time * 0.9 + fPh[i]) * 4.0;
+      const ty = sY[s] + fOy[i] + breathe;
+
+      // Critically damped spring to formation slot
+      let ax = (tx - fX[i]) * 3.4 - fVx[i] * 2.65 + sVx[s] * 2.65;
+      let ay = (ty - fY[i]) * 3.4 - fVy[i] * 2.65 + sVy[s] * 2.4;
+
+      // Calm pointer veer
+      if (state.ptrEnergy > 0.04) {
+        const qx = fX[i] - state.ptrX;
+        const qy = fY[i] - state.ptrY;
+        const d = Math.hypot(qx, qy);
+        if (d > 1 && d < veerR) {
+          const w = (1 - d / veerR) * Math.min(1, state.ptrEnergy + 0.35);
+          ax += (qx / d) * w * 310;
+          ay += (qy / d) * w * 310;
+          fBoost[i] = Math.min(1, fBoost[i] + dt * 2.4 * w);
+        }
+      }
+
+      fVx[i] += ax * dt;
+      fVy[i] += ay * dt;
+      fX[i] += fVx[i] * dt;
+      fY[i] += fVy[i] * dt;
+      fBoost[i] = Math.max(0, fBoost[i] - dt * 0.65);
+    }
+
+    // Record Bayer-dissolving wakes on a steady clock
+    trailAccumMs += dt * 1000;
+    if (trailAccumMs >= 55) {
+      trailAccumMs %= 55;
+      for (let k = 0; k < TRAILED_COUNT; k++) {
+        const fi = trailedIdx[k];
+        const next = (trHead[k] + 1) % TRAIL_LEN;
+        trHead[k] = next;
+        if (trFill[k] < TRAIL_LEN) trFill[k]++;
+        const base = k * TRAIL_LEN + next;
+        trX[base] = fX[fi];
+        trY[base] = fY[fi];
+      }
+    }
+
+    // 12fps sprite swim clock
+    swimAccumMs += dt * 1000;
+    if (swimAccumMs >= 1000 / 12) {
+      swimAccumMs %= 1000 / 12;
+      swimStep = (swimStep + 1) & 3;
+    }
+
+    // Step drifting bioluminescent spores
+    for (let i = 0; i < MAX_SPORES; i++) {
+      let vx = spVx[i] + Math.sin(time * 0.7 + spPh[i]) * 6 * dt;
+      let vy = spVy[i];
+      if (state.ptrEnergy > 0.05) {
+        const dx = spX[i] - state.ptrX;
+        const dy = spY[i] - state.ptrY;
+        const d = Math.hypot(dx, dy);
+        if (d > 2 && d < 160) {
+          const w = (1 - d / 160) * state.ptrEnergy;
+          vx += (-dy / d) * w * 85 * dt;
+          vy += (dx / d) * w * 85 * dt;
+        }
+      }
+      spX[i] += vx * dt;
+      spY[i] += vy * dt;
+      if (spY[i] < -12) { spY[i] = vh + 12; spX[i] = ((spX[i] + vw * 0.37) % vw); }
+      if (spX[i] < -12) spX[i] = vw + 12;
+      else if (spX[i] > vw + 12) spX[i] = -12;
+    }
+  }
+
+  function renderSchools() {
+    if (!lifeCtx) return;
+    const { gw, gh, cell, vw } = state;
+    lifeCtx.clearRect(0, 0, gw, gh);
+
+    const su = vw < 760 ? 2 : 1; // keep fish silhouettes legible on mobile 1px cells while grid-locked
+
+    // 1. Bayer-dissolving bioluminescent wakes
+    for (let k = 0; k < TRAILED_COUNT; k++) {
+      const fi = trailedIdx[k];
+      const boost = fBoost[fi];
+      const count = trFill[k];
+      const head = trHead[k];
+      const base = k * TRAIL_LEN;
+      for (let j = 1; j < count; j++) {
+        const idx = (head - j + TRAIL_LEN) % TRAIL_LEN;
+        const age = j / TRAIL_LEN;
+        const rampIn = Math.min(1, j / 3);
+        const keep = (1 - age) * rampIn * (0.72 + boost * 0.35);
+        const cx = Math.round(trX[base + idx] / cell);
+        const cy = Math.round(trY[base + idx] / cell);
+        if (cx < 0 || cx >= gw || cy < 0 || cy >= gh) continue;
+
+        const th = BAYER_TH[((cy & 3) << 2) | (cx & 3)];
+        if (keep > th) {
+          lifeCtx.fillStyle = age < 0.34 ? LADDER_HEX[5] : LADDER_HEX[4];
+          lifeCtx.fillRect(cx, cy, su, su);
+        }
+        if (age > 0.28) {
+          const cy2 = cy + su;
+          const th2 = BAYER_TH[((cy2 & 3) << 2) | (cx & 3)];
+          if (keep * 0.68 > th2 && cy2 < gh) {
+            lifeCtx.fillStyle = LADDER_HEX[3];
+            lifeCtx.fillRect(cx, cy2, su, su);
+          }
+        }
+      }
+    }
+
+    // 2. Drifting bioluminescent spores (single-cell sparks)
+    for (let i = 0; i < MAX_SPORES; i++) {
+      const cx = Math.round(spX[i] / cell);
+      const cy = Math.round(spY[i] / cell);
+      if (cx < 0 || cx >= gw || cy < 0 || cy >= gh) continue;
+      // Keep top-left title corner quiet
+      if (spX[i] < 320 && spY[i] < 125) continue;
+      const pulse = 0.5 + 0.5 * Math.sin(state.time * 1.9 + spPh[i]);
+      lifeCtx.fillStyle = pulse > 0.72 ? LADDER_HEX[7] : pulse > 0.36 ? LADDER_HEX[6] : LADDER_HEX[5];
+      lifeCtx.fillRect(cx, cy, su, su);
+    }
+
+    // 3. Living pixel-grid lanternfish schools
+    const frameIdx = SWIM_SEQ[swimStep];
+    for (let i = 0; i < MAX_FISH; i++) {
+      // Gently skip drawing directly over title typography
+      if (fX[i] < 310 && fY[i] < 115) continue;
+      const sprite = fLarge[i] ? FISH_7[frameIdx] : FISH_5[frameIdx];
+      const sw = sprite[0].length;
+      const sh = sprite.length;
+      const flip = fVx[i] < 0;
+      const cx0 = Math.round(fX[i] / cell) - Math.floor((sw * su) / 2);
+      const cy0 = Math.round(fY[i] / cell) - Math.floor((sh * su) / 2);
+      const lit = fBoost[i] > 0.25;
+
+      for (let ry = 0; ry < sh; ry++) {
+        const row = sprite[ry];
+        const py = cy0 + ry * su;
+        if (py < 0 || py >= gh) continue;
+        for (let rx = 0; rx < sw; rx++) {
+          const ch = row[flip ? sw - 1 - rx : rx];
+          if (ch === '.') continue;
+          const px = cx0 + rx * su;
+          if (px < 0 || px >= gw) continue;
+          lifeCtx.fillStyle = ch === '#'
+            ? LADDER_HEX[7]
+            : (lit ? LADDER_HEX[6] : (fLarge[i] ? LADDER_HEX[6] : LADDER_HEX[5]));
+          lifeCtx.fillRect(px, py, su, su);
+        }
+      }
+    }
+  }
+
+  // ==================== Boot & Resize ====================
+
+  const initialCanvas = document.getElementById('ascii-canvas');
+  const engine = initWithFallback(initialCanvas, initGL, init2D);
+  const mainCanvas = engine.canvas;
+
+  function resize() {
+    const vw = Math.max(1, window.innerWidth);
+    const vh = Math.max(1, window.innerHeight);
+    let dpr = Math.max(1, Math.min(window.devicePixelRatio || 1, 3));
+    if (vw * vh * dpr * dpr > MAX_PIXELS) {
+      dpr = Math.max(1, Math.sqrt(MAX_PIXELS / (vw * vh)));
+    }
+    const cellCss = vw < 760 ? 1 : 2;
+    const cellDev = Math.max(1, Math.round(cellCss * dpr));
+    const dw = Math.ceil(vw * dpr);
+    const dh = Math.ceil(vh * dpr);
+
+    state.vw = vw;
+    state.vh = vh;
+    state.dpr = dpr;
+    state.cellCss = cellCss;
+    state.cellDev = cellDev;
+    state.cell = cellDev / dpr;
+    state.dw = dw;
+    state.dh = dh;
+    state.gw = Math.ceil(dw / cellDev);
+    state.gh = Math.ceil(dh / cellDev);
+    state.lw = Math.ceil(state.gw / 6);
+    state.lh = Math.ceil(state.gh / 9);
+
+    if (engine.mode === 'webgl2') {
+      mainCanvas.width = dw;
+      mainCanvas.height = dh;
+      mainCanvas.style.width = (dw / dpr) + 'px';
+      mainCanvas.style.height = (dh / dpr) + 'px';
+    } else {
+      mainCanvas.width = state.gw;
+      mainCanvas.height = state.gh;
+      mainCanvas.style.width = (state.gw * state.cell) + 'px';
+      mainCanvas.style.height = (state.gh * state.cell) + 'px';
+    }
+
+    lifeCanvas.width = state.gw;
+    lifeCanvas.height = state.gh;
+    lifeCanvas.style.width = (state.gw * state.cell) + 'px';
+    lifeCanvas.style.height = (state.gh * state.cell) + 'px';
+    if (lifeCtx) lifeCtx.imageSmoothingEnabled = false;
+
+    engine.ctrl.resizeTargets();
+    buildDitherTiles(cellCss);
+    sampleDimRects();
+
+    if (!state.ptrInside) {
+      state.ptrX = state.ptrTargetX = vw * 0.56;
+      state.ptrY = state.ptrTargetY = vh * 0.48;
+      state.lensX = vw * 0.55;
+      state.lensY = vh * 0.48;
+    }
+
+    resetSchools(vw, vh);
+    state.dirty = true;
+  }
+
+  // ==================== Interactions & Controls ====================
+
+  function spawnRipple(x, y, amp = 1.0) {
+    const o = state.rippleCursor * 4;
+    state.ripples[o] = x;
+    state.ripples[o + 1] = y;
+    state.ripples[o + 2] = 0.0;
+    state.ripples[o + 3] = amp;
+    state.rippleCursor = (state.rippleCursor + 1) % MAX_RIPPLES;
+    scatterSchools(x, y);
+    state.dirty = true;
+  }
+
+  function dropWake(x, y, strength = 1.0) {
+    const o = state.wakeCursor * 4;
+    state.wake[o] = x;
+    state.wake[o + 1] = y;
+    state.wake[o + 2] = Math.min(1.5, strength);
+    state.wake[o + 3] = Math.max(54, Math.min(state.vw, state.vh) * 0.088);
+    state.wakeCursor = (state.wakeCursor + 1) % MAX_WAKE;
+    state.lastWakeX = x;
+    state.lastWakeY = y;
+  }
+
+  function isDockEvent(e) {
+    return !!(e.target && e.target.closest && e.target.closest('.dock-wrap'));
+  }
+
+  window.addEventListener('pointermove', (e) => {
+    const x = e.clientX;
+    const y = e.clientY;
+    const inCornerPark = x <= 16 && y <= 16;
+    if (inCornerPark) {
+      state.ptrInside = false;
+      return;
+    }
+    const prevX = state.ptrTargetX;
+    const prevY = state.ptrTargetY;
+    state.ptrTargetX = x;
+    state.ptrTargetY = y;
+    state.ptrInside = true;
+
+    const moveDist = Math.hypot(x - prevX, y - prevY);
+    state.ptrSpeed = Math.min(2.2, state.ptrSpeed + moveDist * 0.022);
+    state.ptrEnergy = Math.min(1.55, Math.max(state.ptrEnergy, 0.78) + (state.ptrDown ? 0.35 : 0.14));
+
+    const wakeDist = Math.hypot(x - state.lastWakeX, y - state.lastWakeY);
+    if (wakeDist >= 26) {
+      dropWake(x, y, state.ptrDown ? 1.35 : 0.95);
+    }
+    state.dirty = true;
+  }, { passive: true });
+
+  window.addEventListener('pointerdown', (e) => {
+    if (isDockEvent(e)) return;
+    state.ptrDown = true;
+    state.ptrInside = true;
+    state.ptrTargetX = e.clientX;
+    state.ptrTargetY = e.clientY;
+    state.ptrEnergy = Math.min(1.75, state.ptrEnergy + 0.85);
+    dropWake(e.clientX, e.clientY, 1.35);
+    spawnRipple(e.clientX, e.clientY, 1.15);
+  });
+
+  window.addEventListener('pointerup', () => {
+    state.ptrDown = false;
+  }, { passive: true });
+
+  window.addEventListener('pointerleave', () => {
+    state.ptrInside = false;
+    state.ptrDown = false;
+  }, { passive: true });
+
+  const regimeButtons = Array.from(document.querySelectorAll('button[data-regime]'));
+  const renderToggleBtn = document.querySelector('button[data-render-toggle]');
+  const renderLabelEl = document.querySelector('[data-render-label]');
+
+  function setRegime(idx) {
+    state.regime = Math.max(0, Math.min(2, idx));
+    regimeButtons.forEach((btn) => {
+      btn.setAttribute('aria-pressed', String(Number(btn.dataset.regime) === state.regime));
+    });
+    state.dirty = true;
+  }
+
+  function setRenderMode(fullAscii) {
+    state.fullAscii = !!fullAscii;
+    if (renderToggleBtn) {
+      renderToggleBtn.setAttribute('aria-pressed', String(!state.fullAscii));
+      renderToggleBtn.dataset.renderMode = state.fullAscii ? 'ascii' : 'bayer';
+    }
+    if (renderLabelEl) {
+      renderLabelEl.textContent = state.fullAscii ? 'Full ASCII' : 'Bayer + Lens';
+    }
+    if (!state.fullAscii) {
+      // Snap optical lens immediately into showcase spot if pointer is parked
+      if (!state.ptrInside) {
+        state.lensX = state.vw * 0.55;
+        state.lensY = state.vh * 0.48;
+      } else {
+        state.lensX = state.ptrX;
+        state.lensY = state.ptrY;
+      }
+      state.lensFade = 1.0;
+    }
+    state.dirty = true;
+  }
+
+  regimeButtons.forEach((btn) => {
+    btn.addEventListener('click', () => setRegime(Number(btn.dataset.regime)));
+  });
+
+  if (renderToggleBtn) {
+    renderToggleBtn.addEventListener('click', () => setRenderMode(!state.fullAscii));
+  }
+
+  window.addEventListener('keydown', (e) => {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    if (e.key === '1') setRegime(0);
+    else if (e.key === '2') setRegime(1);
+    else if (e.key === '3') setRegime(2);
+    else if (e.key === 'm' || e.key === 'M' || e.key === 'l' || e.key === 'L') setRenderMode(!state.fullAscii);
+    else if (e.code === 'Space') {
+      e.preventDefault();
+      spawnRipple(state.vw * 0.5, state.vh * 0.5, 1.1);
+    }
+  });
+
+  document.addEventListener('visibilitychange', () => {
+    state.hidden = document.hidden;
+    if (!state.hidden) {
+      lastNow = performance.now();
+      state.dirty = true;
+    }
+  });
+
+  rmQuery.addEventListener('change', (e) => {
+    reducedMotion = e.matches;
+    state.dirty = true;
+  });
+
+  window.addEventListener('resize', resize, { passive: true });
+
+  // ==================== Animation Loop ====================
+
+  let lastNow = performance.now();
+
+  function tick(now) {
+    requestAnimationFrame(tick);
+    if (state.hidden) return;
+
+    const dt = Math.min(0.05, Math.max(0.001, (now - lastNow) / 1000));
+    lastNow = now;
+
+    if (reducedMotion) {
+      if (!state.dirty) return;
+      state.dirty = false;
+      sampleDimRects();
+      engine.ctrl.render();
+      renderSchools();
+      return;
+    }
+
+    state.time += dt;
+
+    // Exponential pointer easing (Law 8)
+    const ease = 1 - Math.exp(-dt * 9.0);
+    state.ptrX += (state.ptrTargetX - state.ptrX) * ease;
+    state.ptrY += (state.ptrTargetY - state.ptrY) * ease;
+
+    // Optical lens smoothly tracks cursor when inside, or settles gracefully at focal spot
+    const targetLensX = state.ptrInside ? state.ptrX : state.vw * 0.55;
+    const targetLensY = state.ptrInside ? state.ptrY : state.vh * 0.48;
+    state.lensX += (targetLensX - state.lensX) * (1 - Math.exp(-dt * 7.5));
+    state.lensY += (targetLensY - state.lensY) * (1 - Math.exp(-dt * 7.5));
+    const targetFade = state.fullAscii ? 0.0 : 1.0;
+    state.lensFade += (targetFade - state.lensFade) * (1 - Math.exp(-dt * 10.0));
+
+    // Decay pointer excitation & wake ribbon smoothly over ~1.4s
+    state.ptrSpeed *= Math.exp(-dt * 3.2);
+    const minHoverEnergy = state.ptrInside ? 0.52 : 0.0;
+    state.ptrEnergy = Math.max(minHoverEnergy, state.ptrEnergy * Math.exp(-dt * 1.15));
+
+    for (let i = 0; i < MAX_WAKE; i++) {
+      const o = i * 4;
+      if (state.wake[o + 2] > 0.003) {
+        state.wake[o + 2] *= Math.exp(-dt * 1.15);
+      } else {
+        state.wake[o + 2] = 0;
+      }
+    }
+
+    // Advance expanding shockwave ripples
+    for (let i = 0; i < MAX_RIPPLES; i++) {
+      const o = i * 4;
+      if (state.ripples[o + 3] > 0.003) {
+        state.ripples[o + 2] += dt;
+        if (state.ripples[o + 2] > 4.2) state.ripples[o + 3] = 0;
+      }
+    }
+
+    stepSchools(dt);
+    sampleDimRects();
+    engine.ctrl.render();
+    renderSchools();
+    state.dirty = false;
+  }
+
+  initKineticCopy();
+  resize();
+  // Render first crisp hero frame immediately
+  engine.ctrl.render();
+  renderSchools();
+  requestAnimationFrame(tick);
+})();
+</script>
+</body>
+</html>

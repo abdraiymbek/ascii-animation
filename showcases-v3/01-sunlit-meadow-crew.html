@@ -1,0 +1,2270 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sunlit Alpine Meadow &amp; Pixel Crew — Optical 5×7 ASCII World</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #08B4FF;
+    font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+  }
+
+  #stage {
+    position: fixed;
+    inset: 0;
+    display: block;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: crisp-edges;
+    image-rendering: pixelated;
+    cursor: crosshair;
+  }
+
+  /* Editorial Hero Overlay */
+  .hero {
+    position: fixed;
+    top: clamp(22px, 4.6vh, 46px);
+    left: clamp(18px, 3.8vw, 50px);
+    max-width: min(460px, 66vw);
+    z-index: 10;
+    pointer-events: none;
+    color: #FFFFFF;
+    transition: color 360ms ease;
+  }
+
+  .eyebrow {
+    font-family: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: clamp(10px, 1.05vw, 12px);
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.92);
+    text-shadow: 0 1px 10px rgba(4, 58, 122, 0.42), 0 1px 2px rgba(4, 58, 122, 0.32);
+    margin-bottom: 6px;
+    line-height: 1.3;
+  }
+
+  .title {
+    font-size: clamp(26px, 4.1vw, 50px);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1.04;
+    color: #FFFFFF;
+    text-shadow: 0 2px 18px rgba(4, 62, 130, 0.38), 0 1px 3px rgba(4, 62, 130, 0.34);
+    margin-bottom: 8px;
+  }
+
+  .sub {
+    font-size: clamp(12.5px, 1.25vw, 15px);
+    font-weight: 500;
+    line-height: 1.4;
+    color: rgba(255, 255, 255, 0.94);
+    text-shadow: 0 1px 12px rgba(4, 58, 122, 0.44), 0 1px 2px rgba(4, 58, 122, 0.32);
+  }
+
+  body[data-mood="sunset"] .eyebrow,
+  body[data-mood="sunset"] .title,
+  body[data-mood="sunset"] .sub {
+    text-shadow: 0 2px 18px rgba(52, 18, 86, 0.48), 0 1px 3px rgba(52, 18, 86, 0.38);
+  }
+
+  body[data-mood="night"] .eyebrow,
+  body[data-mood="night"] .title,
+  body[data-mood="night"] .sub {
+    color: #F2F7FF;
+    text-shadow: 0 2px 20px rgba(4, 8, 28, 0.72), 0 1px 3px rgba(4, 8, 28, 0.6);
+  }
+
+  /* Stepped 4x4 Bayer Reveal (--dz1..--dz7) */
+  @keyframes dz {
+    0%   { opacity: 0; }
+    5%   { opacity: 1; -webkit-mask-image: var(--dz1); mask-image: var(--dz1); }
+    18%  { opacity: 1; -webkit-mask-image: var(--dz2); mask-image: var(--dz2); }
+    31%  { opacity: 1; -webkit-mask-image: var(--dz3); mask-image: var(--dz3); }
+    44%  { opacity: 1; -webkit-mask-image: var(--dz4); mask-image: var(--dz4); }
+    57%  { opacity: 1; -webkit-mask-image: var(--dz5); mask-image: var(--dz5); }
+    70%  { opacity: 1; -webkit-mask-image: var(--dz6); mask-image: var(--dz6); }
+    83%  { opacity: 1; -webkit-mask-image: var(--dz7); mask-image: var(--dz7); }
+    100% { opacity: 1; -webkit-mask-image: none; mask-image: none; }
+  }
+  @keyframes dzr {
+    from { transform: translateY(0.12em); }
+  }
+  .kin .w {
+    display: inline-block;
+    opacity: 0;
+    padding-block: 0.22em;
+    margin-block: -0.22em;
+    -webkit-mask-size: var(--dzs, 12px) var(--dzs, 12px);
+    mask-size: var(--dzs, 12px) var(--dzs, 12px);
+  }
+  .kin.in .w {
+    opacity: 1;
+    animation: dz 520ms step-end both, dzr 720ms cubic-bezier(.16, 1, .3, 1) both;
+    animation-delay: calc(var(--bd, 0ms) + var(--i) * 40ms);
+  }
+
+  /* Quiet Translucent Floating Bottom Dock */
+  .dock-wrap {
+    position: fixed;
+    left: 50%;
+    bottom: clamp(14px, 2.4vh, 24px);
+    transform: translateX(-50%);
+    z-index: 20;
+    max-width: calc(100vw - 20px);
+  }
+
+  .dock {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: nowrap;
+    gap: 4px;
+    padding: 5px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.74);
+    border: 1px solid rgba(255, 255, 255, 0.85);
+    box-shadow: 0 8px 28px rgba(10, 48, 86, 0.16), 0 1px 2px rgba(10, 48, 86, 0.08);
+    backdrop-filter: blur(14px) saturate(1.4);
+    -webkit-backdrop-filter: blur(14px) saturate(1.4);
+    transition: background 320ms ease, border-color 320ms ease, box-shadow 320ms ease;
+  }
+
+  body[data-mood="sunset"] .dock {
+    background: rgba(255, 248, 244, 0.74);
+    border-color: rgba(255, 255, 255, 0.76);
+    box-shadow: 0 8px 28px rgba(64, 20, 74, 0.2);
+  }
+
+  body[data-mood="night"] .dock {
+    background: rgba(12, 18, 46, 0.76);
+    border-color: rgba(146, 182, 255, 0.24);
+    box-shadow: 0 10px 30px rgba(2, 5, 18, 0.55);
+  }
+
+  .dock-group {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+  }
+
+  .dock-sep {
+    width: 1px;
+    height: 18px;
+    margin: 0 4px;
+    background: rgba(14, 42, 76, 0.16);
+    flex-shrink: 0;
+  }
+
+  body[data-mood="night"] .dock-sep {
+    background: rgba(190, 214, 255, 0.22);
+  }
+
+  .dock button {
+    appearance: none;
+    border: 0;
+    background: transparent;
+    color: #0E2B4D;
+    font-family: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 11.5px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    padding: 7px 11px;
+    border-radius: 999px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 180ms ease, color 180ms ease, transform 120ms ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .dock button:hover {
+    background: rgba(14, 43, 77, 0.08);
+  }
+
+  .dock button:active {
+    transform: scale(0.96);
+  }
+
+  .dock button.active {
+    background: #0F2B4D;
+    color: #FFFFFF;
+    box-shadow: 0 2px 8px rgba(15, 43, 77, 0.24);
+  }
+
+  body[data-mood="sunset"] .dock button.active {
+    background: #512573;
+    color: #FFF8FA;
+  }
+
+  body[data-mood="night"] .dock button {
+    color: rgba(226, 238, 255, 0.84);
+  }
+
+  body[data-mood="night"] .dock button:hover {
+    background: rgba(186, 212, 255, 0.12);
+    color: #FFFFFF;
+  }
+
+  body[data-mood="night"] .dock button.active {
+    background: #FFD866;
+    color: #10193B;
+    box-shadow: 0 2px 10px rgba(255, 216, 102, 0.35);
+  }
+
+  .dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    display: inline-block;
+    flex-shrink: 0;
+    box-shadow: 0 0 0 1px rgba(15, 43, 77, 0.14);
+  }
+  body[data-mood="night"] .dock button.active .dot {
+    background: #10193B !important;
+    box-shadow: none;
+  }
+
+  @media (max-width: 680px) {
+    .hero {
+      top: 22px;
+      left: 16px;
+      max-width: 68vw;
+    }
+    .eyebrow {
+      font-size: 9.5px;
+      letter-spacing: 0.1em;
+    }
+    .title { font-size: 27px; margin-bottom: 5px; }
+    .sub { font-size: 12px; }
+    .dock {
+      flex-wrap: wrap;
+      border-radius: 20px;
+      padding: 5px 6px;
+      gap: 4px;
+      max-width: calc(100vw - 20px);
+    }
+    .dock-sep { display: none; }
+    .dock button {
+      font-size: 10.5px;
+      padding: 6px 9px;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .kin .w {
+      opacity: 1 !important;
+      animation: none !important;
+      -webkit-mask-image: none !important;
+      mask-image: none !important;
+    }
+  }
+</style>
+</head>
+<body data-mood="noon">
+  <canvas id="stage" aria-label="Interactive sunlit alpine meadow with five pixel bots and an optical color 5x7 ASCII lens"></canvas>
+
+  <header class="hero">
+    <p class="eyebrow kin" data-dim style="--bd: 0ms">Alpine Pixel Field · 5×7 Optical Lens</p>
+    <h1 class="title kin" data-dim style="--bd: 85ms">Sunlit Meadow Crew</h1>
+    <p class="sub kin" data-dim style="--bd: 170ms">Poke a bot, click the sky for petals, or sweep the color ASCII lens.</p>
+  </header>
+
+  <nav class="dock-wrap" aria-label="Scene controls">
+    <div class="dock">
+      <div class="dock-group" role="group" aria-label="Lighting mood">
+        <button id="mood-noon" data-mood="noon" class="active" aria-pressed="true">
+          <span class="dot" style="background:#08B4FF"></span>Noon
+        </button>
+        <button id="mood-sunset" data-mood="sunset" aria-pressed="false">
+          <span class="dot" style="background:#FF7BA8"></span>Sunset
+        </button>
+        <button id="mood-night" data-mood="night" aria-pressed="false">
+          <span class="dot" style="background:#FFD866"></span>Night
+        </button>
+      </div>
+      <span class="dock-sep" aria-hidden="true"></span>
+      <div class="dock-group" role="group" aria-label="Render mode">
+        <button id="mode-lens" data-mode="lens" class="active" aria-pressed="true">Pixel + Lens</button>
+        <button id="mode-ascii" data-mode="ascii" aria-pressed="false">Full-Color ASCII</button>
+      </div>
+    </div>
+  </nav>
+
+<script>
+(() => {
+  'use strict';
+
+  /* =========================================================================
+     1. BAYER MATRIX, HASHES & PACKED 5x7 SCENE_24 GLYPH ENGINE
+     ========================================================================= */
+  const BAYER_INT = [
+    0, 8, 2, 10,
+    12, 4, 14, 6,
+    3, 11, 1, 9,
+    15, 7, 13, 5,
+  ];
+  const BAYER = BAYER_INT.map((v) => (v + 0.5) / 16);
+
+  function pcg2(x, y) {
+    let vx = (x | 0) * 1664525 + 1013904223 | 0;
+    let vy = (y | 0) * 1664525 + 1013904223 | 0;
+    vx = (vx + Math.imul(vy, 1664525)) | 0;
+    vy = (vy + Math.imul(vx, 1664525)) | 0;
+    vx ^= vx >>> 16;
+    vy ^= vy >>> 16;
+    vx = (vx + Math.imul(vy, 1664525)) | 0;
+    vy = (vy + Math.imul(vx, 1664525)) | 0;
+    return ((vx ^ vy) >>> 0) / 4294967296;
+  }
+
+  // Exact SCENE_24 5x7 bitmap glyphs from scripts/pack-glyphs.mjs
+  const GLYPH_DEFS = [
+    /* 0  ' ' */ ['.....','.....','.....','.....','.....','.....','.....'],
+    /* 1  '.' */ ['.....','.....','.....','.....','.....','..#..','.....'],
+    /* 2  ',' */ ['.....','.....','.....','.....','..#..','..#..','.#...'],
+    /* 3  ':' */ ['.....','.....','..#..','.....','.....','..#..','.....'],
+    /* 4  '~' */ ['.....','.....','.#..#','#.##.','.....','.....','.....'],
+    /* 5  '-' */ ['.....','.....','.....','.###.','.....','.....','.....'],
+    /* 6  '=' */ ['.....','.....','#####','.....','#####','.....','.....'],
+    /* 7  '+' */ ['.....','..#..','..#..','#####','..#..','..#..','.....'],
+    /* 8  '*' */ ['.....','..#..','#.#.#','.###.','#.#.#','..#..','.....'],
+    /* 9  '#' */ ['.#.#.','.#.#.','#####','.#.#.','#####','.#.#.','.#.#.'],
+    /* 10 '%' */ ['##..#','##.##','..##.','.##..','##.##','#..##','.....'],
+    /* 11 '@' */ ['.###.','#...#','#.###','#.#.#','#.###','#....','.###.'],
+    /* 12 '/' */ ['....#','...#.','...#.','..#..','.#...','.#...','#....'],
+    /* 13 '\' */ ['#....','.#...','.#...','..#..','...#.','...#.','....#'],
+    /* 14 '|' */ ['..#..','..#..','..#..','..#..','..#..','..#..','..#..'],
+    /* 15 '_' */ ['.....','.....','.....','.....','.....','.....','#####'],
+    /* 16 '█' */ ['#####','#####','#####','#####','#####','#####','#####'],
+    /* 17 '^' */ ['..#..','.#.#.','#...#','.....','.....','.....','.....'],
+    /* 18 'v' */ ['.....','.....','.....','#...#','.#.#.','..#..','.....'],
+    /* 19 'o' */ ['.....','.....','.###.','#...#','#...#','.###.','.....'],
+    /* 20 '"' */ ['.#.#.','.#.#.','.....','.....','.....','.....','.....'],
+    /* 21 ';' */ ['.....','.....','..#..','.....','..#..','..#..','.#...'],
+    /* 22 '[' */ ['.###.','.#...','.#...','.#...','.#...','.#...','.###.'],
+    /* 23 ']' */ ['.###.','...#.','...#.','...#.','...#.','...#.','.###.'],
+  ];
+  const GLYPH_BITS = new Uint8Array(GLYPH_DEFS.length * 35);
+  for (let g = 0; g < GLYPH_DEFS.length; g++) {
+    for (let r = 0; r < 7; r++) {
+      const row = GLYPH_DEFS[g][r];
+      for (let c = 0; c < 5; c++) {
+        GLYPH_BITS[g * 35 + r * 5 + c] = row[c] === '#' ? 1 : 0;
+      }
+    }
+  }
+
+  /* =========================================================================
+     2. COLOR UTILITIES & CURATED POLYCHROMATIC MOOD PALETTES
+     ========================================================================= */
+  function hexToRgb(hex) {
+    const n = parseInt(hex.slice(1), 16);
+    return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+  }
+  function packRgba(r, g, b) {
+    return (255 << 24) | ((b & 255) << 16) | ((g & 255) << 8) | (r & 255);
+  }
+  function lerp(a, b, t) { return a + (b - a) * t; }
+  function clamp(v, lo, hi) { return v < lo ? lo : v > hi ? hi : v; }
+  function lerpRgb(c1, c2, t) {
+    return [
+      Math.round(c1[0] + (c2[0] - c1[0]) * t),
+      Math.round(c1[1] + (c2[1] - c1[1]) * t),
+      Math.round(c1[2] + (c2[2] - c1[2]) * t),
+    ];
+  }
+
+  const MOODS = {
+    noon: {
+      sky: ['#08B4FF', '#39C9FF', '#8CE0FF', '#C5EEFF'].map(hexToRgb),
+      sunCore: hexToRgb('#FFF9B8'),
+      sunMid: hexToRgb('#FFE44D'),
+      sunHalo: hexToRgb('#FFEC78'),
+      cloudTop: hexToRgb('#FFFDF7'),
+      cloudMid: hexToRgb('#FFFFFF'),
+      cloudPink: hexToRgb('#FFCBE2'),
+      cloudLemon: hexToRgb('#FFF0A6'),
+      peakLit: hexToRgb('#FFFFFF'),
+      peakMid: hexToRgb('#DCF1FF'),
+      peakShade: hexToRgb('#A8D8FF'),
+      peakDeep: hexToRgb('#84C2FA'),
+      hillFar: hexToRgb('#CFC2F8'),
+      hillMid: hexToRgb('#BEB0F0'),
+      hillShade: hexToRgb('#A896E6'),
+      pineTip: hexToRgb('#3CF285'),
+      pineLit: hexToRgb('#1EE06E'),
+      pineMid: hexToRgb('#14B858'),
+      pineDeep: hexToRgb('#0B8F43'),
+      meadowTop: hexToRgb('#C8F74A'),
+      meadowMid: hexToRgb('#B8EC3B'),
+      meadowLow: hexToRgb('#9CD92B'),
+      meadowTick: hexToRgb('#96D424'),
+      meadowShadow: hexToRgb('#86C11E'),
+      flowers: ['#FFE44D', '#FFB8D6', '#FFFFFF', '#FF85BA'].map(hexToRgb),
+      stem: hexToRgb('#1EB85A'),
+      nightAmt: 0,
+      sunYFrac: 0.165,
+      sunYFracMob: 0.095,
+    },
+    sunset: {
+      sky: ['#5248CC', '#B35CD8', '#FF7BA8', '#FFC670'].map(hexToRgb),
+      sunCore: hexToRgb('#FFF6C2'),
+      sunMid: hexToRgb('#FFB347'),
+      sunHalo: hexToRgb('#FF8FA3'),
+      cloudTop: hexToRgb('#FFF1DB'),
+      cloudMid: hexToRgb('#FFE2D4'),
+      cloudPink: hexToRgb('#FF94C0'),
+      cloudLemon: hexToRgb('#FFD28A'),
+      peakLit: hexToRgb('#FFF2F6'),
+      peakMid: hexToRgb('#FFD2DF'),
+      peakShade: hexToRgb('#A994DE'),
+      peakDeep: hexToRgb('#856FC4'),
+      hillFar: hexToRgb('#A97ED4'),
+      hillMid: hexToRgb('#9166BF'),
+      hillShade: hexToRgb('#784EA8'),
+      pineTip: hexToRgb('#30BF88'),
+      pineLit: hexToRgb('#1E996E'),
+      pineMid: hexToRgb('#147A58'),
+      pineDeep: hexToRgb('#0C5740'),
+      meadowTop: hexToRgb('#D6DA42'),
+      meadowMid: hexToRgb('#B8C431'),
+      meadowLow: hexToRgb('#94A826'),
+      meadowTick: hexToRgb('#8DA322'),
+      meadowShadow: hexToRgb('#80941E'),
+      flowers: ['#FFE66D', '#FF99C8', '#FFF6E3', '#FFA96B'].map(hexToRgb),
+      stem: hexToRgb('#1E8F56'),
+      nightAmt: 0.18,
+      sunYFrac: 0.34,
+      sunYFracMob: 0.30,
+    },
+    night: {
+      sky: ['#070B22', '#101A44', '#1C2B66', '#2B3E80'].map(hexToRgb),
+      sunCore: hexToRgb('#FFFCE8'),
+      sunMid: hexToRgb('#DCEBFF'),
+      sunHalo: hexToRgb('#6E93D6'),
+      cloudTop: hexToRgb('#3D5299'),
+      cloudMid: hexToRgb('#2E407D'),
+      cloudPink: hexToRgb('#223063'),
+      cloudLemon: hexToRgb('#26366E'),
+      peakLit: hexToRgb('#D8ECFF'),
+      peakMid: hexToRgb('#9CC2ED'),
+      peakShade: hexToRgb('#5274B8'),
+      peakDeep: hexToRgb('#334C8A'),
+      hillFar: hexToRgb('#3B3573'),
+      hillMid: hexToRgb('#2C285C'),
+      hillShade: hexToRgb('#201D47'),
+      pineTip: hexToRgb('#21786F'),
+      pineLit: hexToRgb('#165C58'),
+      pineMid: hexToRgb('#0E4445'),
+      pineDeep: hexToRgb('#082D32'),
+      meadowTop: hexToRgb('#246B4F'),
+      meadowMid: hexToRgb('#1B563F'),
+      meadowLow: hexToRgb('#134231'),
+      meadowTick: hexToRgb('#0E3326'),
+      meadowShadow: hexToRgb('#0D3024'),
+      flowers: ['#E8E090', '#D99EC4', '#D8ECFF', '#FFB88C'].map(hexToRgb),
+      stem: hexToRgb('#195944'),
+      nightAmt: 1.0,
+      sunYFrac: 0.165,
+      sunYFracMob: 0.095,
+    },
+  };
+
+  function blendPalettes(a, b, t) {
+    if (t <= 0.001) return a;
+    if (t >= 0.999) return b;
+    return {
+      sky: a.sky.map((c, i) => lerpRgb(c, b.sky[i], t)),
+      sunCore: lerpRgb(a.sunCore, b.sunCore, t),
+      sunMid: lerpRgb(a.sunMid, b.sunMid, t),
+      sunHalo: lerpRgb(a.sunHalo, b.sunHalo, t),
+      cloudTop: lerpRgb(a.cloudTop, b.cloudTop, t),
+      cloudMid: lerpRgb(a.cloudMid, b.cloudMid, t),
+      cloudPink: lerpRgb(a.cloudPink, b.cloudPink, t),
+      cloudLemon: lerpRgb(a.cloudLemon, b.cloudLemon, t),
+      peakLit: lerpRgb(a.peakLit, b.peakLit, t),
+      peakMid: lerpRgb(a.peakMid, b.peakMid, t),
+      peakShade: lerpRgb(a.peakShade, b.peakShade, t),
+      peakDeep: lerpRgb(a.peakDeep, b.peakDeep, t),
+      hillFar: lerpRgb(a.hillFar, b.hillFar, t),
+      hillMid: lerpRgb(a.hillMid, b.hillMid, t),
+      hillShade: lerpRgb(a.hillShade, b.hillShade, t),
+      pineTip: lerpRgb(a.pineTip, b.pineTip, t),
+      pineLit: lerpRgb(a.pineLit, b.pineLit, t),
+      pineMid: lerpRgb(a.pineMid, b.pineMid, t),
+      pineDeep: lerpRgb(a.pineDeep, b.pineDeep, t),
+      meadowTop: lerpRgb(a.meadowTop, b.meadowTop, t),
+      meadowMid: lerpRgb(a.meadowMid, b.meadowMid, t),
+      meadowLow: lerpRgb(a.meadowLow, b.meadowLow, t),
+      meadowTick: lerpRgb(a.meadowTick, b.meadowTick, t),
+      meadowShadow: lerpRgb(a.meadowShadow, b.meadowShadow, t),
+      flowers: a.flowers.map((c, i) => lerpRgb(c, b.flowers[i], t)),
+      stem: lerpRgb(a.stem, b.stem, t),
+      nightAmt: lerp(a.nightAmt, b.nightAmt, t),
+      sunYFrac: lerp(a.sunYFrac, b.sunYFrac, t),
+      sunYFracMob: lerp(a.sunYFracMob, b.sunYFracMob, t),
+    };
+  }
+
+  /* =========================================================================
+     3. BAYER TEXT REVEAL SETUP (--dz1..--dz7)
+     ========================================================================= */
+  const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function buildDitherTiles(cell) {
+    const cSize = Math.max(2, Math.round(cell || 3));
+    const u = cSize * Math.min(3, Math.ceil(window.devicePixelRatio || 1));
+    const cv = document.createElement('canvas');
+    cv.width = cv.height = u * 4;
+    const g = cv.getContext('2d');
+    const root = document.documentElement.style;
+    g.fillStyle = '#fff';
+    for (let k = 1; k <= 7; k++) {
+      g.clearRect(0, 0, u * 4, u * 4);
+      for (let i = 0; i < 16; i++) {
+        if (BAYER[i] < k / 8) g.fillRect((i & 3) * u, (i >> 2) * u, u, u);
+      }
+      root.setProperty('--dz' + k, `url(${cv.toDataURL()})`);
+    }
+    root.setProperty('--dzs', (cSize * 4) + 'px');
+  }
+
+  function initKineticWords() {
+    document.querySelectorAll('.kin').forEach((el) => {
+      const words = el.textContent.trim().split(/\s+/);
+      el.textContent = '';
+      words.forEach((word, i) => {
+        const sp = document.createElement('span');
+        sp.className = 'w';
+        sp.style.setProperty('--i', String(i));
+        sp.textContent = word;
+        el.appendChild(sp);
+        if (i < words.length - 1) el.appendChild(document.createTextNode(' '));
+      });
+      if (prefersReduced) {
+        el.classList.add('in');
+      }
+    });
+    if (!prefersReduced) {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          document.querySelectorAll('.kin').forEach((el) => el.classList.add('in'));
+        });
+      });
+    }
+  }
+
+  /* =========================================================================
+     4. SCENE STATE, CANVAS SIZING & WORLD ENTITIES
+     ========================================================================= */
+  const canvas = document.getElementById('stage');
+  const ctx = canvas.getContext('2d', { alpha: false });
+  const off = document.createElement('canvas');
+  const offCtx = off.getContext('2d', { alpha: false });
+
+  const S = {
+    vw: 1440, vh: 900, dpr: 1,
+    dw: 1440, dh: 900,
+    cellCss: 3, cellDev: 3, cell: 3,
+    gw: 480, gh: 300,
+    imgData: null, buf8: null, buf32: null,
+    matBuf: null, detBuf: null,
+    out32: null,
+    moodFrom: 'noon',
+    moodTo: 'noon',
+    moodT: 1,
+    renderMode: 'lens', // 'lens' | 'ascii'
+    time: 0,
+    ptrX: -9999, ptrY: -9999,
+    ptrTargetX: 720, ptrTargetY: 450,
+    ptrActive: false,
+    ptrLensAlpha: 0,
+    parX: 0, parY: 0,
+    dimRects: [],
+    shootStar: { active: false, x: 0, y: 0, vx: 0, vy: 0, life: 0, maxLife: 1.1, nextAt: 3.5 },
+  };
+
+  // World-space procedural scene elements (framed cleanly away from hero copy and sun/moon)
+  const CLOUDS = [
+    { x: 0.44, y: 0.14, w: 38, h: 13, speed: 0.0045, belly: 'lemon', puffs: [[-12, 2, 9], [-3, -4, 12], [7, -2, 10], [15, 2, 7]] },
+    { x: 0.68, y: 0.22, w: 34, h: 11, speed: 0.0056, belly: 'pink',  puffs: [[-10, 2, 8], [-1, -3, 11], [9, 1, 8]] },
+    { x: 0.22, y: 0.305, w: 30, h: 10, speed: 0.0064, belly: 'lemon', puffs: [[-9, 1, 7], [0, -3, 10], [9, 1, 7]] },
+    { x: 0.56, y: 0.295, w: 28, h: 10, speed: 0.0052, belly: 'pink',  puffs: [[-8, 1, 7], [1, -2, 9], [9, 1, 6]] },
+    { x: 0.94, y: 0.275, w: 30, h: 10, speed: 0.0048, belly: 'lemon', puffs: [[-9, 1, 7], [0, -3, 10], [9, 1, 7]] },
+  ];
+
+  // Alpine peaks: [centerXFrac, peakHeightFracAboveBase, halfWidthFrac, ridgeBias]
+  const PEAKS = [
+    { x: 0.08, h: 0.20, w: 0.19, bias: -0.08 },
+    { x: 0.26, h: 0.27, w: 0.22, bias: -0.05 },
+    { x: 0.45, h: 0.22, w: 0.20, bias: 0.06 },
+    { x: 0.66, h: 0.29, w: 0.24, bias: -0.06 },
+    { x: 0.88, h: 0.23, w: 0.21, bias: 0.04 },
+  ];
+
+  // Pre-seeded wildflowers & pines (regenerated deterministically on resize)
+  let PINES = [];
+  let FLOWERS = [];
+  let FIREFLIES = [];
+  const PETALS = [];
+
+  function buildWorldProps() {
+    const mob = S.vw < 760;
+    PINES = [];
+    const pineCount = mob ? 30 : 58;
+    for (let i = 0; i < pineCount; i++) {
+      const frac = (i + (pcg2(i, 11) - 0.5) * 0.65) / pineCount;
+      const h = Math.round((mob ? 12 : 15) + pcg2(i, 23) * (mob ? 11 : 14));
+      const w = Math.round(h * (0.42 + pcg2(i, 37) * 0.14));
+      const yOff = Math.round((pcg2(i, 51) - 0.35) * 8);
+      const shadeVar = pcg2(i, 67);
+      PINES.push({ frac, h, w, yOff, shadeVar });
+    }
+    PINES.sort((a, b) => a.yOff - b.yOff);
+
+    FLOWERS = [];
+    const flCount = mob ? 38 : 68;
+    for (let i = 0; i < flCount; i++) {
+      const fx = 0.03 + pcg2(i, 101) * 0.94;
+      const fy = 0.05 + pcg2(i, 131) * 0.84; // fraction below meadow crest
+      const colorIdx = Math.floor(pcg2(i, 157) * 4);
+      const stemH = 2 + Math.floor(pcg2(i, 179) * 3);
+      const phase = pcg2(i, 193) * Math.PI * 2;
+      FLOWERS.push({ fx, fy, colorIdx, stemH, phase });
+    }
+
+    FIREFLIES = [];
+    for (let i = 0; i < 18; i++) {
+      FIREFLIES.push({
+        x: 0.08 + pcg2(i, 211) * 0.84,
+        y: 0.56 + pcg2(i, 223) * 0.32,
+        ph: pcg2(i, 239) * Math.PI * 2,
+        sp: 0.7 + pcg2(i, 251) * 0.9,
+      });
+    }
+  }
+
+  /* =========================================================================
+     5. FIVE EXPRESSIVE PROCEDURAL SDF PIXEL-CREW BOTS
+     ========================================================================= */
+  const BOT_SPECS = [
+    {
+      id: 'cat',
+      name: 'Violet Cat',
+      deskX: 0.21, deskY: 0.77,
+      mobX: 0.18, mobY: 0.785,
+      body: hexToRgb('#8A42FF'),
+      hi: hexToRgb('#B98CFF'),
+      shade: hexToRgb('#6524D4'),
+      outline: hexToRgb('#44139E'),
+      eye: hexToRgb('#FFFFFF'),
+      accent: hexToRgb('#FFB8E6'),
+      shape: 'cat',
+    },
+    {
+      id: 'blob',
+      name: 'Cobalt Blob',
+      deskX: 0.355, deskY: 0.755,
+      mobX: 0.29, mobY: 0.69,
+      body: hexToRgb('#1F64FF'),
+      hi: hexToRgb('#6BA3FF'),
+      shade: hexToRgb('#1043C7'),
+      outline: hexToRgb('#09298A'),
+      eye: hexToRgb('#FFFFFF'),
+      accent: hexToRgb('#6EF7FF'),
+      shape: 'blob',
+    },
+    {
+      id: 'mochi',
+      name: 'Hot-Pink Mochi',
+      deskX: 0.50, deskY: 0.772, // Dead center at (720, 660) on 1440x900!
+      mobX: 0.50, mobY: 0.775,
+      body: hexToRgb('#FF2D95'),
+      hi: hexToRgb('#FF82C2'),
+      shade: hexToRgb('#CC1470'),
+      outline: hexToRgb('#8F084C'),
+      eye: hexToRgb('#FFFFFF'),
+      accent: hexToRgb('#FFD1E8'),
+      shape: 'mochi',
+    },
+    {
+      id: 'bean',
+      name: 'Tangerine Bean',
+      deskX: 0.645, deskY: 0.758,
+      mobX: 0.71, mobY: 0.69,
+      body: hexToRgb('#FF6B00'),
+      hi: hexToRgb('#FFAB52'),
+      shade: hexToRgb('#CC4A00'),
+      outline: hexToRgb('#8F2E00'),
+      eye: hexToRgb('#FFFFFF'),
+      accent: hexToRgb('#20DF70'),
+      shape: 'bean',
+    },
+    {
+      id: 'star',
+      name: 'Golden Star',
+      deskX: 0.79, deskY: 0.772,
+      mobX: 0.82, mobY: 0.785,
+      body: hexToRgb('#FFC41F'),
+      hi: hexToRgb('#FFF296'),
+      shade: hexToRgb('#E08E00'),
+      outline: hexToRgb('#995800'),
+      eye: hexToRgb('#3D2000'),
+      accent: hexToRgb('#FFFFFF'),
+      shape: 'star',
+    },
+  ];
+
+  const BOTS = BOT_SPECS.map((spec, idx) => ({
+    ...spec,
+    idx,
+    // Spring physics state
+    sq: 1.0, sqV: 0,
+    lean: 0, leanV: 0,
+    hopY: 0, hopV: 0,
+    spinT: 0, spinDur: 0.65,
+    mood: 'open',
+    moodTimer: 0,
+    blinkTimer: 1.6 + idx * 0.85,
+    blinking: false,
+    earTwitch: 0,
+    earTimer: 2.1,
+    glanceX: 0, glanceY: 0, glanceTimer: 0,
+    glancePending: null,
+    pokeCount: 0,
+    screenX: 0, screenY: 0, // updated every frame for hit testing
+    cellX: 0, cellFootY: 0,
+  }));
+
+  function spawnSparkles(cx, cy, colors, count, upward = 1) {
+    for (let i = 0; i < count; i++) {
+      const ang = -Math.PI * 0.85 + Math.random() * Math.PI * 0.7;
+      const spd = 24 + Math.random() * 44;
+      PETALS.push({
+        x: cx + (Math.random() - 0.5) * 8,
+        y: cy + (Math.random() - 0.5) * 6,
+        vx: Math.cos(ang) * spd * 0.65 + (Math.random() - 0.5) * 16,
+        vy: Math.sin(ang) * spd * upward - 14,
+        age: 0,
+        maxAge: 1.3 + Math.random() * 1.4,
+        rgb: colors[i % colors.length],
+        size: Math.random() < 0.45 ? 2 : 1,
+        kind: upward > 1 ? 'spark' : 'petal',
+        ph: Math.random() * Math.PI * 2,
+      });
+    }
+    if (PETALS.length > 160) PETALS.splice(0, PETALS.length - 160);
+  }
+
+  function pokeBot(bot) {
+    const reactions = ['boing', 'squish', 'wobble', 'spin'];
+    const kind = reactions[bot.pokeCount % reactions.length];
+    bot.pokeCount++;
+
+    if (kind === 'boing') {
+      bot.hopV = 195;
+      bot.sq = 1.42;
+      bot.sqV = -3.2;
+      bot.leanV = (Math.random() < 0.5 ? -1 : 1) * 4.5;
+      bot.mood = 'happy';
+      bot.moodTimer = 1.25;
+      spawnSparkles(bot.cellX, bot.cellFootY - 18, [bot.hi, [255, 240, 120], [255, 184, 214], [255, 255, 255]], 10, 1.35);
+    } else if (kind === 'squish') {
+      bot.sq = 0.52;
+      bot.sqV = 6.2;
+      bot.hopV = 95;
+      bot.mood = 'heart';
+      bot.moodTimer = 1.25;
+      spawnSparkles(bot.cellX, bot.cellFootY - 14, [[255, 110, 180], [255, 210, 232], [255, 240, 130]], 9, 1.2);
+    } else if (kind === 'wobble') {
+      bot.leanV = 16;
+      bot.sq = 0.78;
+      bot.sqV = 3.5;
+      bot.hopV = 65;
+      bot.mood = 'big';
+      bot.moodTimer = 1.1;
+      spawnSparkles(bot.cellX, bot.cellFootY - 16, [bot.hi, [255, 255, 255]], 7, 1.1);
+    } else {
+      bot.spinT = bot.spinDur;
+      bot.hopV = 140;
+      bot.sq = 1.26;
+      bot.mood = 'happy';
+      bot.moodTimer = 1.1;
+      spawnSparkles(bot.cellX, bot.cellFootY - 17, [bot.hi, [255, 230, 90], [255, 255, 255]], 9, 1.25);
+    }
+
+    // Social neighbor awareness: nearby bots glance over + sympathetically bounce
+    for (const other of BOTS) {
+      if (other === bot) continue;
+      const dist = Math.hypot(other.screenX - bot.screenX, other.screenY - bot.screenY);
+      if (dist < 460) {
+        other.glancePending = {
+          delay: 0.08 + dist * 0.0005,
+          x: bot.screenX,
+          y: bot.screenY - 26,
+          dur: 1.35,
+        };
+      }
+    }
+  }
+
+  function stepBots(dt) {
+    const k = 220;
+    const c = 2 * 0.45 * Math.sqrt(k);
+    for (const b of BOTS) {
+      // Squash-and-stretch spring toward 1.0
+      const sqAcc = -k * (b.sq - 1.0) - c * b.sqV;
+      b.sqV += sqAcc * dt;
+      b.sq = clamp(b.sq + b.sqV * dt, 0.46, 1.56);
+
+      // Lean spring toward 0
+      const leanAcc = -180 * b.lean - 10.5 * b.leanV;
+      b.leanV += leanAcc * dt;
+      b.lean = clamp(b.lean + b.leanV * dt, -0.55, 0.55);
+
+      // Gravity hop
+      if (b.hopY > 0 || b.hopV > 0) {
+        b.hopV -= 560 * dt;
+        b.hopY += b.hopV * dt;
+        if (b.hopY <= 0) {
+          b.hopY = 0;
+          if (Math.abs(b.hopV) > 40) {
+            b.sq = Math.min(b.sq, 0.72);
+            b.sqV = -2.2;
+          }
+          b.hopV = 0;
+        }
+      }
+
+      if (b.spinT > 0) b.spinT = Math.max(0, b.spinT - dt);
+
+      if (b.moodTimer > 0) {
+        b.moodTimer -= dt;
+        if (b.moodTimer <= 0) b.mood = 'open';
+      }
+
+      // Natural blinking
+      b.blinkTimer -= dt;
+      if (b.blinkTimer <= 0) {
+        if (!b.blinking) {
+          b.blinking = true;
+          b.blinkTimer = 0.11;
+        } else {
+          b.blinking = false;
+          b.blinkTimer = 2.6 + Math.random() * 2.6;
+        }
+      }
+
+      // Violet Cat twitching ears
+      if (b.shape === 'cat') {
+        b.earTimer -= dt;
+        if (b.earTimer <= 0) {
+          b.earTwitch = 0.28;
+          b.earTimer = 2.2 + Math.random() * 2.8;
+        }
+        if (b.earTwitch > 0) b.earTwitch = Math.max(0, b.earTwitch - dt);
+      }
+
+      // Social glance queue
+      if (b.glancePending) {
+        b.glancePending.delay -= dt;
+        if (b.glancePending.delay <= 0) {
+          b.glanceX = b.glancePending.x;
+          b.glanceY = b.glancePending.y;
+          b.glanceTimer = b.glancePending.dur;
+          if (b.hopY === 0) {
+            b.hopV = 48;
+            b.sq = 0.88;
+          }
+          b.glancePending = null;
+        }
+      }
+      if (b.glanceTimer > 0) b.glanceTimer = Math.max(0, b.glanceTimer - dt);
+    }
+  }
+
+  /* =========================================================================
+     6. SHARED WIND FIELD & TERRAIN FUNCTIONS
+     ========================================================================= */
+  function windAt(cx, t) {
+    return 0.42 + Math.sin(cx * 0.042 - t * 2.1) * 0.52 + Math.cos(cx * 0.019 - t * 1.15) * 0.26;
+  }
+
+  function meadowCrestY(cx, gw, gh, parX, parY) {
+    const u = (cx - parX) / gw;
+    const dome = Math.sin(clamp(u, 0, 1) * Math.PI);
+    const wave = Math.sin(u * 5.2 + 0.6) * 0.014 + Math.cos(u * 9.5) * 0.006;
+    const base = S.vw < 760 ? 0.625 : 0.635;
+    return Math.round((base - dome * 0.042 + wave) * gh + parY);
+  }
+
+  function hillHeightAt(cx, gw, gh, layer, parX, parY) {
+    const u = (cx - parX) / gw;
+    if (layer === 0) {
+      // Far lavender foothill
+      const h = 0.505 - Math.sin(u * 3.8 + 0.4) * 0.036 - Math.cos(u * 7.4 - 1.1) * 0.018 - Math.sin(u * 13.0) * 0.006;
+      return Math.round(h * gh + parY);
+    }
+    // Nearer lavender foothill
+    const h = 0.55 - Math.cos(u * 4.5 + 0.9) * 0.032 - Math.sin(u * 8.2 + 0.2) * 0.015;
+    return Math.round(h * gh + parY);
+  }
+
+  // Point-in-polygon helper for SDF cat ears and 5-pointed star
+  function pointInPoly(px, py, pts) {
+    let inside = false;
+    for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+      const xi = pts[i][0], yi = pts[i][1];
+      const xj = pts[j][0], yj = pts[j][1];
+      if (((yi > py) !== (yj > py)) && (px < ((xj - xi) * (py - yi)) / (yj - yi + 1e-6) + xi)) {
+        inside = !inside;
+      }
+    }
+    return inside;
+  }
+
+  // Precompute 5-pointed star polygon vertices
+  const STAR_POLY = [];
+  for (let i = 0; i < 10; i++) {
+    const a = -Math.PI / 2 + (i * Math.PI) / 5;
+    const r = i % 2 === 0 ? 11.4 : 5.7;
+    STAR_POLY.push([Math.cos(a) * r, Math.sin(a) * r - 0.5]);
+  }
+
+  /* =========================================================================
+     7. MAIN PIXEL-LOCKED 7-PLANE SCENE RENDERER
+     ========================================================================= */
+  function setCell(cx, cy, rgb, mat, det) {
+    if (cx < 0 || cx >= S.gw || cy < 0 || cy >= S.gh) return;
+    const idx = cy * S.gw + cx;
+    S.buf32[idx] = packRgba(rgb[0], rgb[1], rgb[2]);
+    S.matBuf[idx] = mat;
+    S.detBuf[idx] = det;
+  }
+
+  function isDimmed(cx, cy) {
+    const px = (cx + 0.5) * S.cell;
+    const py = (cy + 0.5) * S.cell;
+    let dim = 0;
+    for (let i = 0; i < S.dimRects.length; i++) {
+      const r = S.dimRects[i];
+      const dx = px < r.l ? r.l - px : px > r.r ? px - r.r : 0;
+      const dy = py < r.t ? r.t - py : py > r.b ? py - r.b : 0;
+      const d2 = dx * dx + dy * dy;
+      if (d2 < 5400) {
+        const w = Math.exp(-d2 / 1450);
+        if (w > dim) dim = w;
+      }
+    }
+    return dim;
+  }
+
+  function renderScene(pal) {
+    const { gw, gh, buf32, matBuf, detBuf, time } = S;
+    const mob = S.vw < 760;
+    const maxShiftX = mob ? 5 : 14;
+    const maxShiftY = mob ? 3 : 8;
+    const night = pal.nightAmt;
+
+    // -----------------------------------------------------------------------
+    // PLANE 0: Bright Saturated Sky Bands + Crisp 4-Cell Bayer Stepped Seams
+    // -----------------------------------------------------------------------
+    const skyPy = -S.parY * maxShiftY * 0.02;
+    const seams = mob
+      ? [0.16 * gh + skyPy, 0.30 * gh + skyPy, 0.44 * gh + skyPy]
+      : [0.145 * gh + skyPy, 0.285 * gh + skyPy, 0.425 * gh + skyPy];
+    const skyPacked = pal.sky.map((c) => packRgba(c[0], c[1], c[2]));
+    const skyEnd = Math.min(gh, Math.ceil(gh * 0.68));
+
+    for (let cy = 0; cy < skyEnd; cy++) {
+      const rowOff = cy * gw;
+      const byRow = (cy & 3) << 2;
+      // Find base band
+      let band = 0;
+      if (cy >= seams[2] + 2) band = 3;
+      else if (cy >= seams[1] + 2) band = 2;
+      else if (cy >= seams[0] + 2) band = 1;
+
+      // Check if inside any 4-cell seam zone
+      let seamIdx = -1;
+      for (let s = 0; s < 3; s++) {
+        if (cy >= seams[s] - 2 && cy <= seams[s] + 2) { seamIdx = s; break; }
+      }
+
+      if (seamIdx === -1) {
+        const col = skyPacked[band];
+        const det = 26 + band * 18;
+        for (let cx = 0; cx < gw; cx++) {
+          const i = rowOff + cx;
+          buf32[i] = col;
+          matBuf[i] = 0;
+          detBuf[i] = det;
+        }
+      } else {
+        const yS = seams[seamIdx];
+        const tBase = clamp((cy - (yS - 2)) / 4, 0, 1);
+        const colA = skyPacked[seamIdx];
+        const colB = skyPacked[seamIdx + 1];
+        const shift = time * 0.35 + seamIdx * 2.1;
+        for (let cx = 0; cx < gw; cx++) {
+          const wave = Math.sin(cx * 0.19 + shift) * 0.14 + Math.cos(cx * 0.53 - shift * 0.5) * 0.09;
+          const th = BAYER[byRow | (cx & 3)];
+          const useB = (tBase + wave) > th;
+          const i = rowOff + cx;
+          buf32[i] = useB ? colB : colA;
+          matBuf[i] = 0;
+          detBuf[i] = useB ? 80 : 62;
+        }
+      }
+    }
+
+    // Single-texel integer-hashed twinkling stars in Night / upper zenith of Sunset
+    if (night > 0.12) {
+      const starDensity = night > 0.5 ? night * 0.0046 : 0.0018;
+      const starMaxY = Math.floor(night > 0.5 ? gh * 0.54 : seams[0] - 2);
+      const starParX = Math.round(-S.parX * maxShiftX * 0.04);
+      const twClock = time % 64;
+      for (let cy = 2; cy < starMaxY; cy++) {
+        for (let cx = 2; cx < gw - 2; cx++) {
+          const sx = cx - starParX;
+          const h = pcg2(sx, cy + 409);
+          if (h < starDensity) {
+            const dim = isDimmed(cx, cy);
+            if (dim > 0.42) continue;
+            const tw = 0.55 + 0.45 * Math.sin(twClock * (1.8 + (h * 430 % 2.4)) + h * 900);
+            if (tw < 0.28) continue;
+            const tint = h < starDensity * 0.35 ? [255, 242, 184] : h < starDensity * 0.7 ? [216, 240, 255] : [255, 255, 255];
+            const bright = clamp((night > 0.5 ? night : 0.72) * tw * (1 - dim * 0.7), 0.28, 1);
+            const c = lerpRgb(pal.sky[0], tint, bright);
+            setCell(cx, cy, c, 7, 250);
+            // Top 6% brightest stars at night get crisp 5-cell '+' cross
+            if (night > 0.5 && h < starDensity * 0.06 && tw > 0.72) {
+              const arm = lerpRgb(pal.sky[1], tint, bright * 0.65);
+              setCell(cx - 1, cy, arm, 7, 210);
+              setCell(cx + 1, cy, arm, 7, 210);
+              setCell(cx, cy - 1, arm, 7, 210);
+              setCell(cx, cy + 1, arm, 7, 210);
+            }
+          }
+        }
+      }
+
+      // Shooting star at night
+      const ss = S.shootStar;
+      if (ss.active && night > 0.6) {
+        const p = ss.life / ss.maxLife;
+        const tailLen = 14;
+        for (let k = 0; k < tailLen; k++) {
+          const sx = Math.round(ss.x - ss.vx * k * 0.012);
+          const sy = Math.round(ss.y - ss.vy * k * 0.012);
+          const keep = (1 - k / tailLen) * (1 - p * 0.45);
+          if (keep > BAYER[((sy & 3) << 2) | (sx & 3)]) {
+            const col = k < 2 ? [255, 255, 255] : [188, 226, 255];
+            setCell(sx, sy, col, 7, 245);
+          }
+        }
+      }
+    }
+
+    // -----------------------------------------------------------------------
+    // PLANE 1: Radiant 2-Tone Golden Pixel Sun (or Crescent Moon) + Pixel Clouds
+    // -----------------------------------------------------------------------
+    const p1x = -S.parX * maxShiftX * 0.06;
+    const p1y = -S.parY * maxShiftY * 0.06;
+    const sunX = Math.round((mob ? 0.83 : 0.84) * gw + p1x);
+    const sunY = Math.round((mob ? pal.sunYFracMob : pal.sunYFrac) * gh + p1y);
+    const sunR = mob ? 12 : 16;
+
+    if (night < 0.55) {
+      // Radiant 2-tone golden pixel sun + Bayer halo + crisp 8-way rays
+      const haloR = sunR + (mob ? 7 : 10);
+      const rayPulse = Math.sin(time * 2.2) * 1.1;
+      for (let dy = -haloR; dy <= haloR; dy++) {
+        for (let dx = -haloR; dx <= haloR; dx++) {
+          const d = Math.hypot(dx, dy);
+          if (d > haloR) continue;
+          const cx = sunX + dx, cy = sunY + dy;
+          if (cx < 0 || cx >= gw || cy < 0 || cy >= gh) continue;
+          if (d <= sunR * 0.66) {
+            setCell(cx, cy, pal.sunCore, 1, 252);
+          } else if (d <= sunR) {
+            setCell(cx, cy, pal.sunMid, 1, 232);
+          } else {
+            const ang = Math.atan2(dy, dx);
+            const ray = Math.pow(Math.max(0, Math.cos(ang * 8 + time * 0.35)), 6) * (2.6 + rayPulse);
+            const fall = clamp(1 - (d - sunR) / (haloR - sunR + ray), 0, 1);
+            if (fall * 0.72 > BAYER[((cy & 3) << 2) | (cx & 3)]) {
+              setCell(cx, cy, pal.sunHalo, 1, 180);
+            }
+          }
+        }
+      }
+    } else {
+      // Crisp Lambertian Crescent Moon (Night)
+      const moonR = mob ? 11 : 14;
+      const lx = 0.76, ly = -0.34, lz = -0.55; // waxing crescent light vector
+      for (let dy = -moonR - 5; dy <= moonR + 5; dy++) {
+        for (let dx = -moonR - 5; dx <= moonR + 5; dx++) {
+          const d = Math.hypot(dx, dy);
+          const cx = sunX + dx, cy = sunY + dy;
+          if (cx < 0 || cx >= gw || cy < 0 || cy >= gh) continue;
+          if (d <= moonR) {
+            const nx = dx / moonR, ny = dy / moonR;
+            const nz = Math.sqrt(Math.max(0, 1 - nx * nx - ny * ny));
+            const lam = nx * lx + ny * ly + nz * lz;
+            const th = BAYER[((cy & 3) << 2) | (cx & 3)];
+            if (lam > 0.08 + th * 0.14) {
+              const col = lam > 0.38 ? pal.sunCore : pal.sunMid;
+              setCell(cx, cy, col, 1, 245);
+            } else if (d > moonR - 1.4 && lam > -0.15) {
+              setCell(cx, cy, pal.sunHalo, 1, 140);
+            }
+          } else if (d <= moonR + 5) {
+            const fall = (1 - (d - moonR) / 5) * 0.35;
+            if (fall > BAYER[((cy & 3) << 2) | (cx & 3)]) {
+              setCell(cx, cy, pal.sunHalo, 1, 120);
+            }
+          }
+        }
+      }
+    }
+
+    // Drifting 2-tone pixel clouds (bright cream top + pastel pink/lemon undersides)
+    const cloudScale = mob ? 0.68 : 1.0;
+    for (let i = 0; i < CLOUDS.length; i++) {
+      const cl = CLOUDS[i];
+      const cx0 = (((cl.x + time * cl.speed) % 1.24) - 0.12) * gw + p1x;
+      const cy0 = (mob ? cl.y * 0.92 + 0.05 : cl.y) * gh + p1y;
+      const bellyCol = cl.belly === 'pink' ? pal.cloudPink : pal.cloudLemon;
+      const boundW = Math.ceil(28 * cloudScale);
+      const boundH = Math.ceil(16 * cloudScale);
+      const minX = Math.max(0, Math.floor(cx0 - boundW));
+      const maxX = Math.min(gw - 1, Math.ceil(cx0 + boundW));
+      const minY = Math.max(0, Math.floor(cy0 - boundH));
+      const maxY = Math.min(gh - 1, Math.ceil(cy0 + boundH));
+
+      for (let cy = minY; cy <= maxY; cy++) {
+        const ly = (cy - cy0) / cloudScale;
+        if (ly > 4.2) continue; // crisp flat pixel cumulus base!
+        const byRow = (cy & 3) << 2;
+        for (let cx = minX; cx <= maxX; cx++) {
+          const lx = (cx - cx0) / cloudScale;
+          let inside = false;
+          let minD = 99;
+          for (let p = 0; p < cl.puffs.length; p++) {
+            const pf = cl.puffs[p];
+            const d = Math.hypot((lx - pf[0]) * 0.92, (ly - pf[1]) * 1.12) / pf[2];
+            if (d < minD) minD = d;
+            if (d <= 1.0) inside = true;
+          }
+          if (!inside) continue;
+
+          // Content-aware [data-dim] thinning behind hero title (clean halo clearance)
+          const dim = isDimmed(cx, cy);
+          const th = BAYER[byRow | (cx & 3)];
+          if (dim > 0.32 || (dim > 0.06 && (dim - 0.06) / 0.26 > th)) continue;
+
+          // 2-tone pixel cloud shading: bright top + crisp stepped pastel underside
+          let col = pal.cloudTop;
+          let det = 195;
+          if (ly > 1.3 + th * 1.4) {
+            col = bellyCol;
+            det = 148;
+          } else if (minD < 0.72 && ly < -1.5) {
+            col = pal.cloudMid;
+            det = 225;
+          }
+          setCell(cx, cy, col, 2, det);
+        }
+      }
+    }
+
+    // -----------------------------------------------------------------------
+    // PLANE 2: Crisp Stepped Snow-Capped Alpine Mountain Range (Isotropic Slope Ratio!)
+    // -----------------------------------------------------------------------
+    const p2x = -S.parX * maxShiftX * 0.12;
+    const p2y = -S.parY * maxShiftY * 0.12;
+    const mBaseY = Math.round((mob ? 0.52 : 0.575) * gh + p2y);
+    // Keep alpine peak slope angle balanced on tall portrait mobile screens (Law 6!)
+    const peakHeightScale = mob ? Math.min(gh, gw * 1.24) : gh;
+
+    for (let cx = 0; cx < gw; cx++) {
+      const u = (cx - p2x) / gw;
+      let bestH = 0;
+      let bestPeak = null;
+      let bestDx = 0;
+      for (let k = 0; k < PEAKS.length; k++) {
+        const pk = PEAKS[k];
+        const dx = u - pk.x;
+        const adx = Math.abs(dx);
+        if (adx < pk.w) {
+          // Crisp terraced alpine silhouette with subtle rock shoulder
+          const raw = 1 - adx / pk.w;
+          const shoulder = Math.sin(dx * 38 + k * 2.3) * 0.035 * (1 - raw);
+          const h = Math.max(0, (raw + shoulder) * pk.h);
+          if (h > bestH) {
+            bestH = h;
+            bestPeak = pk;
+            bestDx = dx;
+          }
+        }
+      }
+      if (bestH <= 0.002) continue;
+
+      // Quantize peak outline into crisp 1-2 cell mountain steps
+      const topY = Math.max(0, Math.round(mBaseY - bestH * peakHeightScale));
+      const peakSpan = Math.max(1, mBaseY - topY);
+      // Curved snow ridge spine separating sunlit left face vs glacier shadow right face
+      const ridgeOffset = bestPeak.bias * bestPeak.w * 0.4;
+
+      for (let cy = topY; cy < mBaseY; cy++) {
+        const relY = (cy - topY) / peakSpan;
+        const spineDx = ridgeOffset + Math.sin(relY * 7.5 + bestPeak.x * 11) * 0.011;
+        const isLitSide = bestDx < spineDx;
+        const th = BAYER[((cy & 3) << 2) | (cx & 3)];
+        const snowLine = 0.48 + Math.sin(cx * 0.22 + bestPeak.x * 20) * 0.09 + (isLitSide ? 0.1 : -0.06);
+
+        let col, det;
+        if (relY < snowLine + th * 0.08) {
+          col = isLitSide ? pal.peakLit : (relY < snowLine * 0.55 ? pal.peakMid : pal.peakShade);
+          det = isLitSide ? 235 : 165;
+        } else {
+          col = isLitSide ? pal.peakMid : (relY > 0.78 + th * 0.12 ? pal.peakDeep : pal.peakShade);
+          det = isLitSide ? 180 : 125;
+        }
+        setCell(cx, cy, col, 3, det);
+      }
+    }
+
+    // -----------------------------------------------------------------------
+    // PLANE 3: Atmospheric Pastel Lavender Foothills
+    // -----------------------------------------------------------------------
+    const p3x = -S.parX * maxShiftX * 0.22;
+    const p3y = -S.parY * maxShiftY * 0.22;
+    const hillBottom = Math.min(gh, Math.ceil(gh * 0.67));
+
+    for (let cx = 0; cx < gw; cx++) {
+      const yFar = hillHeightAt(cx, gw, gh, 0, p3x * 0.8, p3y * 0.8);
+      const yNear = hillHeightAt(cx, gw, gh, 1, p3x, p3y);
+      for (let cy = Math.max(0, yFar); cy < hillBottom; cy++) {
+        const th = BAYER[((cy & 3) << 2) | (cx & 3)];
+        if (cy < yNear) {
+          const edge = (cy - yFar) < 3 ? pal.hillFar : ((cy - yFar) / Math.max(1, yNear - yFar) > 0.65 + th * 0.2 ? pal.hillMid : pal.hillFar);
+          setCell(cx, cy, edge, 4, 140);
+        } else {
+          const depth = clamp((cy - yNear) / 14, 0, 1);
+          const col = depth > 0.52 + th * 0.25 ? pal.hillShade : pal.hillMid;
+          setCell(cx, cy, col, 4, 118);
+        }
+      }
+    }
+
+    // -----------------------------------------------------------------------
+    // PLANE 4: Vivid Emerald Pine Treeline (Swaying in Shared Wind Waves)
+    // -----------------------------------------------------------------------
+    const p4x = -S.parX * maxShiftX * 0.38;
+    const p4y = -S.parY * maxShiftY * 0.38;
+
+    for (let i = 0; i < PINES.length; i++) {
+      const tr = PINES[i];
+      const baseX = Math.round(tr.frac * gw + p4x);
+      const crest = meadowCrestY(baseX, gw, gh, -S.parX * maxShiftX * 0.55, -S.parY * maxShiftY * 0.55);
+      const baseY = crest + 3 + tr.yOff + Math.round(p4y * 0.4);
+      const sway = Math.round(windAt(baseX, time) * 1.55);
+      const h = tr.h;
+      const w = tr.w;
+
+      for (let dy = 0; dy < h; dy++) {
+        const f = dy / h; // 0 = tip, 1 = base
+        // 3 tiered pixel pine boughs
+        const tierFrac = (f * 3) % 1;
+        const halfW = Math.max(1, Math.round((0.18 + f * 0.72 + tierFrac * 0.32) * w));
+        const cxMid = baseX + Math.round(sway * (1 - f) * (1 - f));
+        const cy = baseY - h + dy;
+        if (cy < 0 || cy >= gh) continue;
+
+        for (let dx = -halfW; dx <= halfW; dx++) {
+          const cx = cxMid + dx;
+          if (cx < 0 || cx >= gw) continue;
+          const th = BAYER[((cy & 3) << 2) | (cx & 3)];
+          let col;
+          if (dx < -halfW * 0.25 && tierFrac < 0.55) {
+            col = f < 0.38 ? pal.pineTip : pal.pineLit;
+          } else if (dx <= halfW * 0.22 + (th - 0.5) * 2) {
+            col = tr.shadeVar > 0.5 ? pal.pineLit : pal.pineMid;
+          } else {
+            col = dy > h * 0.72 ? pal.pineDeep : pal.pineMid;
+          }
+          setCell(cx, cy, col, 5, dx < 0 ? 185 : 132);
+        }
+      }
+    }
+
+    // -----------------------------------------------------------------------
+    // PLANE 5: Bright Sunlit Lime-Chartreuse Meadow + Tactile Micro-Weave + Wildflowers
+    // -----------------------------------------------------------------------
+    const p5x = -S.parX * maxShiftX * 0.55;
+    const p5y = -S.parY * maxShiftY * 0.55;
+
+    // Campfire position (active in Night mode)
+    const fireX = Math.round((mob ? 0.34 : 0.36) * gw + p5x);
+    const fireY = Math.round((mob ? 0.835 : 0.82) * gh + p5y);
+
+    for (let cx = 0; cx < gw; cx++) {
+      const yCrest = meadowCrestY(cx, gw, gh, p5x, p5y);
+      const u = (cx - p5x) / gw;
+      const yMidBand = Math.round(yCrest + gh * (0.115 + Math.sin(u * 4.4 + 0.5) * 0.018));
+      const yLowBand = Math.round(yCrest + gh * (0.245 + Math.cos(u * 3.6) * 0.016));
+
+      for (let cy = Math.max(0, yCrest); cy < gh; cy++) {
+        const th = BAYER[((cy & 3) << 2) | (cx & 3)];
+        const wave = Math.sin(cx * 0.14 + 0.8) * 0.12;
+        let baseCol;
+        if (cy < yMidBand - 2) baseCol = pal.meadowTop;
+        else if (cy <= yMidBand + 2) {
+          const t = clamp((cy - (yMidBand - 2)) / 4, 0, 1);
+          baseCol = (t + wave) > th ? pal.meadowMid : pal.meadowTop;
+        } else if (cy < yLowBand - 2) {
+          baseCol = pal.meadowMid;
+        } else if (cy <= yLowBand + 2) {
+          const t = clamp((cy - (yLowBand - 2)) / 4, 0, 1);
+          baseCol = (t - wave) > th ? pal.meadowLow : pal.meadowMid;
+        } else {
+          baseCol = pal.meadowLow;
+        }
+
+        // Whisper-subtle tactile micro-weave grain (+-3% lightness)
+        const weave = ((cx + cy) & 1) === 0 ? 4 : -3;
+        let r = clamp(baseCol[0] + weave, 0, 255);
+        let g = clamp(baseCol[1] + weave, 0, 255);
+        let b = clamp(baseCol[2] + Math.round(weave * 0.6), 0, 255);
+        let det = 142;
+
+        // Subtle sparse grass-blade ticks swaying slightly
+        const gHash = pcg2(cx, cy);
+        if (gHash < 0.032 && cy > yCrest + 2) {
+          r = pal.meadowTick[0];
+          g = pal.meadowTick[1];
+          b = pal.meadowTick[2];
+          det = 104;
+        }
+
+        // Warm Bayer-dithered campfire ground glow at Night
+        if (night > 0.35) {
+          const fd = Math.hypot((cx - fireX) * 0.78, (cy - fireY) * 1.42);
+          const flick = 31 + Math.sin(time * 9.5) * 2.5 + Math.cos(time * 15.3) * 1.5;
+          if (fd < flick) {
+            const glow = clamp(1 - fd / flick, 0, 1) * night;
+            if (glow * 0.94 > th) {
+              const warm = glow > 0.55 ? [242, 162, 58] : [148, 92, 36];
+              const mixT = clamp(glow * 0.76, 0, 0.82);
+              r = Math.round(lerp(r, warm[0], mixT));
+              g = Math.round(lerp(g, warm[1], mixT));
+              b = Math.round(lerp(b, warm[2], mixT));
+              det = 198;
+            }
+          }
+        }
+
+        const idx = cy * gw + cx;
+        buf32[idx] = packRgba(r, g, b);
+        matBuf[idx] = 6;
+        detBuf[idx] = det;
+      }
+    }
+
+    // Swaying 5-cell pixel wildflowers reading the shared wind field
+    for (let i = 0; i < FLOWERS.length; i++) {
+      const fl = FLOWERS[i];
+      const fx = Math.round(fl.fx * gw + p5x);
+      if (fx < 2 || fx >= gw - 2) continue;
+      const yCrest = meadowCrestY(fx, gw, gh, p5x, p5y);
+      const fy = Math.round(yCrest + 3 + fl.fy * (gh - yCrest - 10));
+      if (fy >= gh - 2) continue;
+      const wSway = Math.round(windAt(fx + fl.phase * 8, time) * 1.35);
+
+      // Stem
+      for (let s = 1; s <= fl.stemH; s++) {
+        const sx = fx + Math.round(wSway * (1 - s / fl.stemH));
+        setCell(sx, fy + s, pal.stem, 6, 110);
+      }
+
+      // 5-cell '+' pixel blossom
+      const hx = fx + wSway;
+      const hy = fy;
+      const petalCol = pal.flowers[fl.colorIdx];
+      const centerCol = fl.colorIdx === 0 ? [255, 255, 255] : [255, 232, 77];
+      setCell(hx, hy, centerCol, 7, 250);
+      setCell(hx - 1, hy, petalCol, 7, 238);
+      setCell(hx + 1, hy, petalCol, 7, 238);
+      setCell(hx, hy - 1, petalCol, 7, 238);
+      setCell(hx, hy + 1, petalCol, 7, 238);
+    }
+
+    // Cozy pixel campfire in Starry Campfire Night mode
+    if (night > 0.4) {
+      // Logs
+      for (let dx = -5; dx <= 5; dx++) {
+        setCell(fireX + dx, fireY + 1, [98, 52, 24], 7, 150);
+        if (Math.abs(dx) <= 4) setCell(fireX + dx, fireY + 2, [72, 36, 16], 7, 130);
+      }
+      // Flickering pixel flame
+      const fSway = Math.round(Math.sin(time * 11) * 1.2);
+      for (let dy = -9; dy <= 0; dy++) {
+        const w = Math.max(0, Math.round((1 + dy / 10) * 4.0 + Math.sin(time * 16 + dy) * 0.65));
+        const shift = dy < -4 ? fSway : 0;
+        for (let dx = -w; dx <= w; dx++) {
+          const col = dy > -3 && Math.abs(dx) <= 1 ? [255, 250, 192] : dy > -6 ? [255, 182, 54] : [255, 92, 36];
+          setCell(fireX + dx + shift, fireY + dy, col, 7, 255);
+        }
+      }
+      // Rising embers
+      for (let e = 0; e < 5; e++) {
+        const ep = (time * 0.9 + e * 0.22) % 1;
+        const ex = fireX + Math.round(Math.sin(time * 4 + e * 2.1) * 3.8);
+        const ey = fireY - 9 - Math.round(ep * 18);
+        setCell(ex, ey, ep < 0.5 ? [255, 228, 108] : [255, 132, 48], 7, 248);
+      }
+    }
+
+    // Gentle glowing fireflies at Night
+    if (night > 0.55) {
+      for (let i = 0; i < FIREFLIES.length; i++) {
+        const ff = FIREFLIES[i];
+        const pulse = 0.5 + 0.5 * Math.sin(time * 2.8 * ff.sp + ff.ph);
+        if (pulse < 0.35) continue;
+        const fx = Math.round((ff.x + Math.sin(time * 0.45 * ff.sp + ff.ph) * 0.03) * gw + p5x);
+        const fy = Math.round((ff.y + Math.cos(time * 0.6 * ff.sp + ff.ph) * 0.025) * gh + p5y);
+        setCell(fx, fy, [255, 244, 138], 7, 252);
+      }
+    }
+
+    // -----------------------------------------------------------------------
+    // PLANE 6: Five Expressive Procedural SDF Pixel-Crew Bots + Floating Petals
+    // -----------------------------------------------------------------------
+    const p6x = -S.parX * maxShiftX * 0.76;
+    const p6y = -S.parY * maxShiftY * 0.76;
+    const botScale = mob ? 0.92 : 1.04;
+
+    for (let i = 0; i < BOTS.length; i++) {
+      const b = BOTS[i];
+      const baseCellX = Math.round((mob ? b.mobX : b.deskX) * gw + p6x);
+      const baseFootY = Math.round((mob ? b.mobY : b.deskY) * gh + p6y);
+      b.cellX = baseCellX;
+      b.cellFootY = baseFootY;
+      b.screenX = baseCellX * S.cell;
+      b.screenY = (baseFootY - 10 * botScale - b.hopY * 0.14) * S.cell;
+
+      // Grounded Bayer-dithered meadow shadow (shrinks while hopping!)
+      const hopCells = b.hopY * 0.16;
+      const shScale = clamp(1 - hopCells / 34, 0.38, 1);
+      const shRx = Math.round(9.5 * botScale * shScale);
+      const shRy = Math.max(1, Math.round(2.4 * botScale * shScale));
+      for (let sy = -shRy; sy <= shRy; sy++) {
+        for (let sx = -shRx; sx <= shRx; sx++) {
+          const d = (sx * sx) / (shRx * shRx + 0.1) + (sy * sy) / (shRy * shRy + 0.1);
+          if (d <= 1.0) {
+            const cx = baseCellX + sx;
+            const cy = baseFootY + 1 + sy;
+            if ((1 - d * 0.65) > BAYER[((cy & 3) << 2) | (cx & 3)]) {
+              setCell(cx, cy, pal.meadowShadow, 6, 92);
+            }
+          }
+        }
+      }
+
+      // Compute idle breathing + spring squash/stretch + spin width
+      const breathe = prefersReduced ? 0 : Math.sin(time * 2.8 + b.idx * 1.3) * 0.035;
+      const syScale = b.sq * (1 + breathe);
+      const spinWidth = b.spinT > 0 ? Math.max(0.18, Math.abs(Math.cos((1 - b.spinT / b.spinDur) * Math.PI * 2))) : 1.0;
+      const sxScale = (1 / Math.sqrt(syScale)) * spinWidth;
+      const bodyCenterY = baseFootY - Math.round(9.2 * botScale * syScale + hopCells);
+
+      // Rasterize procedural SDF shape on local crisp pixel grid
+      const rad = Math.ceil(16 * botScale);
+      const minX = -rad, maxX = rad;
+      const minY = -rad - 4, maxY = rad;
+
+      // Subtle night tint (bots stay vibrantly colorful, gently warmed by campfire)
+      const nightTint = night * 0.18;
+      const bodyCol = nightTint > 0 ? lerpRgb(b.body, [255, 224, 175], nightTint * 0.35) : b.body;
+      const hiCol = nightTint > 0 ? lerpRgb(b.hi, [255, 245, 214], nightTint * 0.45) : b.hi;
+      const shadeCol = b.shade;
+      const outCol = b.outline;
+
+      // Local occupancy map so we can stamp a crisp 1-cell colored outline
+      const wGrid = maxX - minX + 1;
+      const hGrid = maxY - minY + 1;
+      const mask = new Uint8Array(wGrid * hGrid); // 0=empty, 1=body, 2=accent(ear/sprout/bobble)
+      const swayPh = prefersReduced ? 0 : Math.sin(time * 3.4 + b.idx * 1.7);
+      const earOffset = b.earTwitch > 0 ? Math.sin(b.earTwitch * 36) * 2.2 : 0;
+
+      for (let ly = minY; ly <= maxY; ly++) {
+        for (let lx = minX; lx <= maxX; lx++) {
+          // Inverse transform into canonical SDF coordinates
+          const u = (lx - ly * b.lean * 0.42) / (botScale * sxScale);
+          const v = ly / (botScale * syScale);
+          let kind = 0;
+
+          if (b.shape === 'cat') {
+            // Squircle torso
+            const sq = Math.pow(Math.abs(u / 8.8), 2.8) + Math.pow(Math.abs((v - 0.8) / 7.8), 2.8);
+            if (sq <= 1.0) kind = 1;
+            // Pointed left & right cat ears (right ear twitches!)
+            if (!kind && pointInPoly(u, v, [[-7.6, -3.6], [-6.6, -11.4], [-1.5, -5.8]])) kind = 1;
+            if (!kind && pointInPoly(u, v, [[7.6, -3.6], [6.6 + earOffset, -11.4 + Math.abs(earOffset) * 0.5], [1.5, -5.8]])) kind = 1;
+            // Inner ear pink
+            if (pointInPoly(u, v, [[-6.2, -5.0], [-5.8, -9.2], [-3.0, -6.0]]) ||
+                pointInPoly(u, v, [[6.2, -5.0], [5.8 + earOffset * 0.7, -9.2 + Math.abs(earOffset) * 0.4], [3.0, -6.0]])) {
+              kind = 2;
+            }
+            // Tail curling up on the left
+            const tx = u + 10.6;
+            const ty = v - 2.5 + Math.sin(time * 4.2 + u * 0.4) * 1.1;
+            if (!kind && tx >= -2.2 && tx <= 2.6 && Math.abs(ty + tx * 0.55) < 1.55) kind = 1;
+            // Little feet
+            if (!kind && v > 6.8 && v < 9.5 && (Math.abs(u + 4.2) < 2.1 || Math.abs(u - 4.2) < 2.1)) kind = 1;
+          } else if (b.shape === 'blob') {
+            // Plump dome blob
+            const rx = v > 1 ? 9.8 + (v - 1) * 0.16 : 9.4;
+            const sq = Math.pow(Math.abs(u / rx), 2.4) + Math.pow(Math.abs((v - 0.6) / 8.0), 2.4);
+            if (sq <= 1.0) kind = 1;
+            // Bouncy antenna stem + glowing cyan bobble
+            const ax = u - swayPh * 1.5 * clamp((-v - 6) / 5, 0, 1);
+            if (!kind && Math.abs(ax) < 1.1 && v < -6.8 && v > -11.5) kind = 1;
+            if (Math.hypot(u - swayPh * 1.6, v + 12.0) <= 2.2) kind = 2;
+            if (!kind && v > 7.2 && v < 9.6 && (Math.abs(u + 4.4) < 2.2 || Math.abs(u - 4.4) < 2.2)) kind = 1;
+          } else if (b.shape === 'mochi') {
+            // Wide soft mochi dome
+            const sq = Math.pow(Math.abs(u / 10.4), 2.25) + Math.pow(Math.abs((v - 1.1) / 7.5), 2.25);
+            if (sq <= 1.0) kind = 1;
+            // Little crown tuft on top
+            if (!kind && Math.hypot(u - 0.5, v + 6.9) <= 2.3) kind = 1;
+            if (!kind && v > 7.2 && v < 9.3 && (Math.abs(u + 4.8) < 2.1 || Math.abs(u - 4.8) < 2.1)) kind = 1;
+          } else if (b.shape === 'bean') {
+            // Energetic upright capsule bean
+            const sq = Math.pow(Math.abs(u / 7.5), 3.0) + Math.pow(Math.abs((v - 0.3) / 8.9), 3.0);
+            if (sq <= 1.0) kind = 1;
+            // Tiny waving arms
+            const armY = 1.2 + swayPh * 1.2;
+            if (!kind && Math.hypot(u + 8.6, v - armY) <= 1.9) kind = 1;
+            if (!kind && Math.hypot(u - 8.6, v + armY - 2.4) <= 1.9) kind = 1;
+            // Little green leaf sprout on top!
+            if (Math.hypot((u - 1.8) * 0.85, (v + 10.4) * 1.3) <= 2.2 ||
+                Math.hypot((u + 1.4) * 0.9, (v + 10.1) * 1.3) <= 1.8 ||
+                (Math.abs(u) < 0.8 && v < -8.2 && v > -10.4)) {
+              kind = 2;
+            }
+            if (!kind && v > 7.8 && v < 10.0 && (Math.abs(u + 3.4) < 1.9 || Math.abs(u - 3.4) < 1.9)) kind = 1;
+          } else {
+            // 5-pointed procedural star polygon SDF!
+            const rot = swayPh * 0.08 + b.lean * 0.3;
+            const cr = Math.cos(rot), sr = Math.sin(rot);
+            const ru = u * cr - v * sr;
+            const rv = u * sr + v * cr;
+            if (pointInPoly(ru, rv, STAR_POLY)) kind = 1;
+          }
+
+          mask[(ly - minY) * wGrid + (lx - minX)] = kind;
+        }
+      }
+
+      // Draw crisp 1-cell outline + 3-tone shaded SDF body
+      for (let ly = minY; ly <= maxY; ly++) {
+        for (let lx = minX; lx <= maxX; lx++) {
+          const gi = (ly - minY) * wGrid + (lx - minX);
+          const m = mask[gi];
+          const cx = baseCellX + lx;
+          const cy = bodyCenterY + ly;
+          if (m > 0) {
+            let col;
+            if (m === 2) {
+              col = b.accent;
+            } else {
+              // 3-tone directional pixel shading (top-left sunlit highlight, bottom-right shade)
+              const topLit = (lx * 0.6 + ly) < -4.2 * botScale;
+              const botShade = (lx * 0.45 + ly) > 4.6 * botScale;
+              col = topLit ? hiCol : botShade ? shadeCol : bodyCol;
+            }
+            setCell(cx, cy, col, 8, m === 2 ? 235 : 210);
+          } else {
+            // Check 4-neighbors for crisp 1-cell colored pixel outline
+            const xIdx = lx - minX, yIdx = ly - minY;
+            const hasN =
+              (xIdx > 0 && mask[gi - 1] > 0) ||
+              (xIdx < wGrid - 1 && mask[gi + 1] > 0) ||
+              (yIdx > 0 && mask[gi - wGrid] > 0) ||
+              (yIdx < hGrid - 1 && mask[gi + wGrid] > 0);
+            if (hasN) {
+              setCell(cx, cy, outCol, 8, 130);
+            }
+          }
+        }
+      }
+
+      // Rosy blush cheeks for Hot-Pink Mochi & Golden Star
+      if (spinWidth > 0.45 && (b.shape === 'mochi' || b.shape === 'star')) {
+        const blushCol = b.shape === 'mochi' ? [255, 194, 224] : [255, 136, 112];
+        const by = bodyCenterY + Math.round(2 * botScale);
+        setCell(baseCellX - Math.round(5.2 * botScale), by, blushCol, 8, 225);
+        setCell(baseCellX - Math.round(4.2 * botScale), by, blushCol, 8, 225);
+        setCell(baseCellX + Math.round(4.2 * botScale), by, blushCol, 8, 225);
+        setCell(baseCellX + Math.round(5.2 * botScale), by, blushCol, 8, 225);
+      }
+
+      // Expressive Eyes (Cursor Gaze + Social Glance + Natural Blink + Poke Moods!)
+      if (spinWidth > 0.35) {
+        let lookX = S.ptrActive ? S.ptrX : b.screenX;
+        let lookY = S.ptrActive ? S.ptrY : b.screenY - 20;
+        if (b.glanceTimer > 0) {
+          lookX = b.glanceX;
+          lookY = b.glanceY;
+        }
+        const gdx = lookX - b.screenX;
+        const gdy = lookY - b.screenY;
+        const gx = clamp(Math.round(gdx / 110), -1, 1);
+        const gy = clamp(Math.round(gdy / 110), -1, 1);
+
+        const eyeSep = Math.round((b.shape === 'star' ? 2.8 : 3.4) * botScale * sxScale);
+        const eyeBaseY = bodyCenterY + Math.round((b.shape === 'mochi' ? 0 : -0.6) * botScale) + gy;
+        const eyeBaseX = baseCellX + gx;
+        const eCol = b.eye;
+
+        const drawEye = (ex, ey) => {
+          if (b.blinking && b.mood === 'open') {
+            setCell(ex, ey + 1, eCol, 8, 255);
+            setCell(ex + 1, ey + 1, eCol, 8, 255);
+          } else if (b.mood === 'happy') {
+            // Crisp '^' happy arc
+            setCell(ex - 1, ey + 1, eCol, 8, 255);
+            setCell(ex, ey, eCol, 8, 255);
+            setCell(ex + 1, ey + 1, eCol, 8, 255);
+          } else if (b.mood === 'heart') {
+            // Crisp 3x3 pixel heart
+            const hc = b.shape === 'star' ? [255, 58, 128] : [255, 240, 248];
+            setCell(ex - 1, ey, hc, 8, 255);
+            setCell(ex + 1, ey, hc, 8, 255);
+            setCell(ex - 1, ey + 1, hc, 8, 255);
+            setCell(ex, ey + 1, hc, 8, 255);
+            setCell(ex + 1, ey + 1, hc, 8, 255);
+            setCell(ex, ey + 2, hc, 8, 255);
+          } else if (b.mood === 'big') {
+            // Surprised 2x4 wide eyes
+            for (let r = -1; r <= 2; r++) {
+              setCell(ex, ey + r, eCol, 8, 255);
+              setCell(ex + 1, ey + r, eCol, 8, 255);
+            }
+          } else {
+            // Iconic crisp 2x3 vertical eyes
+            for (let r = 0; r <= 2; r++) {
+              setCell(ex, ey + r, eCol, 8, 255);
+              setCell(ex + 1, ey + r, eCol, 8, 255);
+            }
+          }
+        };
+
+        drawEye(eyeBaseX - eyeSep - 1, eyeBaseY);
+        drawEye(eyeBaseX + eyeSep, eyeBaseY);
+      }
+    }
+
+    // Floating Petal & Dandelion Bursts (Sky Clicks & Bot Poke Sparkles)
+    for (let i = 0; i < PETALS.length; i++) {
+      const pt = PETALS[i];
+      const cx = Math.round(pt.x);
+      const cy = Math.round(pt.y);
+      const lifeRatio = 1 - pt.age / pt.maxAge;
+      const th = BAYER[((cy & 3) << 2) | (cx & 3)];
+      if (lifeRatio < 0.35 && lifeRatio * 2.8 < th) continue;
+      setCell(cx, cy, pt.rgb, 7, 252);
+      if (pt.size > 1) {
+        setCell(cx + 1, cy, pt.rgb, 7, 245);
+        if (pt.kind === 'spark') setCell(cx, cy - 1, [255, 255, 255], 7, 255);
+      }
+    }
+  }
+
+  /* =========================================================================
+     8. MATERIAL-AWARE POLYCHROMATIC 5x7 ASCII COMPOSITOR (LENS & FULL-ASCII)
+     ========================================================================= */
+  function rgbFromU32(u) {
+    return [u & 255, (u >> 8) & 255, (u >> 16) & 255];
+  }
+
+  function applyColorAscii(pal) {
+    const { gw, gh, buf32, matBuf, detBuf, out32, renderMode, cell, time } = S;
+    const isFull = renderMode === 'ascii';
+    const hasLens = !isFull && S.ptrLensAlpha > 0.02;
+
+    // Fast copy scene to output buffer when in lens mode
+    if (!isFull) {
+      out32.set(buf32);
+      if (!hasLens) return;
+    }
+
+    const lensR = (S.vw < 760 ? 94 : 132) * (isFull ? 1 : S.ptrLensAlpha);
+    const lensCellX = S.ptrX / cell;
+    const lensCellY = S.ptrY / cell;
+    const lensRadCells = Math.ceil((lensR + 10) / cell);
+
+    const txMin = isFull ? 0 : Math.max(0, Math.floor((lensCellX - lensRadCells) / 6));
+    const txMax = isFull ? Math.ceil(gw / 6) - 1 : Math.min(Math.ceil(gw / 6) - 1, Math.floor((lensCellX + lensRadCells) / 6));
+    const tyMin = isFull ? 0 : Math.max(0, Math.floor((lensCellY - lensRadCells) / 9));
+    const tyMax = isFull ? Math.ceil(gh / 9) - 1 : Math.min(Math.ceil(gh / 9) - 1, Math.floor((lensCellY + lensRadCells) / 9));
+
+    const night = pal.nightAmt;
+    const matCounts = new Int32Array(9);
+    const matR = new Int32Array(9);
+    const matG = new Int32Array(9);
+    const matB = new Int32Array(9);
+
+    for (let ty = tyMin; ty <= tyMax; ty++) {
+      const y0 = ty * 9;
+      const y1 = Math.min(gh, y0 + 9);
+      for (let tx = txMin; tx <= txMax; tx++) {
+        const x0 = tx * 6;
+        const x1 = Math.min(gw, x0 + 6);
+
+        // Reset per-tile accumulators
+        matCounts.fill(0); matR.fill(0); matG.fill(0); matB.fill(0);
+
+        let detSum = 0, detMax = 0, nCells = 0;
+        let leftDet = 0, rightDet = 0;
+        let peakR = 255, peakG = 255, peakB = 255;
+
+        for (let cy = y0; cy < y1; cy++) {
+          const rowOff = cy * gw;
+          for (let cx = x0; cx < x1; cx++) {
+            const idx = rowOff + cx;
+            const m = matBuf[idx];
+            const u = buf32[idx];
+            const r = u & 255, g = (u >> 8) & 255, b = (u >> 16) & 255;
+            const d = detBuf[idx];
+            matCounts[m]++;
+            matR[m] += r;
+            matG[m] += g;
+            matB[m] += b;
+            detSum += d;
+            if (cx - x0 < 3) leftDet += d; else rightDet += d;
+            if (d > detMax) {
+              detMax = d;
+              peakR = r; peakG = g; peakB = b;
+            }
+            nCells++;
+          }
+        }
+
+        // Law 5: Preserve Bots & Micro-Highlights (wildflowers, stars, campfire, petals)
+        let domMat = 0;
+        if (matCounts[8] >= 5) {
+          domMat = 8;
+        } else if (matCounts[7] >= 1 && !(night > 0.65 && matCounts[0] > 35 && matCounts[7] === 1 && pcg2(tx, ty + 77) > 0.52)) {
+          domMat = 7;
+        } else if (matCounts[1] >= 4) {
+          domMat = 1;
+        } else {
+          let bestC = -1;
+          for (let k = 0; k <= 6; k++) {
+            if (matCounts[k] > bestC) { bestC = matCounts[k]; domMat = k; }
+          }
+        }
+
+        const cnt = Math.max(1, matCounts[domMat]);
+        const tr = Math.round(matR[domMat] / cnt);
+        const tg = Math.round(matG[domMat] / cnt);
+        const tb = Math.round(matB[domMat] / cnt);
+        const meanDet = detSum / Math.max(1, nCells) / 255;
+        const tileTh = BAYER[((ty & 3) << 2) | (tx & 3)];
+
+        // Choose material-aware 5x7 glyph index from SCENE_24
+        let gi = 0;
+        if (domMat === 0) {
+          // Sky: airy & joyous in day; clean gated void at night!
+          if (night > 0.65) {
+            gi = meanDet > 0.24 + tileTh * 0.14 ? 1 : 0; // clean obsidian night sky
+          } else {
+            const seamBoost = detMax > 72 ? 1 : 0;
+            const v = meanDet * 2.2 + seamBoost * 0.45 + (tileTh - 0.5) * 0.65;
+            gi = v > 1.05 ? 5 : v > 0.72 ? 3 : v > 0.44 ? 1 : 0; // '-', ':', '.', ' '
+          }
+        } else if (domMat === 1) {
+          // Sun / Moon
+          gi = detMax > 240 ? 11 : meanDet > 0.75 ? 9 : meanDet > 0.48 ? 8 : 7; // '@', '#', '*', '+'
+        } else if (domMat === 2) {
+          // Clouds
+          gi = meanDet > 0.74 ? 9 : meanDet > 0.62 ? 6 : meanDet > 0.52 ? 19 : 7; // '#', '=', 'o', '+'
+        } else if (domMat === 3) {
+          // Snow-capped alpine peaks (directional slope glyphs!)
+          const diff = leftDet - rightDet;
+          if (Math.abs(diff) > 220) gi = diff > 0 ? 12 : 13; // '/' or '\'
+          else if (meanDet > 0.82) gi = 9; // '#' sunlit snowcap
+          else if (meanDet > 0.65) gi = 17; // '^' peak ridge
+          else gi = 10; // '%' glacier shadow facet
+        } else if (domMat === 4) {
+          // Pastel lavender foothills
+          const slope = (tx + ty) & 3;
+          gi = slope === 0 ? 12 : slope === 2 ? 13 : meanDet > 0.52 ? 17 : 3; // '/', '\', '^', ':'
+        } else if (domMat === 5) {
+          // Emerald pine treeline (sways subtly with wind!)
+          const swayPhase = Math.sin(tx * 0.6 - time * 2.2) > 0.15;
+          gi = meanDet > 0.66 ? (swayPhase ? 17 : 20) : (tileTh > 0.45 ? 9 : 21); // '^', '"', '#', ';'
+        } else if (domMat === 6) {
+          // Sunlit lime meadow (wind-swaying grass glyphs!)
+          const w = windAt(x0, time);
+          const pick = (tx * 7 + ty * 13 + (w > 0.55 ? 1 : 0)) & 3;
+          gi = pick === 0 ? 2 : pick === 1 ? 21 : pick === 2 ? 20 : 18; // ',', ';', '"', 'v'
+        } else if (domMat === 7) {
+          // Wildflowers, campfire, stars, petals (peak-preserved micro-highlights!)
+          gi = detMax > 248 ? 8 : matCounts[7] >= 4 ? 19 : 7; // '*', 'o', '+'
+        } else {
+          // Expressive Pixel Crew Bots!
+          gi = detMax >= 250 ? 11 : meanDet > 0.74 ? 9 : meanDet > 0.55 ? 10 : (tx & 1 ? 22 : 23); // '@', '#', '%', '[', ']'
+        }
+
+        // Derive harmonious vibrant FG / BG colors (NO black boxes on sunlit skies/meadow!)
+        let bgR, bgG, bgB, fgR, fgG, fgB;
+        const luma = (0.299 * tr + 0.587 * tg + 0.114 * tb) / 255;
+
+        if (night > 0.65) {
+          // Luminous Starry Campfire Night palette
+          if (domMat === 7) {
+            // Preserve background of true dominant underlying material (sky, snow, meadow, etc.)
+            let underM = 0, bestUC = -1;
+            for (let k = 0; k <= 6; k++) {
+              if (matCounts[k] > bestUC) { bestUC = matCounts[k]; underM = k; }
+            }
+            const uc = Math.max(1, matCounts[underM]);
+            bgR = Math.round((matR[underM] / uc) * 0.85);
+            bgG = Math.round((matG[underM] / uc) * 0.85);
+            bgB = Math.round((matB[underM] / uc) * 0.85);
+            fgR = peakR; fgG = peakG; fgB = peakB;
+          } else if (domMat === 8) {
+            bgR = Math.round(tr * 0.55); bgG = Math.round(tg * 0.55); bgB = Math.round(tb * 0.55);
+            fgR = Math.min(255, Math.round(lerp(tr, 255, 0.42)));
+            fgG = Math.min(255, Math.round(lerp(tg, 255, 0.42)));
+            fgB = Math.min(255, Math.round(lerp(tb, 255, 0.42)));
+          } else {
+            bgR = Math.round(tr * 0.78); bgG = Math.round(tg * 0.78); bgB = Math.round(tb * 0.82);
+            fgR = Math.min(255, Math.round(lerp(tr, 232, 0.46)));
+            fgG = Math.min(255, Math.round(lerp(tg, 244, 0.46)));
+            fgB = Math.min(255, Math.round(lerp(tb, 255, 0.52)));
+          }
+        } else {
+          // Bright Polychromatic Daylight & Sunset (ZERO dark/black boxes!)
+          if (domMat === 0) {
+            bgR = tr; bgG = tg; bgB = tb;
+            if (luma > 0.82) {
+              // Pale horizon cyan -> crisp sky-cerulean glyph
+              fgR = Math.round(tr * 0.64); fgG = Math.round(tg * 0.78); fgB = Math.round(tb * 0.94);
+            } else {
+              // Rich cyan/rose sky -> luminous airy highlight glyph
+              fgR = Math.round(lerp(tr, 255, 0.52));
+              fgG = Math.round(lerp(tg, 255, 0.52));
+              fgB = Math.round(lerp(tb, 255, 0.55));
+            }
+          } else if (domMat === 2) {
+            // Clouds: keep soft cream/pink/lemon bg + contrasting tint glyph
+            bgR = tr; bgG = tg; bgB = tb;
+            if (luma > 0.92) {
+              fgR = Math.round(tr * 0.80); fgG = Math.round(tg * 0.84); fgB = Math.round(tb * 0.94);
+            } else {
+              fgR = 255; fgG = 255; fgB = 252;
+            }
+          } else if (domMat === 3) {
+            // Snow peaks: glacier azure glyphs on pure snow, bright white glyphs on shadow faces
+            bgR = tr; bgG = tg; bgB = tb;
+            if (luma > 0.88) {
+              fgR = Math.round(lerp(pal.peakShade[0], tr, 0.2));
+              fgG = Math.round(lerp(pal.peakShade[1], tg, 0.2));
+              fgB = Math.round(lerp(pal.peakShade[2], tb, 0.15));
+            } else {
+              fgR = 255; fgG = 255; fgB = 255;
+            }
+          } else if (domMat === 4) {
+            // Lavender foothills: rich plum-lavender glyph on pastel lavender fill
+            bgR = tr; bgG = tg; bgB = tb;
+            fgR = Math.round(tr * 0.68); fgG = Math.round(tg * 0.62); fgB = Math.round(tb * 0.82);
+          } else if (domMat === 5) {
+            // Emerald pines: bright sunlit mint glyph over rich emerald fill
+            bgR = Math.round(tr * 0.86); bgG = Math.round(tg * 0.88); bgB = Math.round(tb * 0.88);
+            fgR = Math.round(lerp(tr, 210, 0.50));
+            fgG = Math.round(lerp(tg, 255, 0.56));
+            fgB = Math.round(lerp(tb, 190, 0.45));
+          } else if (domMat === 6) {
+            // Sunlit lime meadow: vibrant chartreuse bg + crisp sunlit leaf-green grass glyphs
+            bgR = tr; bgG = tg; bgB = tb;
+            fgR = Math.round(tr * 0.56); fgG = Math.round(tg * 0.72); fgB = Math.round(tb * 0.30);
+          } else if (domMat === 7) {
+            // Wildflowers & Petals: keep vibrant underlying material behind + jewel-bright glyph!
+            let underM = 6, bestUC = -1;
+            for (let k = 0; k <= 6; k++) {
+              if (matCounts[k] > bestUC) { bestUC = matCounts[k]; underM = k; }
+            }
+            const uc = Math.max(1, matCounts[underM]);
+            bgR = Math.round(matR[underM] / uc);
+            bgG = Math.round(matG[underM] / uc);
+            bgB = Math.round(matB[underM] / uc);
+            fgR = peakR; fgG = peakG; fgB = peakB;
+            if (underM === 6) {
+              bgR = Math.round(bgR * 0.84); bgG = Math.round(bgG * 0.88); bgB = Math.round(bgB * 0.84);
+            }
+          } else if (domMat === 1) {
+            // Radiant pixel sun
+            bgR = pal.sunMid[0]; bgG = pal.sunMid[1]; bgB = pal.sunMid[2];
+            fgR = 255; fgG = 255; fgB = 240;
+          } else {
+            // Pixel Crew Bots: saturated bot color base + crisp bright highlight/white glyph!
+            bgR = Math.round(tr * 0.76); bgG = Math.round(tg * 0.76); bgB = Math.round(tb * 0.76);
+            if (detMax >= 250) {
+              fgR = peakR; fgG = peakG; fgB = peakB;
+            } else {
+              fgR = Math.round(lerp(tr, 255, 0.48));
+              fgG = Math.round(lerp(tg, 255, 0.48));
+              fgB = Math.round(lerp(tb, 255, 0.48));
+            }
+          }
+        }
+
+        const bgPack = packRgba(bgR, bgG, bgB);
+        const fgPack = packRgba(fgR, fgG, fgB);
+        const gBase = gi * 35;
+
+        // Stamp 5x7 glyph inside the 6x9 tile (gated by Bayer-dithered circular rim in Lens mode!)
+        for (let cy = y0; cy < y1; cy++) {
+          const rIdx = cy - y0;
+          const rowOff = cy * gw;
+          const byRow = (cy & 3) << 2;
+          for (let cx = x0; cx < x1; cx++) {
+            const cIdx = cx - x0;
+            const lit = rIdx < 7 && cIdx < 5 && GLYPH_BITS[gBase + rIdx * 5 + cIdx] === 1;
+
+            if (isFull) {
+              // Subtle hover illumination inside circular lens even in Full-Color ASCII mode
+              if (S.ptrLensAlpha > 0.05) {
+                const dist = Math.hypot((cx - lensCellX) * cell, (cy - lensCellY) * cell);
+                const th = BAYER[byRow | (cx & 3)];
+                if (Math.abs(dist - (lensR - 5 * cell * th)) < 1.15 * cell) {
+                  out32[rowOff + cx] = packRgba(
+                    Math.min(255, Math.round(lerp(fgR, 255, 0.55))),
+                    Math.min(255, Math.round(lerp(fgG, 255, 0.55))),
+                    Math.min(255, Math.round(lerp(fgB, 255, 0.55)))
+                  );
+                  continue;
+                }
+              }
+              out32[rowOff + cx] = lit ? fgPack : bgPack;
+            } else {
+              const dist = Math.hypot((cx - lensCellX) * cell, (cy - lensCellY) * cell);
+              const th = BAYER[byRow | (cx & 3)];
+              const edgeR = lensR - 7.5 * cell * th;
+              if (dist < edgeR) {
+                if (edgeR - dist < 1.35 * cell) {
+                  // Crisp precision crystal Bayer rim on optical lens
+                  const rimCol = night > 0.5
+                    ? packRgba(195, 224, 255)
+                    : packRgba(
+                        Math.min(255, Math.round(lerp(bgR, 255, 0.62))),
+                        Math.min(255, Math.round(lerp(bgG, 255, 0.62))),
+                        Math.min(255, Math.round(lerp(bgB, 255, 0.62)))
+                      );
+                  out32[rowOff + cx] = rimCol;
+                } else {
+                  out32[rowOff + cx] = lit ? fgPack : bgPack;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  /* =========================================================================
+     9. RESIZE, DOM [data-dim] MEASUREMENT & RENDER LOOP
+     ========================================================================= */
+  function readDimRects() {
+    S.dimRects = [];
+    document.querySelectorAll('[data-dim]').forEach((el) => {
+      const r = el.getBoundingClientRect();
+      if (r.width > 0 && r.height > 0) {
+        S.dimRects.push({ l: r.left - 8, t: r.top - 6, r: r.right + 8, b: r.bottom + 4 });
+      }
+    });
+  }
+
+  function resize() {
+    const maxPixels = 3840 * 2400;
+    const vw = Math.max(1, window.innerWidth);
+    const vh = Math.max(1, window.innerHeight);
+    let dpr = Math.max(1, Math.min(window.devicePixelRatio || 1, 3));
+    if (vw * vh * dpr * dpr > maxPixels) dpr = Math.max(1, Math.sqrt(maxPixels / (vw * vh)));
+
+    const cellCss = vw < 760 ? 2 : 3;
+    const cellDev = Math.max(1, Math.round(cellCss * dpr));
+    const dw = Math.ceil(vw * dpr);
+    const dh = Math.ceil(vh * dpr);
+
+    canvas.width = dw;
+    canvas.height = dh;
+    canvas.style.width = (dw / dpr) + 'px';
+    canvas.style.height = (dh / dpr) + 'px';
+
+    S.vw = vw; S.vh = vh; S.dpr = dpr;
+    S.dw = dw; S.dh = dh;
+    S.cellCss = cellCss; S.cellDev = cellDev;
+    S.cell = cellDev / dpr;
+    S.gw = Math.ceil(dw / cellDev);
+    S.gh = Math.ceil(dh / cellDev);
+
+    off.width = S.gw;
+    off.height = S.gh;
+    S.imgData = offCtx.createImageData(S.gw, S.gh);
+    S.buf8 = S.imgData.data;
+    S.out32 = new Uint32Array(S.buf8.buffer);
+    S.buf32 = new Uint32Array(S.gw * S.gh);
+    S.matBuf = new Uint8Array(S.gw * S.gh);
+    S.detBuf = new Uint8Array(S.gw * S.gh);
+
+    if (!S.ptrActive) {
+      S.ptrTargetX = vw * 0.5;
+      S.ptrTargetY = vh * 0.5;
+    }
+
+    buildDitherTiles(cellCss);
+    buildWorldProps();
+    readDimRects();
+  }
+
+  function renderFrame() {
+    readDimRects();
+    const easeT = S.moodT < 1 ? S.moodT * S.moodT * (3 - 2 * S.moodT) : 1;
+    const pal = blendPalettes(MOODS[S.moodFrom], MOODS[S.moodTo], easeT);
+    renderScene(pal);
+    applyColorAscii(pal);
+
+    offCtx.putImageData(S.imgData, 0, 0);
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(off, 0, 0, S.gw, S.gh, 0, 0, S.gw * S.cellDev, S.gh * S.cellDev);
+  }
+
+  let rafId = 0;
+  let lastTs = 0;
+
+  function tick(ts) {
+    rafId = 0;
+    if (document.hidden) return;
+    const dt = lastTs ? Math.min(0.05, (ts - lastTs) / 1000) : 0.016;
+    lastTs = ts;
+
+    S.time = (S.time + dt) % 10000;
+
+    // Smooth mood crossfade
+    if (S.moodT < 1) {
+      S.moodT = Math.min(1, S.moodT + dt * 2.4);
+    }
+
+    // Exponential pointer & parallax easing (1 - exp(-dt * 9))
+    const ease = 1 - Math.exp(-dt * 9);
+    const targetParX = S.ptrActive ? (S.ptrTargetX / S.vw - 0.5) * 2 : 0;
+    const targetParY = S.ptrActive ? (S.ptrTargetY / S.vh - 0.5) * 2 : 0;
+    S.parX += (targetParX - S.parX) * ease;
+    S.parY += (targetParY - S.parY) * ease;
+    if (S.ptrActive) {
+      if (S.ptrX < -1000) { S.ptrX = S.ptrTargetX; S.ptrY = S.ptrTargetY; }
+      else {
+        S.ptrX += (S.ptrTargetX - S.ptrX) * ease;
+        S.ptrY += (S.ptrTargetY - S.ptrY) * ease;
+      }
+    }
+    const targetAlpha = S.ptrActive ? 1 : 0;
+    S.ptrLensAlpha += (targetAlpha - S.ptrLensAlpha) * (1 - Math.exp(-dt * 11));
+
+    // Update bots
+    stepBots(dt);
+
+    // Update floating petals / sparkles
+    for (let i = PETALS.length - 1; i >= 0; i--) {
+      const pt = PETALS[i];
+      pt.age += dt;
+      if (pt.age >= pt.maxAge) {
+        PETALS.splice(i, 1);
+        continue;
+      }
+      if (pt.kind === 'petal') {
+        const w = windAt(pt.x, S.time);
+        pt.vx += (w * 14 - pt.vx) * dt * 1.4;
+        pt.vy += (9.5 - pt.vy) * dt * 1.6;
+        pt.x += (pt.vx + Math.sin(S.time * 4.2 + pt.ph) * 8) * dt;
+        pt.y += pt.vy * dt;
+      } else {
+        pt.vy += 42 * dt;
+        pt.x += pt.vx * dt;
+        pt.y += pt.vy * dt;
+      }
+    }
+
+    // Shooting star timer at Night
+    if (S.moodTo === 'night') {
+      const ss = S.shootStar;
+      if (!ss.active) {
+        ss.nextAt -= dt;
+        if (ss.nextAt <= 0) {
+          ss.active = true;
+          ss.life = 0;
+          ss.maxLife = 0.85;
+          ss.x = (0.18 + Math.random() * 0.52) * S.gw;
+          ss.y = (0.06 + Math.random() * 0.16) * S.gh;
+          ss.vx = 175 + Math.random() * 70;
+          ss.vy = 55 + Math.random() * 35;
+        }
+      } else {
+        ss.life += dt;
+        ss.x += ss.vx * dt;
+        ss.y += ss.vy * dt;
+        if (ss.life >= ss.maxLife) {
+          ss.active = false;
+          ss.nextAt = 4.2 + Math.random() * 5.0;
+        }
+      }
+    }
+
+    renderFrame();
+    if (!prefersReduced) {
+      rafId = requestAnimationFrame(tick);
+    }
+  }
+
+  /* =========================================================================
+     10. INTERACTIONS: HOVER LENS, BOT POKES, SKY PETAL BURSTS & DOCK CONTROLS
+     ========================================================================= */
+  function setMood(nextMood) {
+    if (!MOODS[nextMood]) return;
+    if (S.moodTo !== nextMood) {
+      S.moodFrom = S.moodTo;
+      S.moodTo = nextMood;
+      S.moodT = prefersReduced ? 1 : 0;
+    }
+    document.body.dataset.mood = nextMood;
+    document.querySelectorAll('[data-mood]').forEach((btn) => {
+      if (btn.tagName !== 'BUTTON') return;
+      const active = btn.dataset.mood === nextMood;
+      btn.classList.toggle('active', active);
+      btn.setAttribute('aria-pressed', String(active));
+    });
+    if (prefersReduced) renderFrame();
+  }
+
+  function setRenderMode(nextMode) {
+    S.renderMode = nextMode;
+    document.querySelectorAll('[data-mode]').forEach((btn) => {
+      const active = btn.dataset.mode === nextMode;
+      btn.classList.toggle('active', active);
+      btn.setAttribute('aria-pressed', String(active));
+    });
+    if (prefersReduced) renderFrame();
+  }
+
+  document.querySelectorAll('button[data-mood]').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      setMood(btn.dataset.mood);
+    });
+  });
+
+  document.querySelectorAll('button[data-mode]').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      setRenderMode(btn.dataset.mode);
+    });
+  });
+
+  window.addEventListener('pointermove', (e) => {
+    const insideCornerPark = e.clientX < 18 && e.clientY < 18;
+    S.ptrTargetX = e.clientX;
+    S.ptrTargetY = e.clientY;
+    S.ptrActive = !insideCornerPark;
+    if (prefersReduced && S.ptrActive) {
+      S.ptrX = e.clientX;
+      S.ptrY = e.clientY;
+      S.ptrLensAlpha = 1;
+      renderFrame();
+    }
+  }, { passive: true });
+
+  window.addEventListener('pointerleave', () => {
+    S.ptrActive = false;
+  });
+
+  canvas.addEventListener('pointerdown', (e) => {
+    const x = e.clientX;
+    const y = e.clientY;
+    S.ptrTargetX = x;
+    S.ptrTargetY = y;
+    S.ptrActive = true;
+
+    // Check if user poked one of the 5 pixel-crew bots
+    let hitBot = null;
+    let bestDist = 56;
+    for (const b of BOTS) {
+      const d = Math.hypot(x - b.screenX, y - b.screenY);
+      if (d < bestDist) {
+        bestDist = d;
+        hitBot = b;
+      }
+    }
+
+    if (hitBot) {
+      pokeBot(hitBot);
+      if (prefersReduced) renderFrame();
+      return;
+    }
+
+    // Clicking empty sky or meadow launches floating petal/dandelion bursts!
+    const pal = MOODS[S.moodTo];
+    const cx = x / S.cell;
+    const cy = y / S.cell;
+    const burstCols = S.moodTo === 'night'
+      ? [[255, 240, 145], [216, 238, 255], [255, 184, 214], [255, 255, 255]]
+      : [pal.flowers[0], pal.flowers[1], pal.flowers[2], [255, 246, 178]];
+    spawnSparkles(cx, cy, burstCols, 16, 1.0);
+    if (prefersReduced) renderFrame();
+  });
+
+  window.addEventListener('resize', () => {
+    resize();
+    if (prefersReduced) renderFrame();
+  });
+
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden && !prefersReduced && !rafId) {
+      lastTs = 0;
+      rafId = requestAnimationFrame(tick);
+    }
+  });
+
+  /* =========================================================================
+     11. BOOT
+     ========================================================================= */
+  initKineticWords();
+  resize();
+
+  if (prefersReduced) {
+    S.time = 1.4; // Crisp posed frame with gentle wind composition
+    renderFrame();
+  } else {
+    rafId = requestAnimationFrame(tick);
+  }
+})();
+</script>
+</body>
+</html>

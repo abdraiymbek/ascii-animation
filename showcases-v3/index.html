@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>ASCII &amp; Polychromatic Scene Showcases (v3 Skill Suite)</title>
+<style>
+  :root {
+    --bg: #07090F;
+    --card: #0F1422;
+    --border: rgba(255, 255, 255, 0.11);
+    --text: #F6F8FC;
+    --muted: rgba(226, 234, 248, 0.68);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    min-height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap {
+    max-width: 1260px;
+    margin: 0 auto;
+    padding: clamp(32px, 5vw, 68px) clamp(18px, 4vw, 44px);
+  }
+  header {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 16px;
+    margin-bottom: 36px;
+    padding-bottom: 22px;
+    border-bottom: 1px solid var(--border);
+  }
+  .eyebrow {
+    font: 600 11px/1.4 ui-monospace, "SF Mono", Menlo, monospace;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #39C9FF;
+    margin-bottom: 8px;
+  }
+  h1 {
+    font-size: clamp(28px, 4vw, 44px);
+    font-weight: 650;
+    letter-spacing: -0.025em;
+    line-height: 1.08;
+  }
+  .sub {
+    margin-top: 10px;
+    max-width: 66ch;
+    font-size: 14.5px;
+    line-height: 1.55;
+    color: var(--muted);
+  }
+  .pill {
+    font: 500 11px/1 ui-monospace, "SF Mono", Menlo, monospace;
+    color: #C8F74A;
+    border: 1px solid rgba(200, 247, 74, 0.28);
+    background: rgba(200, 247, 74, 0.08);
+    padding: 8px 13px;
+    border-radius: 999px;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 20px;
+  }
+  .card {
+    grid-column: span 2;
+    display: flex;
+    flex-direction: column;
+    text-decoration: none;
+    color: inherit;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    transition: transform 220ms cubic-bezier(.16, 1, .3, 1), border-color 220ms ease;
+  }
+  .card.wide { grid-column: span 3; }
+  @media (max-width: 960px) {
+    .card, .card.wide { grid-column: span 3; }
+  }
+  @media (max-width: 640px) {
+    .card, .card.wide { grid-column: span 6; }
+  }
+  .card:hover, .card:focus-visible {
+    transform: translateY(-3px);
+    border-color: rgba(255, 255, 255, 0.34);
+    outline: none;
+  }
+  .thumb {
+    position: relative;
+    aspect-ratio: 16 / 10;
+    background: #05070D;
+    overflow: hidden;
+    border-bottom: 1px solid var(--border);
+  }
+  .thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 360ms cubic-bezier(.16, 1, .3, 1);
+  }
+  .card:hover .thumb img { transform: scale(1.025); }
+  .num {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    font: 600 10.5px/1 ui-monospace, "SF Mono", Menlo, monospace;
+    letter-spacing: 0.09em;
+    padding: 5px 9px;
+    border-radius: 999px;
+    background: rgba(7, 9, 15, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #fff;
+    backdrop-filter: blur(8px);
+  }
+  .body {
+    padding: 16px 18px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    flex: 1;
+  }
+  .meta {
+    font: 500 10.5px/1.3 ui-monospace, "SF Mono", Menlo, monospace;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #7AF7FF;
+  }
+  h2 {
+    font-size: 18px;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+  }
+  .desc {
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--muted);
+    flex: 1;
+  }
+  .open {
+    margin-top: 6px;
+    font: 500 11.5px/1 ui-monospace, "SF Mono", Menlo, monospace;
+    color: #fff;
+    opacity: 0.86;
+  }
+  footer {
+    margin-top: 34px;
+    padding-top: 18px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 12px;
+    font: 400 12px/1.5 ui-monospace, "SF Mono", Menlo, monospace;
+    color: var(--muted);
+  }
+  footer a { color: #39C9FF; text-decoration: none; }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div>
+        <p class="eyebrow">ascii-animation v3 · polychromatic scenes &amp; evolved abstracts</p>
+        <h1>Five Completely Different ASCII &amp; Pixel Worlds</h1>
+        <p class="sub">Fusing <code>dusk.bot</code>'s sunlit polychromatic pixel-scene &amp; procedural character craft with <code>joinariapp.com</code>'s pixel-locked optical ASCII lens, live WebGL2 ping-pong Gray-Scott PDEs, and multi-material Bauhaus 3D raymarching.</p>
+      </div>
+      <span class="pill">5 Verified Zero-Dep Showcases · Cloud-Ready Skill</span>
+    </header>
+
+    <main class="grid">
+      <a class="card wide" href="./01-sunlit-meadow-crew.html">
+        <div class="thumb">
+          <img src="../assets/previews/v3-01-meadow-lens.png" alt="Sunlit Alpine Meadow & Pixel Crew" />
+          <span class="num">01 / SUNLIT MEADOW · DUSK.BOT + LENS</span>
+        </div>
+        <div class="body">
+          <span class="meta">Archetype F + E · Bright Polychromatic World</span>
+          <h2>Sunlit Alpine Meadow &amp; Pixel Crew</h2>
+          <p class="desc">7-plane sunlit alpine diorama with stepped Bayer sky seams, snow peaks, wildflowers, 5 interactive SDF pixel bots (cursor gaze, spring pokes, social glances), Color 5×7 ASCII Lens, Full-Color ASCII mode, Sunset &amp; Starry Campfire Night.</p>
+          <span class="open">Open 01-sunlit-meadow-crew.html →</span>
+        </div>
+      </a>
+
+      <a class="card wide" href="./02-harbor-painted-sails.html">
+        <div class="thumb">
+          <img src="../assets/previews/v3-02-harbor-lens.png" alt="Harbor of Painted Sails" />
+          <span class="num">02 / COASTAL HARBOR · FULL-COLOR ASCII</span>
+        </div>
+        <div class="body">
+          <span class="meta">Archetype F + E · Maritime Illustrated Scene</span>
+          <h2>Harbor of Painted Sails</h2>
+          <p class="desc">Chalk cliffs, rotating lighthouse beam, striped hot-air balloon, pastel sailboats with Bayer foam wakes &amp; water reflections, live drag wind-steering, sea-click wave rings, Full-Color ASCII default + Pixel+Lens &amp; 3 coastal palettes.</p>
+          <span class="open">Open 02-harbor-painted-sails.html →</span>
+        </div>
+      </a>
+
+      <a class="card" href="./03-neon-kyoto-rain.html">
+        <div class="thumb">
+          <img src="../assets/previews/v3-03-kyoto-lens.png" alt="Neon Rain in Pixel Kyoto" />
+          <span class="num">03 / KYOTO CANAL · LUMINOUS NIGHT</span>
+        </div>
+        <div class="body">
+          <span class="meta">Archetype F + B · Nocturnal Architecture</span>
+          <h2>Neon Rain in Pixel Kyoto</h2>
+          <p class="desc">Twilight pagoda skyline, glowing machiya windows, swaying vermilion lanterns, scanline-rippled canal reflections, deflected diagonal rain, gliding elevated train, click fireworks, ASCII Night / Pixel+Lens / Color Braille.</p>
+          <span class="open">Open 03-neon-kyoto-rain.html →</span>
+        </div>
+      </a>
+
+      <a class="card" href="./04-coral-mitosis-rd.html">
+        <div class="thumb">
+          <img src="../assets/previews/v3-04-coral-lens.png" alt="Polychromatic Coral Mitosis PDE" />
+          <span class="num">04 / LIVE GPU PDE · GRAY-SCOTT</span>
+        </div>
+        <div class="body">
+          <span class="meta">Archetype B (v3) · Ping-Pong Reaction-Diffusion</span>
+          <h2>Polychromatic Coral Mitosis</h2>
+          <p class="desc">Real-time WebGL2 ping-pong Gray-Scott PDE with live chemical brush painting, 4 biological presets, 4 vivid palettes (incl. Acid Risograph Paper), True-Color ASCII, Bayer+Lens &amp; Color 2×4 Braille.</p>
+          <span class="open">Open 04-coral-mitosis-rd.html →</span>
+        </div>
+      </a>
+
+      <a class="card" href="./05-bauhaus-3d-kinetic.html">
+        <div class="thumb">
+          <img src="../assets/previews/v3-05-bauhaus-braille.png" alt="Bauhaus Kinetic Pavilion 3D" />
+          <span class="num">05 / BAUHAUS 3D · GALLERY PAPER</span>
+        </div>
+        <div class="body">
+          <span class="meta">Archetype C + D (v3) · Multi-Material 3D SDF</span>
+          <h2>Bauhaus Kinetic Pavilion</h2>
+          <p class="desc">Warm gallery paper hosting primary-pigment 3D raymarched sculptures with soft cast floor shadows, orbital drag, Pigment ASCII / Blueprint Contours / Color 2×4 Braille &amp; Midnight Blueprint flip.</p>
+          <span class="open">Open 05-bauhaus-3d-kinetic.html →</span>
+        </div>
+      </a>
+    </main>
+
+    <footer>
+      <span>Cloud-ready skill: skills/ascii-animation/</span>
+      <span>Also see original v2 suite: <a href="../showcases/index.html">showcases/index.html</a></span>
+    </footer>
+  </div>
+</body>
+</html>

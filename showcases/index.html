@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>ASCII &amp; Bayer Animation Showcases</title>
+<style>
+  :root {
+    --bg: #05070D;
+    --surface: #0C1A36;
+    --border: rgba(169, 196, 244, 0.16);
+    --text: #F4F8FF;
+    --muted: #A9C4F4;
+    --accent: #6F98E8;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    min-height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: clamp(36px, 6vw, 72px) clamp(20px, 4vw, 44px);
+  }
+  header {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 16px;
+    margin-bottom: 40px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--border);
+  }
+  .eyebrow {
+    font: 500 11px/1.4 ui-monospace, "SF Mono", Menlo, monospace;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 10px;
+  }
+  h1 {
+    font-size: clamp(28px, 4vw, 44px);
+    font-weight: 600;
+    letter-spacing: -0.025em;
+    line-height: 1.08;
+  }
+  .sub {
+    margin-top: 10px;
+    max-width: 58ch;
+    font-size: 15px;
+    line-height: 1.55;
+    color: rgba(244, 248, 255, 0.72);
+  }
+  .badge {
+    font: 500 11px/1 ui-monospace, "SF Mono", Menlo, monospace;
+    color: var(--muted);
+    border: 1px solid var(--border);
+    background: rgba(12, 26, 54, 0.6);
+    padding: 8px 12px;
+    border-radius: 999px;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 22px;
+  }
+  .card {
+    display: flex;
+    flex-direction: column;
+    text-decoration: none;
+    color: inherit;
+    background: rgba(12, 26, 54, 0.42);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    transition: transform 220ms cubic-bezier(.16, 1, .3, 1), border-color 220ms ease, background 220ms ease;
+  }
+  .card:hover, .card:focus-visible {
+    transform: translateY(-3px);
+    border-color: rgba(169, 196, 244, 0.42);
+    background: rgba(12, 26, 54, 0.68);
+    outline: none;
+  }
+  .thumb {
+    position: relative;
+    aspect-ratio: 16 / 10;
+    background: #070b14;
+    overflow: hidden;
+    border-bottom: 1px solid var(--border);
+  }
+  .thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 360ms cubic-bezier(.16, 1, .3, 1);
+  }
+  .card:hover .thumb img { transform: scale(1.025); }
+  .num {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    font: 600 11px/1 ui-monospace, "SF Mono", Menlo, monospace;
+    letter-spacing: 0.1em;
+    padding: 5px 9px;
+    border-radius: 999px;
+    background: rgba(5, 7, 13, 0.78);
+    border: 1px solid rgba(244, 248, 255, 0.18);
+    color: #F4F8FF;
+    backdrop-filter: blur(8px);
+  }
+  .body {
+    padding: 18px 20px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex: 1;
+  }
+  .meta {
+    font: 500 11px/1.3 ui-monospace, "SF Mono", Menlo, monospace;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  h2 {
+    font-size: 19px;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+  }
+  .desc {
+    font-size: 13.5px;
+    line-height: 1.5;
+    color: rgba(244, 248, 255, 0.72);
+    flex: 1;
+  }
+  .open {
+    margin-top: 8px;
+    font: 500 12px/1 ui-monospace, "SF Mono", Menlo, monospace;
+    color: var(--muted);
+  }
+  footer {
+    margin-top: 38px;
+    padding-top: 18px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 12px;
+    font: 400 12px/1.5 ui-monospace, "SF Mono", Menlo, monospace;
+    color: rgba(169, 196, 244, 0.65);
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div>
+        <p class="eyebrow">ascii-animation skill · final verified suite</p>
+        <h1>Four ASCII &amp; Bayer Animation Showcases</h1>
+        <p class="sub">Built end-to-end with the final portable <code>ascii-animation</code> skill on Gemini 4 Neon High (Devin 2) and multi-state verified in headless Chromium across desktop, pointer, drag, mobile, and reduced motion.</p>
+      </div>
+      <span class="badge">WebGL2 + 2D Fallback · Zero Dependencies</span>
+    </header>
+
+    <main class="grid">
+      <a class="card" href="./01-glacier-sky-lens.html">
+        <div class="thumb">
+          <img src="../assets/previews/v2-01-glacier-lens.png" alt="Glacier Sky & 5x7 ASCII Lens" />
+          <span class="num">01 / ARCHETYPE A+E</span>
+        </div>
+        <div class="body">
+          <span class="meta">Bayer 4×4 Atmosphere · 5×7 ASCII Lens</span>
+          <h2>Glacier Sky &amp; ASCII Lens</h2>
+          <p class="desc">JoinAriapp-inspired 3-deck parallax cloudscape with full day-to-night cycle, Sun/Moon/Milky Way/Aurora, circular Bayer-rimmed 5×7 ASCII lens, full-ASCII toggle, and spring V-formation gull flocks.</p>
+          <span class="open">Open 01-glacier-sky-lens.html →</span>
+        </div>
+      </a>
+
+      <a class="card" href="./02-3d-sdf-singularity.html">
+        <div class="thumb">
+          <img src="../assets/previews/v2-02-singularity-braille.png" alt="3D Orbital Singularity in GPU 2x4 Braille" />
+          <span class="num">02 / ARCHETYPE C</span>
+        </div>
+        <div class="body">
+          <span class="meta">3D SDF Raymarching · Contour · 2×4 Braille</span>
+          <h2>3D Orbital Singularity</h2>
+          <p class="desc">Gravitational ray-bending black hole, braided (2,3) Torus Knot, and Ringed Exoplanet on the Obsidian &amp; Solar Amber ladder with Luminance ASCII, Directional Contours, and Zero-Readback GPU 2×4 Braille.</p>
+          <span class="open">Open 02-3d-sdf-singularity.html →</span>
+        </div>
+      </a>
+
+      <a class="card" href="./03-bioluminescent-tide.html">
+        <div class="thumb">
+          <img src="../assets/previews/v2-03-tide-lens.png" alt="Bioluminescent Tide Fluid ASCII" />
+          <span class="num">03 / ARCHETYPE B+E</span>
+        </div>
+        <div class="body">
+          <span class="meta">Curl-Noise Fluid · Bathymetric Contours</span>
+          <h2>Bioluminescent Tide</h2>
+          <p class="desc">Full-grid GPU 5×7 bitmap ASCII ocean currents, seabed iso-contours, and wave caustics with interactive pointer vortex wakes, click shockwaves, Bayer+Lens toggle, and swimming luminescent schools.</p>
+          <span class="open">Open 03-bioluminescent-tide.html →</span>
+        </div>
+      </a>
+
+      <a class="card" href="./04-kinetic-ascii-type.html">
+        <div class="thumb">
+          <img src="../assets/previews/v2-04-kinetic-type.png" alt="Kinetic ASCII Type Studio" />
+          <span class="num">04 / ARCHETYPE D</span>
+        </div>
+        <div class="body">
+          <span class="meta">Kinetic Letterpress · Morphing Emblems</span>
+          <h2>Kinetic ASCII Type Studio</h2>
+          <p class="desc">High-DPI tone-bucketed typography &amp; Solar Emblem morpher with live custom text input, spring cursor turbulence, 4 OKLab palettes (Editorial Paper, Glacier Night, Amber, Phosphor), and ASCII/Bayer toggle.</p>
+          <span class="open">Open 04-kinetic-ascii-type.html →</span>
+        </div>
+      </a>
+    </main>
+
+    <footer>
+      <span>Skill path: skills/ascii-animation/</span>
+      <span>Verified: 0 runtime errors · live motion · mobile 390px · prefers-reduced-motion</span>
+    </footer>
+  </div>
+</body>
+</html>

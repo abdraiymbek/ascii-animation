@@ -1,0 +1,2555 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Harbor of Painted Sails — Full-Color 5×7 ASCII Coastal World</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #0EB6FF;
+    font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: none;
+  }
+
+  #stage {
+    position: fixed;
+    inset: 0;
+    display: block;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: crisp-edges;
+    image-rendering: pixelated;
+    cursor: crosshair;
+  }
+
+  #stage.dragging {
+    cursor: grabbing;
+  }
+
+  .hero {
+    position: fixed;
+    top: clamp(18px, 3.2vh, 36px);
+    left: clamp(18px, 3.6vw, 48px);
+    max-width: min(580px, 72vw);
+    z-index: 10;
+    pointer-events: none;
+    color: #FFFFFF;
+    transition: color 360ms ease;
+  }
+
+  .eyebrow {
+    font-family: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: clamp(10px, 1.0vw, 12px);
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.95);
+    text-shadow: 0 1px 12px rgba(6, 56, 114, 0.50), 0 1px 2px rgba(6, 56, 114, 0.42);
+    margin-bottom: 6px;
+    line-height: 1.3;
+  }
+
+  .title {
+    font-size: clamp(25px, 3.9vw, 48px);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1.04;
+    color: #FFFFFF;
+    text-shadow: 0 2px 18px rgba(6, 56, 114, 0.46), 0 1px 3px rgba(6, 56, 114, 0.40);
+    margin-bottom: 7px;
+  }
+
+  .sub {
+    font-size: clamp(12px, 1.18vw, 14.5px);
+    font-weight: 500;
+    line-height: 1.38;
+    color: rgba(255, 255, 255, 0.96);
+    text-shadow: 0 1px 12px rgba(6, 56, 114, 0.50), 0 1px 2px rgba(6, 56, 114, 0.38);
+  }
+
+  body[data-pal="sunset"] .eyebrow,
+  body[data-pal="sunset"] .title,
+  body[data-pal="sunset"] .sub {
+    text-shadow: 0 2px 18px rgba(74, 24, 92, 0.52), 0 1px 3px rgba(74, 24, 92, 0.42);
+  }
+
+  body[data-pal="coral"] .eyebrow,
+  body[data-pal="coral"] .title,
+  body[data-pal="coral"] .sub {
+    text-shadow: 0 2px 18px rgba(0, 68, 98, 0.50), 0 1px 3px rgba(0, 68, 98, 0.42);
+  }
+
+  @keyframes dz {
+    0%   { opacity: 0; }
+    5%   { opacity: 1; -webkit-mask-image: var(--dz1); mask-image: var(--dz1); }
+    18%  { opacity: 1; -webkit-mask-image: var(--dz2); mask-image: var(--dz2); }
+    31%  { opacity: 1; -webkit-mask-image: var(--dz3); mask-image: var(--dz3); }
+    44%  { opacity: 1; -webkit-mask-image: var(--dz4); mask-image: var(--dz4); }
+    57%  { opacity: 1; -webkit-mask-image: var(--dz5); mask-image: var(--dz5); }
+    70%  { opacity: 1; -webkit-mask-image: var(--dz6); mask-image: var(--dz6); }
+    83%  { opacity: 1; -webkit-mask-image: var(--dz7); mask-image: var(--dz7); }
+    100% { opacity: 1; -webkit-mask-image: none; mask-image: none; }
+  }
+  @keyframes dzr {
+    from { transform: translateY(0.12em); }
+  }
+  .kin .w {
+    display: inline-block;
+    opacity: 0;
+    padding-block: 0.22em;
+    margin-block: -0.22em;
+    -webkit-mask-size: var(--dzs, 12px) var(--dzs, 12px);
+    mask-size: var(--dzs, 12px) var(--dzs, 12px);
+  }
+  .kin.in .w {
+    opacity: 1;
+    animation: dz 500ms step-end both, dzr 700ms cubic-bezier(.16, 1, .3, 1) both;
+    animation-delay: calc(var(--bd, 0ms) + var(--i) * 38ms);
+  }
+
+  .dock-wrap {
+    position: fixed;
+    left: 50%;
+    bottom: clamp(14px, 2.3vh, 24px);
+    transform: translateX(-50%);
+    z-index: 20;
+    max-width: calc(100vw - 20px);
+  }
+
+  .dock {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: nowrap;
+    gap: 4px;
+    padding: 5px;
+    border-radius: 999px;
+    background: rgba(255, 253, 246, 0.78);
+    border: 1px solid rgba(255, 255, 255, 0.90);
+    box-shadow: 0 8px 28px rgba(10, 56, 98, 0.18), 0 1px 2px rgba(10, 56, 98, 0.08);
+    backdrop-filter: blur(14px) saturate(1.4);
+    -webkit-backdrop-filter: blur(14px) saturate(1.4);
+    transition: background 320ms ease, border-color 320ms ease, box-shadow 320ms ease;
+  }
+
+  body[data-pal="sunset"] .dock {
+    background: rgba(255, 248, 244, 0.78);
+    box-shadow: 0 8px 28px rgba(72, 24, 84, 0.20);
+  }
+
+  body[data-pal="coral"] .dock {
+    background: rgba(246, 255, 253, 0.78);
+    box-shadow: 0 8px 28px rgba(0, 74, 96, 0.18);
+  }
+
+  .dock-group {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+  }
+
+  .dock-sep {
+    width: 1px;
+    height: 18px;
+    margin: 0 4px;
+    background: rgba(14, 48, 84, 0.18);
+    flex-shrink: 0;
+  }
+
+  .dock button {
+    appearance: none;
+    border: 0;
+    background: transparent;
+    color: #0E3156;
+    font-family: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 11.5px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    padding: 7px 11px;
+    border-radius: 999px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 180ms ease, color 180ms ease, transform 120ms ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .dock button:hover {
+    background: rgba(14, 49, 86, 0.09);
+  }
+
+  .dock button:active {
+    transform: scale(0.96);
+  }
+
+  .dock button.active {
+    background: #0F355E;
+    color: #FFFFFF;
+    box-shadow: 0 2px 8px rgba(15, 53, 94, 0.25);
+  }
+
+  body[data-pal="sunset"] .dock button.active {
+    background: #612978;
+    color: #FFF9FB;
+  }
+
+  body[data-pal="coral"] .dock button.active {
+    background: #005B7A;
+    color: #F2FFFD;
+  }
+
+  .dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    display: inline-block;
+    flex-shrink: 0;
+    box-shadow: 0 0 0 1px rgba(15, 43, 77, 0.16);
+  }
+
+  @media (max-width: 720px) {
+    .hero {
+      top: 18px;
+      left: 16px;
+      max-width: 66vw;
+    }
+    .eyebrow {
+      font-size: 9.5px;
+      letter-spacing: 0.10em;
+      margin-bottom: 4px;
+    }
+    .title {
+      font-size: 25px;
+      margin-bottom: 5px;
+    }
+    .sub {
+      font-size: 11.5px;
+      line-height: 1.35;
+    }
+    .dock {
+      flex-wrap: wrap;
+      border-radius: 20px;
+      padding: 5px 6px;
+      gap: 4px;
+      max-width: calc(100vw - 20px);
+    }
+    .dock-sep { display: none; }
+    .dock button {
+      font-size: 10.5px;
+      padding: 6px 9px;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .kin .w {
+      opacity: 1 !important;
+      animation: none !important;
+      -webkit-mask-image: none !important;
+      mask-image: none !important;
+    }
+  }
+</style>
+</head>
+<body data-pal="riviera">
+  <canvas id="stage" aria-label="Interactive sunlit coastal harbor rendered in material-aware full-color 5x7 ASCII with sailboats, chalk cliffs, lighthouse, and live wind physics"></canvas>
+
+  <header class="hero">
+    <p class="eyebrow kin" data-dim style="--bd: 0ms">Full-Color 5×7 ASCII · Maritime Field</p>
+    <h1 class="title kin" data-dim style="--bd: 80ms">Harbor of Painted Sails</h1>
+    <p class="sub kin" data-dim style="--bd: 160ms">Drag to steer wind, click the sea for wave rings, or toggle Pixel + Lens.</p>
+  </header>
+
+  <nav class="dock-wrap" aria-label="Harbor controls">
+    <div class="dock">
+      <div class="dock-group" role="group" aria-label="Coastal palette">
+        <button id="pal-riviera" data-pal="riviera" class="active" aria-pressed="true">
+          <span class="dot" style="background:#0EB6FF"></span>Riviera Day
+        </button>
+        <button id="pal-sunset" data-pal="sunset" aria-pressed="false">
+          <span class="dot" style="background:#FF92A8"></span>Peach Sunset
+        </button>
+        <button id="pal-coral" data-pal="coral" aria-pressed="false">
+          <span class="dot" style="background:#2CE0DF"></span>Tropical Coral
+        </button>
+      </div>
+      <span class="dock-sep" aria-hidden="true"></span>
+      <div class="dock-group" role="group" aria-label="Render mode">
+        <button id="mode-ascii" data-mode="ascii" class="active" aria-pressed="true">Full-Color ASCII</button>
+        <button id="mode-lens" data-mode="lens" aria-pressed="false">Pixel + Lens</button>
+      </div>
+    </div>
+  </nav>
+
+<script>
+(() => {
+  'use strict';
+
+  const BAYER_INT = [
+    0, 8, 2, 10,
+    12, 4, 14, 6,
+    3, 11, 1, 9,
+    15, 7, 13, 5,
+  ];
+  const BAYER = BAYER_INT.map((v) => (v + 0.5) / 16);
+
+  function pcg2(x, y) {
+    let vx = (x | 0) * 1664525 + 1013904223 | 0;
+    let vy = (y | 0) * 1664525 + 1013904223 | 0;
+    vx = (vx + Math.imul(vy, 1664525)) | 0;
+    vy = (vy + Math.imul(vx, 1664525)) | 0;
+    vx ^= vx >>> 16;
+    vy ^= vy >>> 16;
+    vx = (vx + Math.imul(vy, 1664525)) | 0;
+    vy = (vy + Math.imul(vx, 1664525)) | 0;
+    return ((vx ^ vy) >>> 0) / 4294967296;
+  }
+
+  // Packed SCENE_24 5x7 bitmap glyphs (exact match to scripts/pack-glyphs.mjs)
+  const GLYPH_DEFS = [
+    /* 0  ' ' */ ['.....','.....','.....','.....','.....','.....','.....'],
+    /* 1  '.' */ ['.....','.....','.....','.....','.....','..#..','.....'],
+    /* 2  ',' */ ['.....','.....','.....','.....','..#..','..#..','.#...'],
+    /* 3  ':' */ ['.....','.....','..#..','.....','.....','..#..','.....'],
+    /* 4  '~' */ ['.....','.....','.#..#','#.##.','.....','.....','.....'],
+    /* 5  '-' */ ['.....','.....','.....','.###.','.....','.....','.....'],
+    /* 6  '=' */ ['.....','.....','#####','.....','#####','.....','.....'],
+    /* 7  '+' */ ['.....','..#..','..#..','#####','..#..','..#..','.....'],
+    /* 8  '*' */ ['.....','..#..','#.#.#','.###.','#.#.#','..#..','.....'],
+    /* 9  '#' */ ['.#.#.','.#.#.','#####','.#.#.','#####','.#.#.','.#.#.'],
+    /* 10 '%' */ ['##..#','##.##','..##.','.##..','##.##','#..##','.....'],
+    /* 11 '@' */ ['.###.','#...#','#.###','#.#.#','#.###','#....','.###.'],
+    /* 12 '/' */ ['....#','...#.','...#.','..#..','.#...','.#...','#....'],
+    /* 13 '\' */ ['#....','.#...','.#...','..#..','...#.','...#.','....#'],
+    /* 14 '|' */ ['..#..','..#..','..#..','..#..','..#..','..#..','..#..'],
+    /* 15 '_' */ ['.....','.....','.....','.....','.....','.....','#####'],
+    /* 16 '█' */ ['#####','#####','#####','#####','#####','#####','#####'],
+    /* 17 '^' */ ['..#..','.#.#.','#...#','.....','.....','.....','.....'],
+    /* 18 'v' */ ['.....','.....','.....','#...#','.#.#.','..#..','.....'],
+    /* 19 'o' */ ['.....','.....','.###.','#...#','#...#','.###.','.....'],
+    /* 20 '"' */ ['.#.#.','.#.#.','.....','.....','.....','.....','.....'],
+    /* 21 ';' */ ['.....','.....','..#..','.....','..#..','..#..','.#...'],
+    /* 22 '[' */ ['.###.','.#...','.#...','.#...','.#...','.#...','.###.'],
+    /* 23 ']' */ ['.###.','...#.','...#.','...#.','...#.','...#.','.###.'],
+  ];
+  const GLYPH_BITS = new Uint8Array(GLYPH_DEFS.length * 35);
+  for (let g = 0; g < GLYPH_DEFS.length; g++) {
+    for (let r = 0; r < 7; r++) {
+      const row = GLYPH_DEFS[g][r];
+      for (let c = 0; c < 5; c++) {
+        GLYPH_BITS[g * 35 + r * 5 + c] = row[c] === '#' ? 1 : 0;
+      }
+    }
+  }
+
+  // Exact 12fps pixel gull wing-flap sprites from references/kinetic-type-and-sprites.md
+  const GULL_7 = [
+    ['X.....X', '.X...X.', '..XXX..'],
+    ['.XX.XX.', 'X..X..X', '.......'],
+    ['.......', 'X.XXX.X', '.X...X.'],
+  ];
+  const GULL_5 = [
+    ['X...X', '.X.X.', '..X..'],
+    ['.X.X.', 'X.X.X', '.....'],
+    ['.....', 'X.X.X', '.X.X.'],
+  ];
+  const FLAP_SEQ = [0, 1, 2, 1];
+
+  function hexToRgb(hex) {
+    const n = parseInt(hex.slice(1), 16);
+    return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+  }
+  function packRgba(r, g, b) {
+    return (255 << 24) | ((b & 255) << 16) | ((g & 255) << 8) | (r & 255);
+  }
+  function lerp(a, b, t) { return a + (b - a) * t; }
+  function clamp(v, lo, hi) { return v < lo ? lo : v > hi ? hi : v; }
+  function lerpRgb(c1, c2, t) {
+    return [
+      Math.round(c1[0] + (c2[0] - c1[0]) * t),
+      Math.round(c1[1] + (c2[1] - c1[1]) * t),
+      Math.round(c1[2] + (c2[2] - c1[2]) * t),
+    ];
+  }
+
+  // Semantic material IDs for matBuf
+  const MAT_SKY = 0;
+  const MAT_SUN = 1;
+  const MAT_CLOUD = 2;
+  const MAT_HEADLAND = 3;
+  const MAT_CLIFF = 4;
+  const MAT_GRASS = 5;
+  const MAT_LIGHTHOUSE = 6;
+  const MAT_SEA = 7;
+  const MAT_SAILBOAT = 8;
+  const MAT_SAND = 9;
+  const MAT_PIER = 10;
+  const MAT_BALLOON = 11;
+  const MAT_GLINT = 12;
+
+  const PALETTES = {
+    riviera: {
+      sky: ['#0EB6FF', '#47CEFF', '#9BE5FF', '#D5F4FF'].map(hexToRgb),
+      sunCore: hexToRgb('#FFF49C'),
+      sunMid: hexToRgb('#FFE042'),
+      sunHalo: hexToRgb('#FFEB7D'),
+      cloudTop: hexToRgb('#FFFFFF'),
+      cloudMid: hexToRgb('#FFFBF2'),
+      cloudPink: hexToRgb('#FFD0E6'),
+      cloudLemon: hexToRgb('#FFF0A6'),
+      headlandFar: hexToRgb('#B8D6FA'),
+      headlandMid: hexToRgb('#CFC4F6'),
+      headlandLit: hexToRgb('#E8ECFF'),
+      cliffLit: hexToRgb('#FFFFFF'),
+      cliffMid: hexToRgb('#F8F4EA'),
+      cliffShade: hexToRgb('#EAE2D3'),
+      cliffDeep: hexToRgb('#D4C8B4'),
+      grassTop: hexToRgb('#D3FA5C'),
+      grassMid: hexToRgb('#C2F249'),
+      grassShade: hexToRgb('#94D62A'),
+      lhRed: hexToRgb('#FF3B30'),
+      lhRedShade: hexToRgb('#D4251C'),
+      lhWhite: hexToRgb('#FFFFFF'),
+      lhWhiteShade: hexToRgb('#DDE6F0'),
+      lhDark: hexToRgb('#1E3552'),
+      lhGlow: hexToRgb('#FFF6AE'),
+      beamTint: hexToRgb('#FFF8C2'),
+      seaBands: ['#7BE6F7', '#48B9F5', '#2795E6'].map(hexToRgb),
+      seaShallow: hexToRgb('#74F0F2'),
+      foam: hexToRgb('#FFFFFF'),
+      ringColor: hexToRgb('#B8FCFF'),
+      sandTop: hexToRgb('#FFF099'),
+      sandMid: hexToRgb('#F7DF72'),
+      sandWet: hexToRgb('#E4C554'),
+      sandGrain: hexToRgb('#D9B642'),
+      pierTop: hexToRgb('#E8A66B'),
+      pierMid: hexToRgb('#C97F46'),
+      pierDark: hexToRgb('#8C5028'),
+      birdCol: hexToRgb('#1E4A7A'),
+      birdWing: hexToRgb('#FFFFFF'),
+      balloonCols: ['#FF5247', '#FFE24A', '#26C8FF', '#FF78B4'].map(hexToRgb),
+      boatHulls: [
+        { main: hexToRgb('#FFB3D1'), shade: hexToRgb('#E382AC'), sail: hexToRgb('#FFF6DF'), stripe: hexToRgb('#FFE24A'), flag: hexToRgb('#FF5247') },
+        { main: hexToRgb('#FFE24A'), shade: hexToRgb('#E0B91E'), sail: hexToRgb('#FFF9EB'), stripe: hexToRgb('#FFB3D1'), flag: hexToRgb('#FF5247') },
+        { main: hexToRgb('#FF5247'), shade: hexToRgb('#CC2E24'), sail: hexToRgb('#FFF6DF'), stripe: hexToRgb('#48B9F5'), flag: hexToRgb('#FFE24A') },
+        { main: hexToRgb('#5CE6B0'), shade: hexToRgb('#2EBA84'), sail: hexToRgb('#FFF9EC'), stripe: hexToRgb('#FF7DA8'), flag: hexToRgb('#FF5247') },
+      ],
+      sunYFrac: 0.16,
+      sunYFracMob: 0.095,
+    },
+    sunset: {
+      sky: ['#686CF0', '#C274E8', '#FF90AC', '#FFD78A'].map(hexToRgb),
+      sunCore: hexToRgb('#FFF8CC'),
+      sunMid: hexToRgb('#FFBF4D'),
+      sunHalo: hexToRgb('#FF9EB0'),
+      cloudTop: hexToRgb('#FFF5E6'),
+      cloudMid: hexToRgb('#FFE5DA'),
+      cloudPink: hexToRgb('#FF9EC7'),
+      cloudLemon: hexToRgb('#FFD98C'),
+      headlandFar: hexToRgb('#C89AE6'),
+      headlandMid: hexToRgb('#B482DA'),
+      headlandLit: hexToRgb('#FFCAE0'),
+      cliffLit: hexToRgb('#FFF5EA'),
+      cliffMid: hexToRgb('#F7E3D0'),
+      cliffShade: hexToRgb('#E3C2B0'),
+      cliffDeep: hexToRgb('#C79E94'),
+      grassTop: hexToRgb('#E2EC5C'),
+      grassMid: hexToRgb('#C6D63E'),
+      grassShade: hexToRgb('#94B02A'),
+      lhRed: hexToRgb('#FF4642'),
+      lhRedShade: hexToRgb('#C92830'),
+      lhWhite: hexToRgb('#FFF7F0'),
+      lhWhiteShade: hexToRgb('#E6CED6'),
+      lhDark: hexToRgb('#34244F'),
+      lhGlow: hexToRgb('#FFF3A6'),
+      beamTint: hexToRgb('#FFEFA6'),
+      seaBands: ['#9AE2EE', '#62A8F2', '#4476DB'].map(hexToRgb),
+      seaShallow: hexToRgb('#8CE8E0'),
+      foam: hexToRgb('#FFF7F2'),
+      ringColor: hexToRgb('#FFE8D6'),
+      sandTop: hexToRgb('#FFE296'),
+      sandMid: hexToRgb('#F4C676'),
+      sandWet: hexToRgb('#DEA55E'),
+      sandGrain: hexToRgb('#CC8F4C'),
+      pierTop: hexToRgb('#E69B66'),
+      pierMid: hexToRgb('#BD6E44'),
+      pierDark: hexToRgb('#7E412C'),
+      birdCol: hexToRgb('#4B2869'),
+      birdWing: hexToRgb('#FFF2E8'),
+      balloonCols: ['#FF5272', '#FFD654', '#40D0E8', '#C674FF'].map(hexToRgb),
+      boatHulls: [
+        { main: hexToRgb('#FFA6C9'), shade: hexToRgb('#DB729F'), sail: hexToRgb('#FFF3E0'), stripe: hexToRgb('#FFD859'), flag: hexToRgb('#FF4A42') },
+        { main: hexToRgb('#FFD859'), shade: hexToRgb('#D9A626'), sail: hexToRgb('#FFF7EA'), stripe: hexToRgb('#FF8EB8'), flag: hexToRgb('#FF4A42') },
+        { main: hexToRgb('#FF5454'), shade: hexToRgb('#C92A32'), sail: hexToRgb('#FFF3E2'), stripe: hexToRgb('#67B8F5'), flag: hexToRgb('#FFE05C') },
+        { main: hexToRgb('#64E0B8'), shade: hexToRgb('#35B08C'), sail: hexToRgb('#FFF6E8'), stripe: hexToRgb('#FF82AD'), flag: hexToRgb('#FF5454') },
+      ],
+      sunYFrac: 0.25,
+      sunYFracMob: 0.16,
+    },
+    coral: {
+      sky: ['#00A6E8', '#2CE0DE', '#8CF5EE', '#DCFFFA'].map(hexToRgb),
+      sunCore: hexToRgb('#FFFBD0'),
+      sunMid: hexToRgb('#FFE847'),
+      sunHalo: hexToRgb('#FFF394'),
+      cloudTop: hexToRgb('#FFFFFF'),
+      cloudMid: hexToRgb('#F7FFFE'),
+      cloudPink: hexToRgb('#FFC2D8'),
+      cloudLemon: hexToRgb('#FFF3A3'),
+      headlandFar: hexToRgb('#8CE8E8'),
+      headlandMid: hexToRgb('#9DD4F5'),
+      headlandLit: hexToRgb('#E0FFF9'),
+      cliffLit: hexToRgb('#FFFFFF'),
+      cliffMid: hexToRgb('#FAF4E6'),
+      cliffShade: hexToRgb('#EBE0CC'),
+      cliffDeep: hexToRgb('#D1C2AA'),
+      grassTop: hexToRgb('#A4FA55'),
+      grassMid: hexToRgb('#70EB46'),
+      grassShade: hexToRgb('#36C24A'),
+      lhRed: hexToRgb('#FF405C'),
+      lhRedShade: hexToRgb('#D41F42'),
+      lhWhite: hexToRgb('#FFFFFF'),
+      lhWhiteShade: hexToRgb('#D6EEF0'),
+      lhDark: hexToRgb('#104054'),
+      lhGlow: hexToRgb('#FFF7A8'),
+      beamTint: hexToRgb('#FFF9C4'),
+      seaBands: ['#68FAE8', '#22CAE8', '#108AD4'].map(hexToRgb),
+      seaShallow: hexToRgb('#82FFF0'),
+      foam: hexToRgb('#FFFFFF'),
+      ringColor: hexToRgb('#D4FFF9'),
+      sandTop: hexToRgb('#FFF4B3'),
+      sandMid: hexToRgb('#FCE283'),
+      sandWet: hexToRgb('#E8C664'),
+      sandGrain: hexToRgb('#D9B24E'),
+      pierTop: hexToRgb('#EDAC6E'),
+      pierMid: hexToRgb('#CC8248'),
+      pierDark: hexToRgb('#8F5228'),
+      birdCol: hexToRgb('#0C5672'),
+      birdWing: hexToRgb('#FFFFFF'),
+      balloonCols: ['#FF477E', '#FFE64A', '#18C8E8', '#FF8552'].map(hexToRgb),
+      boatHulls: [
+        { main: hexToRgb('#FF9EC4'), shade: hexToRgb('#E06E9D'), sail: hexToRgb('#FFF9E8'), stripe: hexToRgb('#22CAE8'), flag: hexToRgb('#FF405C') },
+        { main: hexToRgb('#FFE64A'), shade: hexToRgb('#DFB91C'), sail: hexToRgb('#FFFCEF'), stripe: hexToRgb('#FF6E9A'), flag: hexToRgb('#FF405C') },
+        { main: hexToRgb('#FF4D58'), shade: hexToRgb('#CC2638'), sail: hexToRgb('#FFF8E6'), stripe: hexToRgb('#30E6D2'), flag: hexToRgb('#FFE64A') },
+        { main: hexToRgb('#4EF2B6'), shade: hexToRgb('#24C28C'), sail: hexToRgb('#FFFBF0'), stripe: hexToRgb('#FF6E8E'), flag: hexToRgb('#FF4D58') },
+      ],
+      sunYFrac: 0.15,
+      sunYFracMob: 0.095,
+    },
+  };
+
+  function blendPalettes(a, b, t) {
+    if (t <= 0.001) return a;
+    if (t >= 0.999) return b;
+    return {
+      sky: a.sky.map((c, i) => lerpRgb(c, b.sky[i], t)),
+      sunCore: lerpRgb(a.sunCore, b.sunCore, t),
+      sunMid: lerpRgb(a.sunMid, b.sunMid, t),
+      sunHalo: lerpRgb(a.sunHalo, b.sunHalo, t),
+      cloudTop: lerpRgb(a.cloudTop, b.cloudTop, t),
+      cloudMid: lerpRgb(a.cloudMid, b.cloudMid, t),
+      cloudPink: lerpRgb(a.cloudPink, b.cloudPink, t),
+      cloudLemon: lerpRgb(a.cloudLemon, b.cloudLemon, t),
+      headlandFar: lerpRgb(a.headlandFar, b.headlandFar, t),
+      headlandMid: lerpRgb(a.headlandMid, b.headlandMid, t),
+      headlandLit: lerpRgb(a.headlandLit, b.headlandLit, t),
+      cliffLit: lerpRgb(a.cliffLit, b.cliffLit, t),
+      cliffMid: lerpRgb(a.cliffMid, b.cliffMid, t),
+      cliffShade: lerpRgb(a.cliffShade, b.cliffShade, t),
+      cliffDeep: lerpRgb(a.cliffDeep, b.cliffDeep, t),
+      grassTop: lerpRgb(a.grassTop, b.grassTop, t),
+      grassMid: lerpRgb(a.grassMid, b.grassMid, t),
+      grassShade: lerpRgb(a.grassShade, b.grassShade, t),
+      lhRed: lerpRgb(a.lhRed, b.lhRed, t),
+      lhRedShade: lerpRgb(a.lhRedShade, b.lhRedShade, t),
+      lhWhite: lerpRgb(a.lhWhite, b.lhWhite, t),
+      lhWhiteShade: lerpRgb(a.lhWhiteShade, b.lhWhiteShade, t),
+      lhDark: lerpRgb(a.lhDark, b.lhDark, t),
+      lhGlow: lerpRgb(a.lhGlow, b.lhGlow, t),
+      beamTint: lerpRgb(a.beamTint, b.beamTint, t),
+      seaBands: a.seaBands.map((c, i) => lerpRgb(c, b.seaBands[i], t)),
+      seaShallow: lerpRgb(a.seaShallow, b.seaShallow, t),
+      foam: lerpRgb(a.foam, b.foam, t),
+      ringColor: lerpRgb(a.ringColor, b.ringColor, t),
+      sandTop: lerpRgb(a.sandTop, b.sandTop, t),
+      sandMid: lerpRgb(a.sandMid, b.sandMid, t),
+      sandWet: lerpRgb(a.sandWet, b.sandWet, t),
+      sandGrain: lerpRgb(a.sandGrain, b.sandGrain, t),
+      pierTop: lerpRgb(a.pierTop, b.pierTop, t),
+      pierMid: lerpRgb(a.pierMid, b.pierMid, t),
+      pierDark: lerpRgb(a.pierDark, b.pierDark, t),
+      birdCol: lerpRgb(a.birdCol, b.birdCol, t),
+      birdWing: lerpRgb(a.birdWing, b.birdWing, t),
+      balloonCols: a.balloonCols.map((c, i) => lerpRgb(c, b.balloonCols[i], t)),
+      boatHulls: a.boatHulls.map((bh, i) => ({
+        main: lerpRgb(bh.main, b.boatHulls[i].main, t),
+        shade: lerpRgb(bh.shade, b.boatHulls[i].shade, t),
+        sail: lerpRgb(bh.sail, b.boatHulls[i].sail, t),
+        stripe: lerpRgb(bh.stripe, b.boatHulls[i].stripe, t),
+        flag: lerpRgb(bh.flag, b.boatHulls[i].flag, t),
+      })),
+      sunYFrac: lerp(a.sunYFrac, b.sunYFrac, t),
+      sunYFracMob: lerp(a.sunYFracMob, b.sunYFracMob, t),
+    };
+  }
+
+  // Bayer text reveal (--dz1..--dz7)
+  const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function buildDitherTiles(cell) {
+    const cSize = Math.max(2, Math.round(cell || 3));
+    const u = cSize * Math.min(3, Math.ceil(window.devicePixelRatio || 1));
+    const cv = document.createElement('canvas');
+    cv.width = cv.height = u * 4;
+    const g = cv.getContext('2d');
+    const root = document.documentElement.style;
+    g.fillStyle = '#fff';
+    for (let k = 1; k <= 7; k++) {
+      g.clearRect(0, 0, u * 4, u * 4);
+      for (let i = 0; i < 16; i++) {
+        if (BAYER[i] < k / 8) g.fillRect((i & 3) * u, (i >> 2) * u, u, u);
+      }
+      root.setProperty('--dz' + k, `url(${cv.toDataURL()})`);
+    }
+    root.setProperty('--dzs', (cSize * 4) + 'px');
+  }
+
+  function initKineticWords() {
+    document.querySelectorAll('.kin').forEach((el) => {
+      const words = el.textContent.trim().split(/\s+/);
+      el.textContent = '';
+      words.forEach((word, i) => {
+        const sp = document.createElement('span');
+        sp.className = 'w';
+        sp.style.setProperty('--i', String(i));
+        sp.textContent = word;
+        el.appendChild(sp);
+        if (i < words.length - 1) el.appendChild(document.createTextNode(' '));
+      });
+      if (prefersReduced) el.classList.add('in');
+    });
+    if (!prefersReduced) {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          document.querySelectorAll('.kin').forEach((el) => el.classList.add('in'));
+        });
+      });
+    }
+  }
+
+  const canvas = document.getElementById('stage');
+  const ctx = canvas.getContext('2d', { alpha: false });
+  const off = document.createElement('canvas');
+  const offCtx = off.getContext('2d', { alpha: false });
+
+  const S = {
+    vw: 1440, vh: 900, dpr: 1,
+    dw: 1440, dh: 900,
+    cellCss: 3, cellDev: 3, cell: 3,
+    gw: 480, gh: 300,
+    imgData: null, buf8: null, out32: null,
+    buf32: null, matBuf: null, detBuf: null,
+    palFrom: 'riviera', palTo: 'riviera', palT: 1,
+    renderMode: 'ascii', // Default: Full-Color Material-Aware 5x7 ASCII Harbor
+    time: prefersReduced ? 4.2 : 0,
+    flapAccum: 0,
+    flapFrame: 0,
+    // Pointer & lens state
+    ptrActive: false,
+    ptrX: -2000, ptrY: -2000,
+    ptrTargetX: 720, ptrTargetY: 450,
+    ptrLensAlpha: 0,
+    parX: 0, parY: 0,
+    // Live steered wind vector (drag updates windTargetX/Y + spawns gusts!)
+    windX: 0.72,
+    windY: 0.0,
+    windTargetX: 0.72,
+    windTargetY: 0.0,
+    windEnergy: 0,
+    dragging: false,
+    dragStartX: 0, dragStartY: 0,
+    dragLastX: 0, dragLastY: 0,
+    dragMoved: 0,
+    dimRects: [],
+    // World geometry cached on resize
+    yWater: 150,
+    landScale: 300,
+    cliffRight: 118,
+    lhX: 54,
+    lhBaseY: 114,
+    lhHeight: 44,
+    clouds: [],
+    cliffFlowers: [],
+    shells: [],
+    boats: [],
+    birds: [],
+    balloon: null,
+    rings: [],
+    sprays: [],
+    gusts: [],
+  };
+
+  function buildWorld() {
+    const { gw, gh, vw } = S;
+    const isMob = vw < 760;
+    const landScale = isMob ? Math.min(gh, gw * 1.15) : gh;
+    S.landScale = landScale;
+    S.yWater = Math.round(gh * (isMob ? 0.515 : 0.505));
+
+    // Left chalk cliff headland & lighthouse (cleanly below hero text safe zone)
+    S.cliffRight = Math.round(gw * (isMob ? 0.37 : 0.255));
+    S.lhX = Math.round(S.cliffRight * (isMob ? 0.48 : 0.46));
+    const cliffPlateauH = Math.round(landScale * (isMob ? 0.140 : 0.125));
+    S.lhBaseY = S.yWater - cliffPlateauH;
+    S.lhHeight = Math.round(landScale * (isMob ? 0.185 : 0.148));
+
+    // Clouds (spaced cleanly away from the hot-air balloon & hero text)
+    S.clouds = [
+      { x: gw * 0.48, y: S.yWater * 0.18, rx: Math.round(gw * 0.068), ry: Math.round(landScale * 0.028), speed: 2.0, tint: 'pink', seed: 11 },
+      { x: gw * 0.90, y: S.yWater * 0.62, rx: Math.round(gw * 0.076), ry: Math.round(landScale * 0.028), speed: 1.5, tint: 'lemon', seed: 23 },
+      { x: gw * 0.29, y: S.yWater * 0.48, rx: Math.round(gw * 0.062), ry: Math.round(landScale * 0.025), speed: 1.8, tint: 'pink', seed: 37 },
+      { x: gw * 0.72, y: S.yWater * 0.68, rx: Math.round(gw * 0.068), ry: Math.round(landScale * 0.024), speed: 1.3, tint: 'lemon', seed: 51 },
+    ];
+
+    // Cliffside wildflowers
+    S.cliffFlowers = [];
+    for (let i = 0; i < 18; i++) {
+      const fx = Math.round(4 + pcg2(i, 19) * (S.cliffRight * 0.84));
+      const fyOff = Math.round(1 + pcg2(i, 41) * 4);
+      S.cliffFlowers.push({ x: fx, dy: fyOff, colIdx: i % 3 });
+    }
+
+    // Tiny sandy cove pebbles / shells
+    S.shells = [];
+    for (let i = 0; i < 24; i++) {
+      S.shells.push({
+        u: 0.06 + pcg2(i, 73) * 0.88,
+        v: 0.28 + pcg2(i, 91) * 0.62,
+        kind: i % 3,
+      });
+    }
+
+    // Hot-air balloon drifting cleanly in open mid-right sky
+    S.balloon = {
+      x: gw * (isMob ? 0.68 : 0.61),
+      y: S.yWater * (isMob ? 0.44 : 0.36),
+      baseY: S.yWater * (isMob ? 0.44 : 0.36),
+      r: Math.max(8, Math.round(landScale * (isMob ? 0.048 : 0.044))),
+      tilt: 0,
+      tiltV: 0,
+      bobPh: 1.1,
+    };
+
+    // Four pastel sailboats on parallax sea lanes
+    const seaSpan = Math.round(gh * (isMob ? 0.835 : 0.825)) - S.yWater;
+    const laneConfigs = isMob ? [
+      { hullIdx: 0, xFrac: 0.56, laneFrac: 0.18, scale: 0.78, dir: 1, speed: 4.0, ph: 0.2 },
+      { hullIdx: 1, xFrac: 0.82, laneFrac: 0.34, scale: 0.94, dir: -1, speed: 4.8, ph: 1.9 },
+      { hullIdx: 2, xFrac: 0.44, laneFrac: 0.54, scale: 1.14, dir: 1, speed: 5.5, ph: 3.4 },
+      { hullIdx: 3, xFrac: 0.74, laneFrac: 0.73, scale: 1.04, dir: -1, speed: 4.5, ph: 4.8 },
+    ] : [
+      { hullIdx: 0, xFrac: 0.39, laneFrac: 0.19, scale: 0.82, dir: 1, speed: 4.4, ph: 0.3 },
+      { hullIdx: 1, xFrac: 0.76, laneFrac: 0.33, scale: 0.96, dir: -1, speed: 5.2, ph: 2.1 },
+      { hullIdx: 2, xFrac: 0.51, laneFrac: 0.52, scale: 1.18, dir: 1, speed: 5.8, ph: 3.6 },
+      { hullIdx: 3, xFrac: 0.27, laneFrac: 0.72, scale: 1.06, dir: 1, speed: 4.9, ph: 5.0 },
+    ];
+
+    S.boats = laneConfigs.map((cfg) => ({
+      hullIdx: cfg.hullIdx,
+      x: gw * cfg.xFrac,
+      y: S.yWater + Math.round(seaSpan * cfg.laneFrac),
+      scale: cfg.scale * (landScale / 300),
+      dir: cfg.dir,
+      baseSpeed: cfg.speed,
+      ph: cfg.ph,
+      bobY: 0, bobV: 0,
+      heel: 0, heelV: 0,
+      wake: [],
+    }));
+
+    // Pre-seed wakes so frame 0 and reduced-motion have rich Bayer foam wakes
+    for (let i = 0; i < S.boats.length; i++) {
+      const b = S.boats[i];
+      for (let k = 1; k <= 14; k++) {
+        b.wake.push({
+          x: b.x - b.dir * k * (2.6 * b.scale),
+          y: b.y + Math.sin(k * 0.5 + b.ph) * 0.4,
+          age: k / 15,
+        });
+      }
+    }
+
+    // Wheeling pixel seabirds
+    S.birds = [];
+    const birdCount = isMob ? 7 : 10;
+    for (let i = 0; i < birdCount; i++) {
+      const big = i % 3 === 0;
+      S.birds.push({
+        x: gw * (0.28 + pcg2(i, 101) * 0.66),
+        y: S.yWater * (0.24 + pcg2(i, 137) * 0.58),
+        vx: (i % 2 === 0 ? 1 : -1) * (10 + pcg2(i, 151) * 9),
+        vy: 0,
+        baseY: S.yWater * (0.24 + pcg2(i, 137) * 0.58),
+        amp: 3 + pcg2(i, 173) * 6,
+        freq: 0.65 + pcg2(i, 191) * 0.6,
+        ph: pcg2(i, 211) * Math.PI * 2,
+        big,
+        flapOff: i & 3,
+      });
+    }
+  }
+
+  function cliffProfileY(cx) {
+    const right = S.cliffRight;
+    if (cx > right + 8) return S.yWater + 20;
+    const u = cx / Math.max(1, right);
+    const plateau = S.lhBaseY;
+    if (u < 0.56) {
+      const gentle = Math.round(Math.sin(u * 5.2) * 2.2 + Math.cos(u * 13.5) * 1.1);
+      return plateau + gentle;
+    }
+    // Dramatic stepped coastal drop-off down to the sea
+    const t = clamp((u - 0.56) / 0.44, 0, 1);
+    const stepped = Math.pow(t, 1.55);
+    const ledge = (t > 0.34 && t < 0.50) ? -3 : (t > 0.68 && t < 0.80) ? -2 : 0;
+    return Math.round(lerp(plateau, S.yWater + 2, stepped) + ledge);
+  }
+
+  function sandShoreY(cx) {
+    const { gw, gh, vw } = S;
+    const u = cx / Math.max(1, gw);
+    const base = gh * (vw < 760 ? 0.855 : 0.845);
+    // Sweeping crescent cove: curves gently higher at the left cliff foot and right edge
+    const curve = -Math.pow((u - 0.54) * 1.75, 2) * (S.landScale * 0.055);
+    const wave = Math.sin(u * 11.0 + S.time * 0.7) * 1.4 + Math.cos(u * 23.0 - S.time * 0.5) * 0.7;
+    return Math.round(base + curve + wave);
+  }
+
+  function setCell(cx, cy, rgb, mat, det) {
+    const { gw, gh, buf32, matBuf, detBuf } = S;
+    if (cx < 0 || cx >= gw || cy < 0 || cy >= gh) return;
+    const idx = cy * gw + cx;
+    buf32[idx] = packRgba(rgb[0], rgb[1], rgb[2]);
+    matBuf[idx] = mat;
+    detBuf[idx] = det;
+  }
+
+  function isDimmed(cx, cy) {
+    const px = (cx + 0.5) * S.cell;
+    const py = (cy + 0.5) * S.cell;
+    const rects = S.dimRects;
+    for (let i = 0; i < rects.length; i++) {
+      const r = rects[i];
+      if (px >= r.l && px <= r.r && py >= r.t && py <= r.b) return true;
+    }
+    return false;
+  }
+
+  function drawLine(x0, y0, x1, y1, rgb, mat, det) {
+    let ix0 = Math.round(x0), iy0 = Math.round(y0);
+    const ix1 = Math.round(x1), iy1 = Math.round(y1);
+    const dx = Math.abs(ix1 - ix0), sx = ix0 < ix1 ? 1 : -1;
+    const dy = -Math.abs(iy1 - iy0), sy = iy0 < iy1 ? 1 : -1;
+    let err = dx + dy;
+    for (let guard = 0; guard < 240; guard++) {
+      setCell(ix0, iy0, rgb, mat, det);
+      if (ix0 === ix1 && iy0 === iy1) break;
+      const e2 = 2 * err;
+      if (e2 >= dy) { err += dy; ix0 += sx; }
+      if (e2 <= dx) { err += dx; iy0 += sy; }
+    }
+  }
+
+  function renderScene(pal) {
+    const { gw, gh, buf32, matBuf, detBuf, time, yWater, landScale, parX, parY, windX } = S;
+    const isMob = S.vw < 760;
+
+    // -----------------------------------------------------------------------
+    // PLANE 0: Saturated 4-Band Cyan Sky with Crisp 4-Cell Bayer Stepped Seams
+    // -----------------------------------------------------------------------
+    const seam1 = Math.round(yWater * 0.25);
+    const seam2 = Math.round(yWater * 0.54);
+    const seam3 = Math.round(yWater * 0.80);
+    const skyShift = time * 0.22 + parX * 1.4;
+
+    for (let cy = 0; cy < yWater; cy++) {
+      const rowOff = cy * gw;
+      const byRow = (cy & 3) << 2;
+      for (let cx = 0; cx < gw; cx++) {
+        const th = BAYER[byRow | (cx & 3)];
+        const wave = Math.sin(cx * 0.19 + skyShift) * 0.16 + Math.cos(cx * 0.53 - skyShift * 0.4) * 0.09;
+        let band = 0;
+        let nearSeam = false;
+        if (cy < seam1 - 2) {
+          band = 0;
+        } else if (cy <= seam1 + 2) {
+          const t = clamp((cy - (seam1 - 2)) / 4, 0, 1);
+          band = (t + wave) > th ? 1 : 0;
+          nearSeam = true;
+        } else if (cy < seam2 - 2) {
+          band = 1;
+        } else if (cy <= seam2 + 2) {
+          const t = clamp((cy - (seam2 - 2)) / 4, 0, 1);
+          band = (t + wave) > th ? 2 : 1;
+          nearSeam = true;
+        } else if (cy < seam3 - 2) {
+          band = 2;
+        } else if (cy <= seam3 + 2) {
+          const t = clamp((cy - (seam3 - 2)) / 4, 0, 1);
+          band = (t + wave) > th ? 3 : 2;
+          nearSeam = true;
+        } else {
+          band = 3;
+        }
+
+        const c = pal.sky[band];
+        // Whisper-subtle tactile screenprint weave
+        const weave = (((cx ^ cy) & 1) === 0 ? 2 : -2) * (isDimmed(cx, cy) ? 0.35 : 1);
+        const r = clamp(Math.round(c[0] + weave), 0, 255);
+        const g = clamp(Math.round(c[1] + weave), 0, 255);
+        const b = clamp(Math.round(c[2] + weave), 0, 255);
+        const idx = rowOff + cx;
+        buf32[idx] = packRgba(r, g, b);
+        matBuf[idx] = MAT_SKY;
+        detBuf[idx] = nearSeam ? 110 : (band * 26 + 24);
+      }
+    }
+
+    // -----------------------------------------------------------------------
+    // PLANE 1A: Golden 2-Tone Pixel Sun + Bayer Halo (Upper Right, Clear of Text)
+    // -----------------------------------------------------------------------
+    const sunX = Math.round(gw * (isMob ? 0.85 : 0.82) - parX * 3.5);
+    const sunY = Math.round(gh * (isMob ? pal.sunYFracMob : pal.sunYFrac) - parY * 2.0);
+    const sunR = Math.max(7, Math.round(landScale * (isMob ? 0.048 : 0.044)));
+    const haloR = Math.round(sunR * 1.55);
+    const pulse = Math.sin(time * 2.1) * 0.45;
+
+    for (let dy = -haloR; dy <= haloR; dy++) {
+      const cy = sunY + dy;
+      if (cy < 0 || cy >= yWater) continue;
+      const byRow = (cy & 3) << 2;
+      for (let dx = -haloR; dx <= haloR; dx++) {
+        const cx = sunX + dx;
+        if (cx < 0 || cx >= gw) continue;
+        const d = Math.hypot(dx, dy);
+        const th = BAYER[byRow | (cx & 3)];
+        if (d < sunR * 0.62) {
+          setCell(cx, cy, pal.sunCore, MAT_SUN, 250);
+        } else if (d < sunR) {
+          const edge = (d - sunR * 0.62) / (sunR * 0.38);
+          const col = edge > th ? pal.sunMid : pal.sunCore;
+          setCell(cx, cy, col, MAT_SUN, 226);
+        } else if (d < haloR + pulse) {
+          const fade = 1 - (d - sunR) / (haloR - sunR + 0.01);
+          if (fade * 0.68 > th) {
+            setCell(cx, cy, pal.sunHalo, MAT_SUN, 165);
+          }
+        }
+      }
+    }
+
+    // -----------------------------------------------------------------------
+    // PLANE 1B: Drifting Pastel-Bellied Clouds (Thinned Behind [data-dim] Text)
+    // -----------------------------------------------------------------------
+    for (let i = 0; i < S.clouds.length; i++) {
+      const cl = S.clouds[i];
+      const cx0 = Math.round(cl.x - parX * 5.5);
+      const cy0 = Math.round(cl.y - parY * 2.2);
+      const rx = cl.rx, ry = cl.ry;
+      const bellyCol = cl.tint === 'pink' ? pal.cloudPink : pal.cloudLemon;
+
+      const lobes = [
+        { ox: -rx * 0.46, oy: ry * 0.24, lx: rx * 0.46, ly: ry * 0.70 },
+        { ox: -rx * 0.12, oy: -ry * 0.14, lx: rx * 0.56, ly: ry * 0.96 },
+        { ox: rx * 0.26, oy: -ry * 0.02, lx: rx * 0.52, ly: ry * 0.84 },
+        { ox: rx * 0.52, oy: ry * 0.28, lx: rx * 0.36, ly: ry * 0.58 },
+      ];
+
+      for (let dy = -ry - 2; dy <= ry + 2; dy++) {
+        const cy = cy0 + dy;
+        if (cy < 0 || cy >= yWater) continue;
+        const byRow = (cy & 3) << 2;
+        for (let dx = -rx - 4; dx <= rx + 4; dx++) {
+          const cx = ((cx0 + dx) % gw + gw) % gw;
+          let inside = 0;
+          for (let l = 0; l < lobes.length; l++) {
+            const lb = lobes[l];
+            const nx = (dx - lb.ox) / lb.lx;
+            const ny = (dy - lb.oy) / lb.ly;
+            const d2 = nx * nx + ny * ny;
+            if (d2 < 1) inside = Math.max(inside, 1 - d2);
+          }
+          // Flat sunlit cloud underside
+          if (dy > ry * 0.58) inside = 0;
+          if (inside <= 0.04) continue;
+
+          const th = BAYER[byRow | (cx & 3)];
+          // Content-aware legibility: gently thin clouds inside [data-dim] hero copy
+          if (isDimmed(cx, cy) && (inside < 0.42 || th > 0.38)) continue;
+          if (inside < 0.22 && inside * 4.5 < th) continue;
+
+          const vertU = clamp((dy + ry) / (ry * 1.58), 0, 1);
+          let col;
+          let det;
+          if (vertU < 0.42) {
+            col = pal.cloudTop; det = 212;
+          } else if (vertU < 0.72) {
+            col = (vertU - 0.42) / 0.30 > th ? pal.cloudMid : pal.cloudTop;
+            det = 180;
+          } else {
+            const bt = clamp((vertU - 0.72) / 0.28, 0, 1);
+            col = bt > th ? bellyCol : pal.cloudMid;
+            det = 152;
+          }
+          setCell(cx, cy, col, MAT_CLOUD, det);
+        }
+      }
+    }
+
+    // -----------------------------------------------------------------------
+    // PLANE 1C: Slowly Floating Colorful Hot-Air Balloon
+    // -----------------------------------------------------------------------
+    if (S.balloon) {
+      const bl = S.balloon;
+      const bx = Math.round(bl.x - parX * 7.5);
+      const by = Math.round(bl.y - parY * 3.0);
+      const br = bl.r;
+      const tilt = clamp(bl.tilt, -0.35, 0.35);
+
+      for (let dy = -br; dy <= Math.round(br * 1.35); dy++) {
+        const cy = by + dy;
+        if (cy < 0 || cy >= yWater) continue;
+        const v = (dy + br) / (br * 2.35); // 0 top .. 1 throat
+        let halfW;
+        if (v < 0.55) {
+          const u = (v / 0.55) * 2 - 1;
+          halfW = br * Math.sqrt(Math.max(0, 1 - u * u * 0.85));
+        } else {
+          const t = (v - 0.55) / 0.45;
+          halfW = br * lerp(0.95, 0.24, Math.pow(t, 0.85));
+        }
+        const skew = Math.round(-dy * tilt * 0.35);
+        const iHW = Math.round(halfW);
+        for (let dx = -iHW; dx <= iHW; dx++) {
+          const cx = bx + dx + skew;
+          if (cx < 0 || cx >= gw) continue;
+          const nx = dx / Math.max(1, halfW); // -1 .. 1
+          // Curved vertical stripes across the balloon gores
+          const stripeVal = Math.floor((nx + 1.0) * 3.0);
+          let col = pal.balloonCols[clamp(stripeVal, 0, 3)];
+          // Sunlit highlight on right (sun side), gentle depth on left
+          if (nx > 0.45 && v < 0.72) col = lerpRgb(col, [255, 255, 250], 0.28);
+          else if (nx < -0.45) col = lerpRgb(col, [42, 58, 92], 0.16);
+          // Horizontal decorative equatorial ribbon
+          if (Math.abs(v - 0.50) < 0.055) col = pal.sunMid;
+          setCell(cx, cy, col, MAT_BALLOON, 215);
+        }
+      }
+      // Burner glow, cables & wicker basket
+      const throatY = by + Math.round(br * 1.38);
+      const basketY = throatY + Math.max(3, Math.round(br * 0.42));
+      const bShift = Math.round(-br * 1.4 * tilt * 0.35);
+      // Rigging ropes
+      drawLine(bx - 2 + bShift, throatY, bx - 2 + bShift, basketY, pal.pierDark, MAT_PIER, 150);
+      drawLine(bx + 2 + bShift, throatY, bx + 2 + bShift, basketY, pal.pierDark, MAT_PIER, 150);
+      // Warm burner flicker
+      if (Math.sin(time * 5.2) > -0.35 || prefersReduced) {
+        setCell(bx + bShift, throatY + 1, pal.sunCore, MAT_GLINT, 252);
+      }
+      // Basket
+      for (let r = 0; r < 3; r++) {
+        for (let c = -2; c <= 2; c++) {
+          const bCol = r === 0 ? pal.pierTop : (c === -2 || c === 2 ? pal.pierDark : pal.pierMid);
+          setCell(bx + c + bShift, basketY + r, bCol, MAT_PIER, 185);
+        }
+      }
+    }
+
+    // -----------------------------------------------------------------------
+    // PLANE 2: Distant Pastel Coastal Headlands Across the Bay
+    // -----------------------------------------------------------------------
+    const headShift = parX * 10;
+    for (let cx = 0; cx < gw; cx++) {
+      const u = (cx + headShift) / gw;
+      // Far headland across right/center-right horizon
+      const farShape =
+        Math.exp(-Math.pow((u - 0.76) / 0.20, 2)) * 0.072 +
+        Math.exp(-Math.pow((u - 0.94) / 0.13, 2)) * 0.088 +
+        Math.exp(-Math.pow((u - 0.49) / 0.12, 2)) * 0.042;
+      const farH = Math.round(farShape * landScale + Math.sin(u * 38) * 1.2);
+      if (farH > 1) {
+        const topY = yWater - farH;
+        for (let cy = Math.max(0, topY); cy < yWater; cy++) {
+          const ridge = cy - topY;
+          const col = ridge <= 1 ? pal.headlandLit : pal.headlandFar;
+          setCell(cx, cy, col, MAT_HEADLAND, ridge <= 1 ? 165 : 120);
+        }
+      }
+
+      // Closer pastel promontory on far right
+      const midShape =
+        Math.exp(-Math.pow((u - 0.87) / 0.15, 2)) * 0.062 +
+        Math.exp(-Math.pow((u - 0.65) / 0.09, 2)) * 0.028;
+      const midH = Math.round(midShape * landScale + Math.cos(u * 46) * 0.9);
+      if (midH > 1) {
+        const topY = yWater - midH;
+        for (let cy = Math.max(0, topY); cy < yWater; cy++) {
+          const ridge = cy - topY;
+          const by = BAYER[((cy & 3) << 2) | (cx & 3)];
+          const col = ridge <= 1 ? pal.headlandLit : (cy > yWater - 3 && by > 0.5 ? pal.headlandFar : pal.headlandMid);
+          setCell(cx, cy, col, MAT_HEADLAND, ridge <= 2 ? 175 : 138);
+        }
+      }
+    }
+
+    // -----------------------------------------------------------------------
+    // PLANE 3: Towering Cream Limestone Chalk Cliffs + Lime Cap + Lighthouse
+    // -----------------------------------------------------------------------
+    const cliffPar = Math.round(parX * 14);
+    const cliffMaxX = Math.min(gw - 1, S.cliffRight + 10 - cliffPar);
+    for (let cx = 0; cx <= cliffMaxX; cx++) {
+      const wx = cx + cliffPar;
+      if (wx < 0) continue;
+      const topY = cliffProfileY(wx);
+      if (topY >= yWater + 2) continue;
+
+      const capDepth = 6 + Math.round(Math.sin(wx * 0.25) * 1.4 + (pcg2(wx, 7) > 0.65 ? 1 : 0));
+      const slopeShade = wx > S.cliffRight * 0.56 ? 1 : 0;
+
+      for (let cy = Math.max(0, topY); cy < yWater + 2; cy++) {
+        const dy = cy - topY;
+        const th = BAYER[((cy & 3) << 2) | (cx & 3)];
+
+        if (dy < capDepth) {
+          // Bright sunlit lime grass cap with overhanging tufts
+          const grassU = dy / Math.max(1, capDepth);
+          let gCol = grassU < 0.35 ? pal.grassTop : (grassU < 0.78 ? pal.grassMid : pal.grassShade);
+          if (pcg2(wx, cy + 13) < 0.09 && dy > 0) gCol = pal.grassShade;
+          setCell(cx, cy, gCol, MAT_GRASS, grassU < 0.4 ? 210 : 175);
+        } else {
+          // Cream limestone chalk strata with sunlit facets & micro-weave
+          const strata = Math.sin(cy * 0.42 + Math.sin(wx * 0.14) * 1.8);
+          const facet = Math.sin(wx * 0.19 + Math.floor(cy / 9) * 1.2);
+          let col;
+          let det;
+          if (slopeShade && facet > 0.15) {
+            col = strata > 0.2 ? pal.cliffLit : pal.cliffMid;
+            det = 225;
+          } else if (strata > 0.35 && facet > -0.25) {
+            col = pal.cliffLit; det = 218;
+          } else if (strata < -0.52 || (dy > (yWater - topY) * 0.76 && th > 0.45)) {
+            col = pal.cliffDeep; det = 148;
+          } else {
+            col = (facet + strata * 0.5) > th - 0.3 ? pal.cliffMid : pal.cliffShade;
+            det = 185;
+          }
+          // Subtle sedimentary horizontal crease lines
+          if ((cy % 11 === 0) && pcg2(wx >> 1, cy) < 0.45) {
+            col = pal.cliffDeep; det = 135;
+          }
+          // Soft coastal foam splash at cliff toe
+          if (cy >= yWater - 1 && (Math.sin(wx * 0.5 - time * 3.0) + 0.3) > th) {
+            setCell(cx, cy, pal.foam, MAT_GLINT, 245);
+          } else {
+            setCell(cx, cy, col, MAT_CLIFF, det);
+          }
+        }
+      }
+    }
+
+    // Tiny sea stack off the cliff toe for maritime depth
+    const stackX = S.cliffRight + 14 - cliffPar;
+    const stackW = isMob ? 5 : 7;
+    const stackH = isMob ? 9 : 11;
+    for (let dy = 0; dy < stackH; dy++) {
+      const cy = yWater - stackH + dy + 1;
+      const hw = Math.max(1, Math.round((dy / stackH) * stackW * 0.65 + 1.2));
+      for (let dx = -hw; dx <= hw; dx++) {
+        const cx = stackX + dx;
+        const col = dy < 2 ? pal.grassMid : (dx > 0 ? pal.cliffLit : pal.cliffShade);
+        const mat = dy < 2 ? MAT_GRASS : MAT_CLIFF;
+        setCell(cx, cy, col, mat, dx > 0 ? 212 : 168);
+      }
+    }
+
+    // Cliffside wildflowers on the lime grass cap
+    const flowerCols = [pal.boatHulls[0].main, pal.sunMid, pal.foam];
+    for (let i = 0; i < S.cliffFlowers.length; i++) {
+      const fl = S.cliffFlowers[i];
+      const cx = fl.x - cliffPar;
+      if (cx < 2 || cx > S.cliffRight - 10) continue;
+      const cy = cliffProfileY(fl.x) + fl.dy;
+      if (cy < yWater - 6) {
+        setCell(cx, cy, flowerCols[fl.colIdx], MAT_GLINT, 246);
+      }
+    }
+
+    // Keeper's cottage nestled beside the lighthouse
+    const cotX = S.lhX - Math.round(S.lhHeight * 0.34) - cliffPar;
+    const cotBaseY = cliffProfileY(S.lhX - Math.round(S.lhHeight * 0.34)) + 1;
+    const cotW = isMob ? 11 : 13;
+    const cotH = isMob ? 7 : 8;
+    for (let dy = 0; dy < cotH; dy++) {
+      const cy = cotBaseY - dy;
+      for (let dx = 0; dx < cotW; dx++) {
+        const cx = cotX + dx;
+        const col = dx > cotW * 0.65 ? pal.lhWhite : pal.lhWhiteShade;
+        setCell(cx, cy, col, MAT_LIGHTHOUSE, 200);
+      }
+    }
+    // Pitched red roof
+    for (let r = 0; r < 4; r++) {
+      const cy = cotBaseY - cotH - r;
+      for (let dx = -1 + r; dx <= cotW - r; dx++) {
+        setCell(cotX + dx, cy, r < 2 ? pal.lhRed : pal.lhRedShade, MAT_LIGHTHOUSE, 210);
+      }
+    }
+    // Warm tiny cottage window
+    setCell(cotX + Math.floor(cotW * 0.45), cotBaseY - 3, pal.lhGlow, MAT_GLINT, 248);
+    setCell(cotX + Math.floor(cotW * 0.45) + 1, cotBaseY - 3, pal.lhGlow, MAT_GLINT, 248);
+
+    // Crisp Red-and-White Striped Pixel Lighthouse
+    const lhCx = S.lhX - cliffPar;
+    const lhBase = cliffProfileY(S.lhX) + 1;
+    const lhH = S.lhHeight;
+    const baseHW = isMob ? 5.2 : 5.8;
+    const topHW = isMob ? 3.2 : 3.6;
+    const stripes = 5;
+
+    for (let dy = 0; dy < lhH; dy++) {
+      const cy = lhBase - dy;
+      if (cy < 2) continue;
+      const t = dy / lhH; // 0 base .. 1 top
+      const hw = Math.round(lerp(baseHW, topHW, t));
+      const stripeIdx = Math.floor(t * stripes);
+      const isRed = (stripeIdx & 1) === 1;
+      for (let dx = -hw; dx <= hw; dx++) {
+        const cx = lhCx + dx;
+        const sunlit = dx >= 0;
+        const col = isRed
+          ? (sunlit ? pal.lhRed : pal.lhRedShade)
+          : (sunlit ? pal.lhWhite : pal.lhWhiteShade);
+        setCell(cx, cy, col, MAT_LIGHTHOUSE, sunlit ? 232 : 184);
+      }
+    }
+    // Tiny dark doorway & porthole windows on lighthouse tower
+    for (let r = 0; r < 4; r++) {
+      setCell(lhCx, lhBase - r, pal.lhDark, MAT_LIGHTHOUSE, 120);
+      setCell(lhCx + 1, lhBase - r, pal.lhDark, MAT_LIGHTHOUSE, 120);
+    }
+    setCell(lhCx, lhBase - Math.round(lhH * 0.45), pal.lhDark, MAT_LIGHTHOUSE, 130);
+    setCell(lhCx, lhBase - Math.round(lhH * 0.72), pal.lhDark, MAT_LIGHTHOUSE, 130);
+
+    // Gallery balcony railing
+    const galY = lhBase - lhH;
+    const galHW = Math.round(topHW) + 2;
+    for (let dx = -galHW; dx <= galHW; dx++) {
+      setCell(lhCx + dx, galY, pal.lhDark, MAT_LIGHTHOUSE, 145);
+      if ((dx & 1) === 0) setCell(lhCx + dx, galY - 1, pal.lhDark, MAT_LIGHTHOUSE, 145);
+    }
+    // Glowing Lantern Room
+    const lanH = isMob ? 6 : 7;
+    const lanHW = Math.max(2, Math.round(topHW) - 1);
+    const lanCenterY = galY - Math.ceil(lanH / 2);
+    for (let dy = 1; dy <= lanH; dy++) {
+      const cy = galY - dy;
+      for (let dx = -lanHW; dx <= lanHW; dx++) {
+        const cx = lhCx + dx;
+        const isFrame = Math.abs(dx) === lanHW && (dy === 1 || dy === lanH);
+        if (isFrame) setCell(cx, cy, pal.lhDark, MAT_LIGHTHOUSE, 150);
+        else setCell(cx, cy, dy === 3 || dy === 4 ? pal.sunCore : pal.lhGlow, MAT_SUN, 255);
+      }
+    }
+    // Red conical cupola + spire
+    const cupBase = galY - lanH - 1;
+    for (let r = 0; r <= 4; r++) {
+      const hw = Math.max(0, lanHW + 1 - r);
+      for (let dx = -hw; dx <= hw; dx++) {
+        setCell(lhCx + dx, cupBase - r, dx >= 0 ? pal.lhRed : pal.lhRedShade, MAT_LIGHTHOUSE, 224);
+      }
+    }
+    setCell(lhCx, cupBase - 5, pal.lhDark, MAT_LIGHTHOUSE, 190);
+    setCell(lhCx, cupBase - 6, pal.sunCore, MAT_GLINT, 252);
+
+    // Gentle Rotating Bayer-Dithered Lighthouse Light Cone
+    const beamSweep = Math.sin(time * 0.62) * 0.34;
+    const beamAngle = 0.14 + beamSweep; // aims gently out over the sunlit bay
+    const beamLen = Math.round(gw * (isMob ? 0.62 : 0.44));
+    const beamDirX = Math.cos(beamAngle);
+    const beamDirY = Math.sin(beamAngle);
+    const coneHalfAngle = 0.135;
+
+    const bMinX = Math.max(0, lhCx + 2);
+    const bMaxX = Math.min(gw - 1, lhCx + beamLen);
+    const bMinY = Math.max(0, lanCenterY - Math.round(beamLen * 0.45));
+    const bMaxY = Math.min(yWater - 1, lanCenterY + Math.round(beamLen * 0.45));
+
+    for (let cy = bMinY; cy <= bMaxY; cy++) {
+      const rowOff = cy * gw;
+      const byRow = (cy & 3) << 2;
+      const dy = cy - lanCenterY;
+      for (let cx = bMinX; cx <= bMaxX; cx++) {
+        const dx = cx - lhCx;
+        const along = dx * beamDirX + dy * beamDirY;
+        if (along < 4 || along > beamLen) continue;
+        const perp = Math.abs(-dx * beamDirY + dy * beamDirX);
+        const halfW = 1.6 + along * coneHalfAngle;
+        if (perp > halfW) continue;
+
+        const radial = 1 - perp / halfW;
+        const distFade = 1 - along / beamLen;
+        const strength = radial * distFade * distFade * 0.68;
+        const th = BAYER[byRow | (cx & 3)];
+        if (strength > th * 0.78) {
+          const idx = rowOff + cx;
+          const u = buf32[idx];
+          const r = u & 255, g = (u >> 8) & 255, b = (u >> 16) & 255;
+          const mixA = clamp(strength * 0.92, 0.16, 0.54);
+          const nr = Math.round(lerp(r, pal.beamTint[0], mixA));
+          const ng = Math.round(lerp(g, pal.beamTint[1], mixA));
+          const nb = Math.round(lerp(b, pal.beamTint[2], mixA));
+          buf32[idx] = packRgba(nr, ng, nb);
+          detBuf[idx] = Math.min(250, detBuf[idx] + Math.round(strength * 115));
+        }
+      }
+    }
+
+    // -----------------------------------------------------------------------
+    // PLANE 4: Tiered Turquoise-to-Azure Ocean + Live Sinusoidal Water Reflections
+    // -----------------------------------------------------------------------
+    const seaEnd = Math.round(gh * (isMob ? 0.87 : 0.86));
+    const seaH = Math.max(1, seaEnd - yWater);
+    const seaSeam1 = yWater + Math.round(seaH * 0.30);
+    const seaSeam2 = yWater + Math.round(seaH * 0.66);
+    const chopSpeed = 2.6 + Math.abs(windX) * 1.8;
+    const chopDir = windX >= 0 ? 1 : -1;
+
+    for (let cy = yWater; cy < gh; cy++) {
+      const rowOff = cy * gw;
+      const byRow = (cy & 3) << 2;
+      const dyWater = cy - yWater;
+      const srcY = Math.round(yWater - 1 - dyWater * 0.78);
+      const wavePhase = cy * 0.52 - time * chopSpeed * chopDir;
+
+      for (let cx = 0; cx < gw; cx++) {
+        const th = BAYER[byRow | (cx & 3)];
+        const wave =
+          Math.sin(cx * 0.16 - time * (1.2 + Math.abs(windX) * 0.9) * chopDir + cy * 0.25) * 0.22 +
+          Math.cos(cx * 0.43 + time * 0.8) * 0.10;
+
+        let sBand = 0;
+        if (cy < seaSeam1 - 2) {
+          sBand = 0;
+        } else if (cy <= seaSeam1 + 2) {
+          const t = clamp((cy - (seaSeam1 - 2)) / 4, 0, 1);
+          sBand = (t + wave) > th ? 1 : 0;
+        } else if (cy < seaSeam2 - 2) {
+          sBand = 1;
+        } else if (cy <= seaSeam2 + 2) {
+          const t = clamp((cy - (seaSeam2 - 2)) / 4, 0, 1);
+          sBand = (t + wave) > th ? 2 : 1;
+        } else {
+          sBand = 2;
+        }
+
+        let baseCol = pal.seaBands[sBand];
+        // Translucent shallow turquoise glow approaching the sandy cove
+        const shoreY = sandShoreY(cx);
+        if (cy > shoreY - 12 && cy <= shoreY) {
+          const st = clamp((cy - (shoreY - 12)) / 12, 0, 1);
+          if (st * 0.95 > th) baseCol = pal.seaShallow;
+        }
+
+        let r = baseCol[0], g = baseCol[1], b = baseCol[2];
+        let det = 96 + sBand * 24;
+
+        // Live sinusoidal water reflections of cliffs, lighthouse, headlands, sun & balloon
+        if (srcY >= 0 && srcY < yWater && dyWater < seaH * 0.82) {
+          const amp = 1.1 + dyWater * 0.044 + Math.abs(windX) * 0.65;
+          const rippleDx = Math.round(Math.sin(wavePhase + Math.sin(cx * 0.09) * 2.2) * amp);
+          const sx = clamp(cx + rippleDx, 0, gw - 1);
+          const sIdx = srcY * gw + sx;
+          const sMat = matBuf[sIdx];
+
+          if (
+            sMat === MAT_CLIFF ||
+            sMat === MAT_GRASS ||
+            sMat === MAT_LIGHTHOUSE ||
+            sMat === MAT_SUN ||
+            sMat === MAT_HEADLAND ||
+            sMat === MAT_BALLOON ||
+            (sMat === MAT_GLINT && dyWater < seaH * 0.55)
+          ) {
+            const su = buf32[sIdx];
+            const sr = su & 255, sg = (su >> 8) & 255, sb = (su >> 16) & 255;
+            const depthFade = clamp(1 - dyWater / (seaH * 0.84), 0, 1);
+            const scanline = ((cy + Math.floor(time * 3.5)) & 1) === 0 ? 1.0 : 0.62;
+            const refStrength = (sMat === MAT_SUN || sMat === MAT_LIGHTHOUSE ? 0.72 : 0.48) * depthFade * scanline;
+            if (refStrength > th * 0.52) {
+              const mixT = clamp(refStrength * 1.24, 0.28, 0.78);
+              r = Math.round(lerp(r, sr, mixT));
+              g = Math.round(lerp(g, sg, mixT));
+              b = Math.round(lerp(b, sb, mixT));
+              det = Math.max(det, sMat === MAT_SUN || sMat === MAT_LIGHTHOUSE ? 215 : 172);
+            }
+          }
+        }
+
+        // Subtle horizontal micro-weave & wind-driven sea shimmer
+        const shimmer = Math.sin(cx * 0.14 + cy * 0.9 - time * (2.8 + Math.abs(windX) * 1.8) * chopDir);
+        if (shimmer > 0.88 && ((cy & 1) === 0) && pcg2(cx >> 2, cy) > 0.62) {
+          r = Math.round(lerp(r, pal.foam[0], 0.45));
+          g = Math.round(lerp(g, pal.foam[1], 0.45));
+          b = Math.round(lerp(b, pal.foam[2], 0.45));
+          det = 190;
+        }
+
+        const idx = rowOff + cx;
+        buf32[idx] = packRgba(r, g, b);
+        matBuf[idx] = MAT_SEA;
+        detBuf[idx] = det;
+      }
+    }
+
+    // Crisp Animated Horizontal White Wave Glints (MAT_GLINT)
+    const glintCount = isMob ? 34 : 58;
+    for (let i = 0; i < glintCount; i++) {
+      const seedX = pcg2(i, 307);
+      const seedY = pcg2(i, 331);
+      const speed = (3.5 + seedY * 6.5) * (0.65 + Math.abs(windX) * 0.85) * chopDir;
+      const gx = Math.round(((seedX * gw + time * speed) % gw + gw) % gw);
+      const gy = yWater + 4 + Math.round(seedY * (seaH * 0.84));
+      if (gy >= sandShoreY(gx) - 3) continue;
+      const pulseG = Math.sin(time * (2.6 + seedX * 2.4) + i * 1.7);
+      if (pulseG < -0.15) continue;
+      const len = 2 + Math.round(seedY * 3 + (pulseG > 0.5 ? 1 : 0));
+      for (let k = 0; k < len; k++) {
+        setCell(gx + k, gy, pal.foam, MAT_GLINT, 246);
+      }
+    }
+
+    // Expanding Interactive Sea Wave Rings (Click-to-Splash!)
+    for (let i = 0; i < S.rings.length; i++) {
+      const rg = S.rings[i];
+      const life = 1 - rg.age / rg.maxAge;
+      if (life <= 0) continue;
+      const rx = rg.r;
+      const ry = rg.r * 0.44;
+      const bandW = 3.2 + (1 - life) * 1.6;
+      const minX = Math.max(0, Math.floor(rg.x - rx - bandW - 2));
+      const maxX = Math.min(gw - 1, Math.ceil(rg.x + rx + bandW + 2));
+      const minY = Math.max(yWater, Math.floor(rg.y - ry - bandW - 2));
+      const maxY = Math.min(gh - 1, Math.ceil(rg.y + ry + bandW + 2));
+
+      for (let cy = minY; cy <= maxY; cy++) {
+        const byRow = (cy & 3) << 2;
+        for (let cx = minX; cx <= maxX; cx++) {
+          if (cy >= sandShoreY(cx) - 1) continue;
+          const nx = (cx - rg.x) / Math.max(1, rx);
+          const ny = (cy - rg.y) / Math.max(1, ry);
+          const dist = Math.hypot(nx, ny);
+          const outerHit = Math.abs(dist - 1.0) * rx;
+          const innerHit = rg.r > 10 ? Math.abs(dist - 0.56) * rx : 99;
+          const hit = Math.min(outerHit, innerHit);
+          if (hit > bandW) continue;
+          const th = BAYER[byRow | (cx & 3)];
+          const strength = (1 - hit / bandW) * Math.min(1, life * 1.35);
+          if (strength * 1.35 > th) {
+            const col = outerHit < 2.0 && life > 0.2 ? pal.foam : pal.ringColor;
+            setCell(cx, cy, col, MAT_GLINT, outerHit < 2.0 ? 255 : 244);
+          }
+        }
+      }
+    }
+
+    // -----------------------------------------------------------------------
+    // PLANE 5: Four Bobbing Pastel Sailboats + Live Reflections + Bayer Wakes
+    // -----------------------------------------------------------------------
+    for (let i = 0; i < S.boats.length; i++) {
+      const b = S.boats[i];
+      const bPal = pal.boatHulls[b.hullIdx];
+      const sc = b.scale;
+      const parFactor = 12 + i * 5;
+      const bx = Math.round(b.x - parX * parFactor);
+      const by = Math.round(b.y + b.bobY - parY * 2.5);
+      const hullW = Math.max(9, Math.round(18 * sc));
+      const hullH = Math.max(3, Math.round(5.5 * sc));
+      const mastH = Math.max(13, Math.round(25 * sc));
+      const dir = b.dir;
+      const billow = clamp(windX * 2.6 + dir * 1.4, -4.5, 4.5) * sc;
+      const heelShift = clamp(b.heel * 5.5 + windX * 0.9, -4, 4);
+
+      // 5A. Bayer-dissolving foam wake behind the stern
+      for (let w = 0; w < b.wake.length; w++) {
+        const wk = b.wake[w];
+        const wx = Math.round(wk.x - parX * parFactor);
+        const wy = Math.round(wk.y - parY * 2.5);
+        if (wx < 0 || wx >= gw || wy < yWater || wy >= sandShoreY(wx) - 2) continue;
+        const keep = (1 - wk.age) * clamp(wk.age * 4.5, 0.2, 1);
+        const spread = Math.round(1 + wk.age * (3.2 * sc));
+        for (let dy = -spread; dy <= spread; dy++) {
+          const cy = wy + dy;
+          if (cy < yWater || cy >= sandShoreY(wx) - 1) continue;
+          const rowKeep = keep * (1 - Math.abs(dy) / (spread + 1.2));
+          const th = BAYER[((cy & 3) << 2) | (wx & 3)];
+          if (rowKeep > th) {
+            const wCol = wk.age < 0.35 ? pal.foam : pal.ringColor;
+            setCell(wx, cy, wCol, MAT_GLINT, wk.age < 0.35 ? 248 : 225);
+            if (wk.age < 0.5) setCell(wx - dir, cy, wCol, MAT_GLINT, 232);
+          }
+        }
+      }
+
+      // 5B. Live sinusoidal colorful water reflection of hull & sails beneath waterline
+      const refMaxD = Math.round((hullH + mastH * 0.78));
+      for (let rdy = 1; rdy <= refMaxD; rdy++) {
+        const cy = by + rdy;
+        if (cy < yWater || cy >= gh) continue;
+        const byRow = (cy & 3) << 2;
+        const fade = 1 - rdy / (refMaxD + 1);
+        const waveDx = Math.round(Math.sin(cy * 0.62 - time * 3.8 + b.ph) * (1.2 + rdy * 0.08));
+        const isHullRef = rdy <= hullH + 1;
+        let spanL, spanR, refCol;
+        if (isHullRef) {
+          const hw = Math.round(hullW * 0.52 * (1 - rdy * 0.05));
+          spanL = -hw; spanR = hw;
+          refCol = bPal.main;
+        } else {
+          const st = clamp((rdy - hullH) / Math.max(1, mastH * 0.72), 0, 1);
+          const sailSpan = Math.round((1 - st) * hullW * 0.48);
+          spanL = dir > 0 ? -sailSpan : -Math.round(sailSpan * 0.45);
+          spanR = dir > 0 ? Math.round(sailSpan * 0.45) : sailSpan;
+          refCol = Math.abs(st - 0.52) < 0.12 ? bPal.stripe : bPal.sail;
+        }
+        for (let dx = spanL; dx <= spanR; dx++) {
+          const cx = bx + dx + waveDx;
+          if (cx < 0 || cx >= gw || cy >= sandShoreY(cx) - 1) continue;
+          const th = BAYER[byRow | (cx & 3)];
+          const scan = ((cy + Math.floor(time * 4)) & 1) === 0 ? 1.0 : 0.55;
+          if (fade * scan * 0.88 > th) {
+            const idx = cy * gw + cx;
+            const u = buf32[idx];
+            const ur = u & 255, ug = (u >> 8) & 255, ub = (u >> 16) & 255;
+            const mixA = clamp(fade * 0.74, 0.28, 0.74);
+            buf32[idx] = packRgba(
+              Math.round(lerp(ur, refCol[0], mixA)),
+              Math.round(lerp(ug, refCol[1], mixA)),
+              Math.round(lerp(ub, refCol[2], mixA))
+            );
+            detBuf[idx] = Math.max(detBuf[idx], 188);
+          }
+        }
+      }
+
+      // 5C. Sailboat Mast
+      const mastTopX = bx + Math.round(heelShift);
+      const mastTopY = by - hullH - mastH;
+      drawLine(bx, by - hullH + 1, mastTopX, mastTopY, pal.pierDark, MAT_SAILBOAT, 165);
+
+      // 5D. Mainsail (behind mast, billowing with live wind vector!)
+      const sailBotY = by - hullH - 2;
+      const sailTopY = mastTopY + 2;
+      const sailH = Math.max(6, sailBotY - sailTopY);
+      const mainFoot = Math.round(hullW * 0.52);
+
+      for (let sy = 0; sy <= sailH; sy++) {
+        const t = sy / sailH; // 0 top .. 1 boom
+        const cy = sailTopY + sy;
+        const mastAtY = Math.round(lerp(mastTopX, bx, t));
+        const bulge = Math.sin(t * Math.PI) * billow * 0.72;
+        const outerX = Math.round(mastAtY - dir * (t * mainFoot) + bulge);
+        const xMin = Math.min(mastAtY, outerX);
+        const xMax = Math.max(mastAtY, outerX);
+        const isStripe = t > 0.52 && t < 0.66;
+        for (let cx = xMin; cx <= xMax; cx++) {
+          const edgeU = (cx - xMin) / Math.max(1, xMax - xMin);
+          let col = isStripe ? bPal.stripe : bPal.sail;
+          if (!isStripe && edgeU < 0.25) col = lerpRgb(col, pal.cliffShade, 0.35);
+          setCell(cx, cy, col, MAT_SAILBOAT, isStripe ? 230 : 242);
+        }
+      }
+
+      // 5E. Front Jib Sail (forward of mast)
+      const jibFoot = Math.round(hullW * 0.40);
+      for (let sy = 2; sy <= sailH; sy++) {
+        const t = (sy - 2) / Math.max(1, sailH - 2);
+        const cy = sailTopY + sy;
+        const mastAtY = Math.round(lerp(mastTopX, bx, t)) + dir;
+        const bulge = Math.sin(t * Math.PI) * billow * 0.45;
+        const outerX = Math.round(mastAtY + dir * (t * jibFoot) + bulge);
+        const xMin = Math.min(mastAtY, outerX);
+        const xMax = Math.max(mastAtY, outerX);
+        for (let cx = xMin; cx <= xMax; cx++) {
+          setCell(cx, cy, pal.foam, MAT_SAILBOAT, 248);
+        }
+      }
+
+      // 5F. Fluttering Masthead Pennant (points along live windX!)
+      const penDir = windX >= -0.05 ? 1 : -1;
+      const penLen = Math.max(4, Math.round((5 + Math.min(5, Math.abs(windX) * 2.2)) * sc));
+      for (let k = 0; k < penLen; k++) {
+        const flutter = Math.round(Math.sin(time * (7.5 + Math.abs(windX) * 4) - k * 0.9 + b.ph) * (0.6 + k * 0.12));
+        setCell(mastTopX + penDir * (k + 1), mastTopY + flutter, bPal.flag, MAT_SAILBOAT, 245);
+        if (k < penLen * 0.55) {
+          setCell(mastTopX + penDir * (k + 1), mastTopY + flutter + 1, bPal.flag, MAT_SAILBOAT, 238);
+        }
+      }
+
+      // 5G. Pastel Painted Hull + White Waterline Trim
+      const halfHull = Math.round(hullW * 0.5);
+      for (let dy = 0; dy < hullH; dy++) {
+        const cy = by - hullH + 1 + dy;
+        const taper = dy / Math.max(1, hullH - 1); // 0 deck .. 1 keel
+        const leftTrim = Math.round(taper * (dir > 0 ? 2.5 : 4.2) * sc);
+        const rightTrim = Math.round(taper * (dir > 0 ? 4.2 : 2.5) * sc);
+        for (let dx = -halfHull + leftTrim; dx <= halfHull - rightTrim; dx++) {
+          const cx = bx + dx;
+          let col;
+          if (dy === 0) col = pal.foam; // Crisp deck gunwale highlight
+          else if (dy >= hullH - 1) col = bPal.shade;
+          else col = (dir > 0 ? dx < 0 : dx > 0) ? bPal.shade : bPal.main;
+          setCell(cx, cy, col, MAT_SAILBOAT, dy === 0 ? 245 : 220);
+        }
+      }
+      // Bow splash glint
+      const bowX = bx + dir * (halfHull - 1);
+      setCell(bowX, by, pal.foam, MAT_GLINT, 250);
+      setCell(bowX + dir, by, pal.foam, MAT_GLINT, 240);
+    }
+
+    // -----------------------------------------------------------------------
+    // PLANE 6: Sunlit Butter-Yellow Sandy Cove + Wooden Pixel Pier
+    // -----------------------------------------------------------------------
+    for (let cx = 0; cx < gw; cx++) {
+      const sy = sandShoreY(cx);
+      const lap = Math.sin(cx * 0.14 - time * 2.4) * 1.4;
+      const foamY = Math.round(sy + lap);
+
+      for (let cy = Math.max(yWater, foamY - 2); cy < gh; cy++) {
+        const dy = cy - foamY;
+        const th = BAYER[((cy & 3) << 2) | (cx & 3)];
+        if (dy < 0) {
+          // Gentle lapping shoreline foam fringe
+          if ((1 + dy * 0.45) > th) {
+            setCell(cx, cy, pal.foam, MAT_GLINT, 246);
+          }
+          continue;
+        }
+        if (dy <= 1 && th < 0.72) {
+          setCell(cx, cy, pal.foam, MAT_GLINT, 244);
+          continue;
+        }
+        let col;
+        let det;
+        if (dy < 6) {
+          const wt = (dy - 1) / 5;
+          col = wt > th ? pal.sandMid : pal.sandWet;
+          det = 165;
+        } else if (dy < 13) {
+          const dt = (dy - 6) / 7;
+          col = dt > th ? pal.sandTop : pal.sandMid;
+          det = 192;
+        } else {
+          col = pal.sandTop;
+          det = 212;
+        }
+        // Subtle tactile sand micro-weave & warm grain specks
+        const weave = ((cx ^ cy) & 1) === 0 ? 3 : -3;
+        if (pcg2(cx, cy + 503) < 0.045) {
+          col = pal.sandGrain; det = 148;
+        } else {
+          col = [
+            clamp(col[0] + weave, 0, 255),
+            clamp(col[1] + weave, 0, 255),
+            clamp(col[2] + weave, 0, 255),
+          ];
+        }
+        setCell(cx, cy, col, MAT_SAND, det);
+      }
+    }
+
+    // Tiny pastel shells & pebbles on the sunlit sand
+    const shellCols = [pal.boatHulls[0].main, pal.foam, pal.boatHulls[3].main];
+    for (let i = 0; i < S.shells.length; i++) {
+      const sh = S.shells[i];
+      const cx = Math.round(sh.u * gw);
+      const sy = sandShoreY(cx);
+      const cy = Math.round(sy + 4 + sh.v * (gh - sy - 8));
+      if (cy < gh - 2) {
+        setCell(cx, cy, shellCols[sh.kind], MAT_GLINT, 236);
+      }
+    }
+
+    // Wooden Pixel Pier jutting into the right side of the sunlit cove
+    const pierStartX = Math.round(gw * (isMob ? 0.68 : 0.77) - parX * 16);
+    const pierEndX = Math.min(gw - 2, gw + 4);
+    const pierDeckY = Math.round(sandShoreY(pierStartX) - (isMob ? 4 : 6));
+    const pierDeckH = isMob ? 5 : 6;
+    const pilingStep = isMob ? 10 : 12;
+
+    // Pilings beneath deck with water foam collars
+    for (let px = pierStartX + 3; px < pierEndX; px += pilingStep) {
+      const baseDepth = pierDeckY + pierDeckH + 8;
+      for (let py = pierDeckY + pierDeckH; py <= Math.min(gh - 1, baseDepth); py++) {
+        setCell(px, py, pal.pierDark, MAT_PIER, 140);
+        setCell(px + 1, py, pal.pierMid, MAT_PIER, 165);
+      }
+      // Tiny white water-collar ripple around piling base
+      if (baseDepth < sandShoreY(px)) {
+        setCell(px - 1, baseDepth, pal.foam, MAT_GLINT, 240);
+        setCell(px + 2, baseDepth, pal.foam, MAT_GLINT, 240);
+      }
+      // Mooring bollard rising slightly above deck
+      setCell(px, pierDeckY - 1, pal.pierDark, MAT_PIER, 155);
+      setCell(px + 1, pierDeckY - 1, pal.pierTop, MAT_PIER, 200);
+      setCell(px, pierDeckY - 2, pal.pierTop, MAT_PIER, 210);
+      setCell(px + 1, pierDeckY - 2, pal.pierTop, MAT_PIER, 210);
+    }
+
+    // Horizontal cedar pier deck planks
+    for (let cy = pierDeckY; cy < pierDeckY + pierDeckH; cy++) {
+      for (let cx = pierStartX; cx < pierEndX; cx++) {
+        const isSeam = ((cx - pierStartX) % 4) === 0;
+        const col = cy === pierDeckY
+          ? (isSeam ? pal.pierMid : pal.pierTop)
+          : (cy === pierDeckY + pierDeckH - 1 ? pal.pierDark : (isSeam ? pal.pierDark : pal.pierMid));
+        setCell(cx, cy, col, MAT_PIER, cy === pierDeckY ? 215 : 175);
+      }
+    }
+
+    // Tiny iconic red-and-white lifebuoy resting on the pier's outer bollard
+    const lbX = pierStartX + 3;
+    const lbY = pierDeckY - 3;
+    setCell(lbX, lbY - 1, pal.lhRed, MAT_LIGHTHOUSE, 240);
+    setCell(lbX + 1, lbY - 1, pal.lhWhite, MAT_LIGHTHOUSE, 248);
+    setCell(lbX - 1, lbY, pal.lhWhite, MAT_LIGHTHOUSE, 248);
+    setCell(lbX + 2, lbY, pal.lhRed, MAT_LIGHTHOUSE, 240);
+    setCell(lbX, lbY + 1, pal.lhWhite, MAT_LIGHTHOUSE, 248);
+    setCell(lbX + 1, lbY + 1, pal.lhRed, MAT_LIGHTHOUSE, 240);
+
+    // -----------------------------------------------------------------------
+    // PLANE 1D (Foreground Sky): Wheeling 12fps Pixel Seabirds & Sea Spray / Wind Gusts
+    // -----------------------------------------------------------------------
+    for (let i = 0; i < S.birds.length; i++) {
+      const bd = S.birds[i];
+      const sprite = (bd.big ? GULL_7 : GULL_5)[FLAP_SEQ[(S.flapFrame + bd.flapOff) & 3]];
+      const bx = Math.round(bd.x - parX * 9);
+      const by = Math.round(bd.y - parY * 3);
+      const sh = sprite.length;
+      const sw = sprite[0].length;
+      const ox = Math.floor(sw / 2), oy = Math.floor(sh / 2);
+      for (let r = 0; r < sh; r++) {
+        const row = sprite[r];
+        for (let c = 0; c < sw; c++) {
+          if (row[c] !== 'X') continue;
+          const cx = bx + c - ox;
+          const cy = by + r - oy;
+          if (isDimmed(cx, cy)) continue;
+          const isCenter = Math.abs(c - ox) <= 1 && r === 1;
+          setCell(cx, cy, isCenter ? pal.birdCol : pal.birdWing, MAT_GLINT, isCenter ? 242 : 254);
+        }
+      }
+    }
+
+    // Sea spray droplets from sea clicks
+    for (let i = 0; i < S.sprays.length; i++) {
+      const sp = S.sprays[i];
+      const cx = Math.round(sp.x), cy = Math.round(sp.y);
+      setCell(cx, cy, sp.bright ? pal.foam : pal.ringColor, MAT_GLINT, 252);
+    }
+
+    // Crisp wind-steer air ribbons visible while dragging / steering gusts
+    for (let i = 0; i < S.gusts.length; i++) {
+      const gs = S.gusts[i];
+      const life = 1 - gs.age / gs.maxAge;
+      if (life <= 0) continue;
+      const len = Math.max(4, Math.round(gs.len * life));
+      const nx = gs.vx / Math.max(0.01, Math.hypot(gs.vx, gs.vy));
+      const ny = gs.vy / Math.max(0.01, Math.hypot(gs.vx, gs.vy));
+      for (let k = 0; k < len; k++) {
+        const cx = Math.round(gs.x - nx * k * 1.4);
+        const cy = Math.round(gs.y - ny * k * 1.4 + Math.sin(k * 0.7 + gs.ph) * 0.8);
+        const th = BAYER[((cy & 3) << 2) | (cx & 3)];
+        if (life * (1 - k / (len + 1)) > th * 0.65) {
+          setCell(cx, cy, pal.foam, MAT_GLINT, 248);
+        }
+      }
+    }
+  }
+
+  // =========================================================================
+  // MATERIAL-AWARE FULL-COLOR 5x7 ASCII COMPOSITOR (DEFAULT FULL-ASCII + PIXEL+LENS)
+  // =========================================================================
+  const MAT_COUNT = 13;
+  const matCounts = new Int32Array(MAT_COUNT);
+  const matR = new Int32Array(MAT_COUNT);
+  const matG = new Int32Array(MAT_COUNT);
+  const matB = new Int32Array(MAT_COUNT);
+
+  function applyColorAscii(pal) {
+    const { gw, gh, buf32, matBuf, detBuf, out32, renderMode, cell, time, windX } = S;
+    const isFull = renderMode === 'ascii';
+    const hasLens = !isFull && S.ptrLensAlpha > 0.02;
+
+    if (!isFull) {
+      out32.set(buf32);
+      if (!hasLens) return;
+    }
+
+    const lensR = (S.vw < 760 ? 96 : 134) * (isFull ? 1 : S.ptrLensAlpha);
+    const lensCellX = S.ptrX / cell;
+    const lensCellY = S.ptrY / cell;
+    const lensRadCells = Math.ceil((lensR + 10) / cell);
+
+    const txMin = isFull ? 0 : Math.max(0, Math.floor((lensCellX - lensRadCells) / 6));
+    const txMax = isFull ? Math.ceil(gw / 6) - 1 : Math.min(Math.ceil(gw / 6) - 1, Math.floor((lensCellX + lensRadCells) / 6));
+    const tyMin = isFull ? 0 : Math.max(0, Math.floor((lensCellY - lensRadCells) / 9));
+    const tyMax = isFull ? Math.ceil(gh / 9) - 1 : Math.min(Math.ceil(gh / 9) - 1, Math.floor((lensCellY + lensRadCells) / 9));
+
+    const breezeActive = isFull && S.ptrLensAlpha > 0.04;
+    const breezeR = S.vw < 760 ? 84 : 112;
+
+    for (let ty = tyMin; ty <= tyMax; ty++) {
+      const y0 = ty * 9;
+      const y1 = Math.min(gh, y0 + 9);
+      for (let tx = txMin; tx <= txMax; tx++) {
+        const x0 = tx * 6;
+        const x1 = Math.min(gw, x0 + 6);
+
+        matCounts.fill(0); matR.fill(0); matG.fill(0); matB.fill(0);
+
+        let detSum = 0, detMax = 0, nCells = 0;
+        let leftDet = 0, rightDet = 0;
+        let peakR = 255, peakG = 255, peakB = 255;
+
+        for (let cy = y0; cy < y1; cy++) {
+          const rowOff = cy * gw;
+          for (let cx = x0; cx < x1; cx++) {
+            const idx = rowOff + cx;
+            const m = matBuf[idx];
+            const u = buf32[idx];
+            const r = u & 255, g = (u >> 8) & 255, b = (u >> 16) & 255;
+            const d = detBuf[idx];
+            matCounts[m]++;
+            matR[m] += r;
+            matG[m] += g;
+            matB[m] += b;
+            detSum += d;
+            if (cx - x0 < 3) leftDet += d; else rightDet += d;
+            if (d > detMax) {
+              detMax = d;
+              peakR = r; peakG = g; peakB = b;
+            }
+            nCells++;
+          }
+        }
+
+        // Law 5: Preserve boats, lighthouse, balloon, sun, pier, grass cap & micro-highlights
+        let domMat = MAT_SKY;
+        if (matCounts[MAT_SAILBOAT] >= 6) {
+          domMat = MAT_SAILBOAT;
+        } else if (matCounts[MAT_SUN] >= 5) {
+          domMat = MAT_SUN;
+        } else if (matCounts[MAT_LIGHTHOUSE] >= 6) {
+          domMat = MAT_LIGHTHOUSE;
+        } else if (matCounts[MAT_BALLOON] >= 6) {
+          domMat = MAT_BALLOON;
+        } else if (matCounts[MAT_PIER] >= 7) {
+          domMat = MAT_PIER;
+        } else if (matCounts[MAT_GRASS] >= 12) {
+          domMat = MAT_GRASS;
+        } else if (matCounts[MAT_GLINT] >= 2) {
+          domMat = MAT_GLINT;
+        } else {
+          let bestC = -1;
+          for (let k = 0; k < MAT_GLINT; k++) {
+            if (matCounts[k] > bestC) { bestC = matCounts[k]; domMat = k; }
+          }
+        }
+
+        const cnt = Math.max(1, matCounts[domMat]);
+        const tr = Math.round(matR[domMat] / cnt);
+        const tg = Math.round(matG[domMat] / cnt);
+        const tb = Math.round(matB[domMat] / cnt);
+        const meanDet = detSum / Math.max(1, nCells) / 255;
+        const tileTh = BAYER[((ty & 3) << 2) | (tx & 3)];
+
+        // Subtle interactive sea-breeze hover ripple in Full-Color ASCII mode
+        let breezeDist = 9999;
+        if (breezeActive) {
+          const tcx = (x0 + 3) * cell;
+          const tcy = (y0 + 4.5) * cell;
+          breezeDist = Math.hypot(tcx - S.ptrX, tcy - S.ptrY);
+        }
+        const inBreezeRing = breezeActive && Math.abs(breezeDist - breezeR * (0.72 + 0.14 * Math.sin(time * 3.2))) < 18;
+
+        // Material-aware 5x7 SCENE_24 glyph selection
+        let gi = 0;
+        if (domMat === MAT_SKY) {
+          const seamBoost = detMax > 100 ? 0.55 : 0;
+          const v = meanDet * 1.9 + seamBoost + (tileTh - 0.5) * 0.65;
+          gi = inBreezeRing ? 4 : v > 1.12 ? 5 : v > 0.78 ? 3 : v > 0.46 ? 1 : 0; // '~', '-', ':', '.', ' '
+        } else if (domMat === MAT_SUN) {
+          gi = detMax > 244 ? 11 : meanDet > 0.76 ? 9 : meanDet > 0.50 ? 8 : 7; // '@', '#', '*', '+'
+        } else if (domMat === MAT_CLOUD) {
+          gi = meanDet > 0.78 ? 9 : meanDet > 0.65 ? 6 : meanDet > 0.52 ? 19 : 7; // '#', '=', 'o', '+'
+        } else if (domMat === MAT_HEADLAND) {
+          const slope = (tx + ty) & 3;
+          gi = slope === 0 ? 12 : slope === 2 ? 13 : meanDet > 0.58 ? 17 : 3; // '/', '\', '^', ':'
+        } else if (domMat === MAT_CLIFF) {
+          const diff = leftDet - rightDet;
+          if (Math.abs(diff) > 220) gi = diff > 0 ? 12 : 13; // '/' or '\'
+          else if (meanDet > 0.80) gi = 9; // '#' bright chalk
+          else if (meanDet > 0.64) gi = 10; // '%' limestone strata
+          else gi = 14; // '|' cliff shadow
+        } else if (domMat === MAT_GRASS) {
+          const sway = Math.sin(tx * 0.55 - time * (2.2 + Math.abs(windX) * 1.4)) > 0.1 ? 1 : 0;
+          const pick = (tx * 5 + ty * 11 + sway) & 3;
+          gi = pick === 0 ? 2 : pick === 1 ? 21 : pick === 2 ? 20 : 17; // ',', ';', '"', '^'
+        } else if (domMat === MAT_LIGHTHOUSE) {
+          gi = detMax > 225 ? 9 : meanDet > 0.66 ? 6 : (tx & 1 ? 22 : 23); // '#', '=', '[', ']'
+        } else if (domMat === MAT_SEA) {
+          const wPhase = Math.sin(tx * 0.48 - time * (2.6 + Math.abs(windX) * 1.6) * (windX >= 0 ? 1 : -1) + ty * 0.9);
+          if (inBreezeRing) gi = 4; // '~'
+          else if (wPhase > 0.32 || meanDet > 0.64) gi = 4; // '~'
+          else if (wPhase > -0.25) gi = 6; // '='
+          else if (tileTh > 0.42) gi = 5; // '-'
+          else gi = 3; // ':'
+        } else if (domMat === MAT_SAILBOAT) {
+          const diff = leftDet - rightDet;
+          if (Math.abs(diff) > 240) gi = diff > 0 ? 12 : 13; // '/' or '\' sail edge
+          else if (detMax >= 242) gi = 9; // '#' crisp sail
+          else if (meanDet > 0.65) gi = 10; // '%' colorful hull
+          else gi = 15; // '_'
+        } else if (domMat === MAT_SAND) {
+          const pick = (tx * 7 + ty * 13) & 3;
+          gi = meanDet < 0.66 ? 4 : pick === 0 ? 1 : pick === 1 ? 2 : pick === 2 ? 3 : 1; // '~', '.', ',', ':'
+        } else if (domMat === MAT_PIER) {
+          gi = meanDet > 0.72 ? 6 : meanDet > 0.58 ? 14 : 9; // '=', '|', '#'
+        } else if (domMat === MAT_BALLOON) {
+          gi = meanDet > 0.72 ? 11 : (tx & 1 ? 9 : 19); // '@', '#', 'o'
+        } else {
+          // MAT_GLINT (wave glints, seabirds, wave rings, surf foam, wildflowers)
+          let underM = MAT_SEA, bestUC = -1;
+          for (let k = 0; k < MAT_GLINT; k++) {
+            if (matCounts[k] > bestUC) { bestUC = matCounts[k]; underM = k; }
+          }
+          if (underM === MAT_SKY || underM === MAT_CLOUD) {
+            gi = detMax < 248 ? 18 : 17; // 'v' / '^' seabird wings & gusts
+          } else if (underM === MAT_SEA) {
+            gi = matCounts[MAT_GLINT] >= 5 ? 4 : (detMax > 250 ? 8 : 7); // '~', '*', '+'
+          } else if (underM === MAT_SAND || underM === MAT_CLIFF) {
+            const surf = Math.sin(tx * 0.65 - time * 2.8);
+            gi = surf > 0.35 ? 4 : surf > -0.25 ? 6 : 5; // '~', '=', '-' crisp lapping surf foam!
+          } else {
+            gi = detMax > 250 ? 8 : 7; // '*', '+'
+          }
+        }
+
+        // Harmonious Bright Polychromatic FG/BG Color Pairing (ZERO black boxes!)
+        let bgR, bgG, bgB, fgR, fgG, fgB;
+        const luma = (0.299 * tr + 0.587 * tg + 0.114 * tb) / 255;
+
+        if (domMat === MAT_SKY) {
+          bgR = tr; bgG = tg; bgB = tb;
+          if (inBreezeRing) {
+            fgR = 255; fgG = 255; fgB = 255;
+          } else if (luma > 0.84) {
+            fgR = Math.round(tr * 0.68); fgG = Math.round(tg * 0.80); fgB = Math.round(tb * 0.94);
+          } else {
+            fgR = Math.round(lerp(tr, 255, 0.52));
+            fgG = Math.round(lerp(tg, 255, 0.52));
+            fgB = Math.round(lerp(tb, 255, 0.56));
+          }
+        } else if (domMat === MAT_SUN) {
+          bgR = pal.sunMid[0]; bgG = pal.sunMid[1]; bgB = pal.sunMid[2];
+          fgR = 255; fgG = 255; fgB = 236;
+        } else if (domMat === MAT_CLOUD) {
+          bgR = tr; bgG = tg; bgB = tb;
+          if (luma > 0.91) {
+            fgR = Math.round(tr * 0.82); fgG = Math.round(tg * 0.86); fgB = Math.round(tb * 0.95);
+          } else {
+            fgR = 255; fgG = 255; fgB = 252;
+          }
+        } else if (domMat === MAT_HEADLAND) {
+          bgR = tr; bgG = tg; bgB = tb;
+          fgR = Math.round(tr * 0.70); fgG = Math.round(tg * 0.72); fgB = Math.round(tb * 0.88);
+        } else if (domMat === MAT_CLIFF) {
+          bgR = tr; bgG = tg; bgB = tb;
+          fgR = Math.round(tr * 0.74); fgG = Math.round(tg * 0.71); fgB = Math.round(tb * 0.64);
+        } else if (domMat === MAT_GRASS) {
+          bgR = tr; bgG = tg; bgB = tb;
+          fgR = Math.round(tr * 0.56); fgG = Math.round(tg * 0.74); fgB = Math.round(tb * 0.30);
+        } else if (domMat === MAT_LIGHTHOUSE) {
+          if (luma > 0.80) {
+            bgR = tr; bgG = tg; bgB = tb;
+            fgR = Math.round(lerp(tr, pal.lhRed[0], 0.52));
+            fgG = Math.round(lerp(tg, pal.lhRed[1], 0.52));
+            fgB = Math.round(lerp(tb, pal.lhRed[2], 0.52));
+          } else {
+            bgR = Math.round(tr * 0.86); bgG = Math.round(tg * 0.84); bgB = Math.round(tb * 0.84);
+            fgR = Math.round(lerp(tr, 255, 0.58));
+            fgG = Math.round(lerp(tg, 255, 0.58));
+            fgB = Math.round(lerp(tb, 255, 0.58));
+          }
+        } else if (domMat === MAT_SEA) {
+          bgR = tr; bgG = tg; bgB = tb;
+          if (inBreezeRing) {
+            fgR = 255; fgG = 255; fgB = 255;
+          } else if (luma > 0.76) {
+            fgR = Math.round(tr * 0.58); fgG = Math.round(tg * 0.80); fgB = Math.round(tb * 0.94);
+          } else {
+            fgR = Math.round(lerp(tr, 240, 0.56));
+            fgG = Math.round(lerp(tg, 255, 0.60));
+            fgB = Math.round(lerp(tb, 255, 0.62));
+          }
+        } else if (domMat === MAT_SAILBOAT) {
+          if (luma > 0.86) {
+            bgR = tr; bgG = tg; bgB = tb;
+            fgR = Math.round(tr * 0.70); fgG = Math.round(tg * 0.66); fgB = Math.round(tb * 0.56);
+          } else {
+            bgR = Math.round(tr * 0.88); bgG = Math.round(tg * 0.88); bgB = Math.round(tb * 0.88);
+            fgR = Math.round(lerp(tr, 255, 0.58));
+            fgG = Math.round(lerp(tg, 255, 0.58));
+            fgB = Math.round(lerp(tb, 255, 0.58));
+          }
+        } else if (domMat === MAT_SAND) {
+          bgR = tr; bgG = tg; bgB = tb;
+          fgR = Math.round(tr * 0.76); fgG = Math.round(tg * 0.66); fgB = Math.round(tb * 0.36);
+        } else if (domMat === MAT_PIER) {
+          bgR = Math.round(tr * 0.84); bgG = Math.round(tg * 0.80); bgB = Math.round(tb * 0.76);
+          fgR = Math.round(lerp(tr, 255, 0.44));
+          fgG = Math.round(lerp(tg, 240, 0.42));
+          fgB = Math.round(lerp(tb, 210, 0.38));
+        } else if (domMat === MAT_BALLOON) {
+          bgR = Math.round(tr * 0.86); bgG = Math.round(tg * 0.86); bgB = Math.round(tb * 0.86);
+          fgR = Math.round(lerp(tr, 255, 0.54));
+          fgG = Math.round(lerp(tg, 255, 0.54));
+          fgB = Math.round(lerp(tb, 255, 0.54));
+        } else {
+          // MAT_GLINT: ALWAYS derive background from the true dominant non-glint material in this tile!
+          let underM = MAT_SEA, bestUC = -1;
+          for (let k = 0; k < MAT_GLINT; k++) {
+            if (matCounts[k] > bestUC) { bestUC = matCounts[k]; underM = k; }
+          }
+          if (bestUC > 0) {
+            bgR = Math.round(matR[underM] / bestUC);
+            bgG = Math.round(matG[underM] / bestUC);
+            bgB = Math.round(matB[underM] / bestUC);
+          } else {
+            bgR = pal.seaBands[0][0]; bgG = pal.seaBands[0][1]; bgB = pal.seaBands[0][2];
+          }
+          fgR = peakR; fgG = peakG; fgB = peakB;
+          // Ensure crisp contrast if both glint and pale background are very bright
+          const bgLuma = (0.299 * bgR + 0.587 * bgG + 0.114 * bgB) / 255;
+          const fgLuma = (0.299 * fgR + 0.587 * fgG + 0.114 * fgB) / 255;
+          if (Math.abs(bgLuma - fgLuma) < 0.16 && underM === MAT_SKY) {
+            fgR = pal.birdCol[0]; fgG = pal.birdCol[1]; fgB = pal.birdCol[2];
+          }
+        }
+
+        const bgPack = packRgba(bgR, bgG, bgB);
+        const fgPack = packRgba(fgR, fgG, fgB);
+        const gBase = gi * 35;
+
+        for (let cy = y0; cy < y1; cy++) {
+          const rIdx = cy - y0;
+          const rowOff = cy * gw;
+          const byRow = (cy & 3) << 2;
+          for (let cx = x0; cx < x1; cx++) {
+            const cIdx = cx - x0;
+            const lit = rIdx < 7 && cIdx < 5 && GLYPH_BITS[gBase + rIdx * 5 + cIdx] === 1;
+
+            if (isFull) {
+              out32[rowOff + cx] = lit ? fgPack : bgPack;
+            } else {
+              const dist = Math.hypot((cx - lensCellX) * cell, (cy - lensCellY) * cell);
+              const th = BAYER[byRow | (cx & 3)];
+              const edgeR = lensR - 7.5 * cell * th;
+              if (dist < edgeR) {
+                if (edgeR - dist < 1.35 * cell) {
+                  out32[rowOff + cx] = packRgba(
+                    Math.min(255, Math.round(lerp(bgR, 255, 0.72))),
+                    Math.min(255, Math.round(lerp(bgG, 255, 0.72))),
+                    Math.min(255, Math.round(lerp(bgB, 255, 0.72)))
+                  );
+                } else {
+                  out32[rowOff + cx] = lit ? fgPack : bgPack;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // =========================================================================
+  // PHYSICS STEPPING (WIND VECTOR, BOAT SPRINGS, WAVE RINGS, BALLOON & GULLS)
+  // =========================================================================
+  function spawnSeaWaveRing(cellX, cellY) {
+    const clampedY = clamp(cellY, S.yWater + 3, sandShoreY(clamp(Math.round(cellX), 0, S.gw - 1)) - 3);
+    S.rings.push({
+      x: cellX,
+      y: clampedY,
+      r: 7,
+      speed: 44,
+      age: 0,
+      maxAge: 2.4,
+      rocked: new Set(),
+    });
+    if (S.rings.length > 8) S.rings.shift();
+
+    // Spray sparks
+    for (let i = 0; i < 12; i++) {
+      const ang = -Math.PI * (0.15 + (i / 11) * 0.7);
+      const spd = 14 + pcg2(i, Math.round(S.time * 100)) * 24;
+      S.sprays.push({
+        x: cellX + (pcg2(i, 17) - 0.5) * 4,
+        y: clampedY,
+        vx: Math.cos(ang) * spd + S.windX * 6,
+        vy: Math.sin(ang) * spd,
+        age: 0,
+        maxAge: 0.55 + pcg2(i, 29) * 0.35,
+        bright: (i & 1) === 0,
+      });
+    }
+  }
+
+  function spawnSkyGulls(cellX, cellY) {
+    for (let i = 0; i < 3; i++) {
+      S.birds.push({
+        x: cellX + (i - 1) * 6,
+        y: Math.min(S.yWater - 10, cellY + Math.abs(i - 1) * 3),
+        vx: (S.windX >= 0 ? 1 : -1) * (15 + i * 3),
+        vy: -12 - i * 2,
+        baseY: Math.max(14, cellY - 12),
+        amp: 4 + i * 1.5,
+        freq: 0.9 + i * 0.2,
+        ph: i * 1.3,
+        big: i === 1,
+        flapOff: i,
+      });
+    }
+    if (S.birds.length > 18) S.birds.splice(0, S.birds.length - 18);
+  }
+
+  function spawnWindGust(cellX, cellY, vx, vy) {
+    S.gusts.push({
+      x: cellX,
+      y: cellY,
+      vx, vy,
+      len: 10 + Math.min(14, Math.hypot(vx, vy) * 0.16),
+      age: 0,
+      maxAge: 0.95,
+      ph: S.time * 6 + S.gusts.length,
+    });
+    if (S.gusts.length > 26) S.gusts.shift();
+  }
+
+  function stepPhysics(dt) {
+    const { gw, yWater } = S;
+
+    // 12fps wing-flap clock
+    S.flapAccum += dt;
+    while (S.flapAccum >= 1 / 12) {
+      S.flapAccum -= 1 / 12;
+      S.flapFrame = (S.flapFrame + 1) & 3;
+    }
+
+    // Wind vector smoothly tracks drag steering and gradually eases toward a lively sea breeze
+    if (!S.dragging) {
+      const naturalWind = 0.72 + Math.sin(S.time * 0.35) * 0.22;
+      S.windTargetX += (naturalWind - S.windTargetX) * (1 - Math.exp(-dt * 0.22));
+      S.windTargetY += (0 - S.windTargetY) * (1 - Math.exp(-dt * 0.6));
+    }
+    const wEase = 1 - Math.exp(-dt * 6.5);
+    S.windX += (S.windTargetX - S.windX) * wEase;
+    S.windY += (S.windTargetY - S.windY) * wEase;
+    S.windEnergy = Math.max(0, S.windEnergy - dt * 0.6);
+
+    // Clouds drift with live wind
+    for (let i = 0; i < S.clouds.length; i++) {
+      const cl = S.clouds[i];
+      cl.x += (cl.speed * (0.5 + S.windX * 1.15)) * dt;
+      if (cl.x > gw + cl.rx) cl.x = -cl.rx;
+      if (cl.x < -cl.rx) cl.x = gw + cl.rx;
+    }
+
+    // Hot-air balloon drift & tilt spring
+    if (S.balloon) {
+      const bl = S.balloon;
+      bl.x += (1.1 + S.windX * 2.8) * dt;
+      if (bl.x > gw + bl.r * 2) bl.x = -bl.r * 2;
+      if (bl.x < -bl.r * 2) bl.x = gw + bl.r * 2;
+      bl.y = bl.baseY + Math.sin(S.time * 0.85 + bl.bobPh) * 3.8 + S.windY * 6.0;
+      const targetTilt = clamp(S.windX * 0.14, -0.32, 0.32);
+      const tAcc = (targetTilt - bl.tilt) * 18 - bl.tiltV * 4.2;
+      bl.tiltV += tAcc * dt;
+      bl.tilt += bl.tiltV * dt;
+    }
+
+    // Expanding sea wave rings rock nearby boats on springs
+    for (let i = S.rings.length - 1; i >= 0; i--) {
+      const rg = S.rings[i];
+      rg.age += dt;
+      rg.r += rg.speed * dt;
+      if (rg.age >= rg.maxAge) {
+        S.rings.splice(i, 1);
+        continue;
+      }
+      for (let j = 0; j < S.boats.length; j++) {
+        if (rg.rocked.has(j)) continue;
+        const b = S.boats[j];
+        const d = Math.hypot(b.x - rg.x, (b.y - rg.y) / 0.36);
+        if (Math.abs(d - rg.r) < 7) {
+          rg.rocked.add(j);
+          const prox = clamp(1 - d / 110, 0.25, 1);
+          b.bobV -= (16 + prox * 14);
+          b.heelV += (b.x >= rg.x ? 1 : -1) * (3.2 * prox);
+        }
+      }
+    }
+
+    // Sailboat tacking, spring bobbing/heeling & Bayer wakes
+    for (let i = 0; i < S.boats.length; i++) {
+      const b = S.boats[i];
+      const windPush = S.windX * 3.8;
+      const vx = b.dir * b.baseSpeed * 0.72 + windPush * 0.85;
+      b.x += vx * dt;
+      // Face tack direction when wind strongly reverses
+      if (Math.abs(vx) > 2.2) b.dir = vx >= 0 ? 1 : -1;
+
+      const margin = 24;
+      if (b.x > gw + margin) { b.x = -margin; b.wake.length = 0; }
+      if (b.x < -margin) { b.x = gw + margin; b.wake.length = 0; }
+
+      // Ambient ocean swell + spring damper
+      const swell = Math.sin(S.time * (2.2 + i * 0.25) + b.ph) * (1.2 + Math.abs(S.windX) * 0.45);
+      const bobAcc = (swell - b.bobY) * 28 - b.bobV * 4.2;
+      b.bobV += bobAcc * dt;
+      b.bobY += b.bobV * dt;
+
+      const targetHeel = Math.sin(S.time * 1.9 + b.ph) * 0.15 + clamp(S.windX * 0.14, -0.35, 0.35);
+      const heelAcc = (targetHeel - b.heel) * 22 - b.heelV * 3.8;
+      b.heelV += heelAcc * dt;
+      b.heel += b.heelV * dt;
+
+      // Update wake trail
+      const sternX = b.x - b.dir * (9 * b.scale);
+      if (b.wake.length === 0 || Math.hypot(sternX - b.wake[0].x, b.y - b.wake[0].y) >= 2.2) {
+        b.wake.unshift({ x: sternX, y: b.y + 0.5, age: 0 });
+      }
+      for (let w = b.wake.length - 1; w >= 0; w--) {
+        b.wake[w].age += dt * 0.48;
+        if (b.wake[w].age >= 1) b.wake.splice(w, 1);
+      }
+    }
+
+    // Wheeling pixel seabirds with calm cursor veering
+    const ptrCellX = S.ptrX / S.cell;
+    const ptrCellY = S.ptrY / S.cell;
+    for (let i = 0; i < S.birds.length; i++) {
+      const bd = S.birds[i];
+      const desiredY = bd.baseY + Math.sin(S.time * bd.freq + bd.ph) * bd.amp;
+      let ax = (S.windX * 4.5);
+      let ay = (desiredY - bd.y) * 2.2 - bd.vy * 1.8;
+
+      if (S.ptrActive) {
+        const qx = bd.x - ptrCellX;
+        const qy = bd.y - ptrCellY;
+        const d = Math.hypot(qx, qy);
+        if (d > 1 && d < 36) {
+          const w = 1 - d / 36;
+          ax += (qx / d) * w * 55;
+          ay += (qy / d) * w * 45;
+        }
+      }
+      bd.vx = clamp(bd.vx + ax * dt, -26, 26);
+      if (Math.abs(bd.vx) < 7) bd.vx = (bd.vx >= 0 ? 1 : -1) * 9;
+      bd.vy = clamp(bd.vy + ay * dt, -18, 18);
+      bd.x += bd.vx * dt;
+      bd.y = clamp(bd.y + bd.vy * dt, 10, yWater - 8);
+      if (bd.x > gw + 10) bd.x = -10;
+      if (bd.x < -10) bd.x = gw + 10;
+    }
+
+    // Spray droplets
+    for (let i = S.sprays.length - 1; i >= 0; i--) {
+      const sp = S.sprays[i];
+      sp.age += dt;
+      if (sp.age >= sp.maxAge) { S.sprays.splice(i, 1); continue; }
+      sp.vy += 68 * dt;
+      sp.x += sp.vx * dt;
+      sp.y += sp.vy * dt;
+    }
+
+    // Wind gust ribbons
+    for (let i = S.gusts.length - 1; i >= 0; i--) {
+      const gs = S.gusts[i];
+      gs.age += dt;
+      if (gs.age >= gs.maxAge) { S.gusts.splice(i, 1); continue; }
+      gs.x += gs.vx * dt;
+      gs.y += gs.vy * dt;
+    }
+  }
+
+  // =========================================================================
+  // RESIZE, DOM [data-dim] MEASUREMENT & RENDER LOOP
+  // =========================================================================
+  function readDimRects() {
+    S.dimRects = [];
+    document.querySelectorAll('[data-dim]').forEach((el) => {
+      const r = el.getBoundingClientRect();
+      if (r.width > 0 && r.height > 0) {
+        S.dimRects.push({ l: r.left - 8, t: r.top - 6, r: r.right + 8, b: r.bottom + 4 });
+      }
+    });
+  }
+
+  function resize() {
+    const maxPixels = 3840 * 2400;
+    const vw = Math.max(1, window.innerWidth);
+    const vh = Math.max(1, window.innerHeight);
+    let dpr = Math.max(1, Math.min(window.devicePixelRatio || 1, 3));
+    if (vw * vh * dpr * dpr > maxPixels) dpr = Math.max(1, Math.sqrt(maxPixels / (vw * vh)));
+
+    const cellCss = vw < 760 ? 2 : 3;
+    const cellDev = Math.max(1, Math.round(cellCss * dpr));
+    const dw = Math.ceil(vw * dpr);
+    const dh = Math.ceil(vh * dpr);
+
+    canvas.width = dw;
+    canvas.height = dh;
+    canvas.style.width = (dw / dpr) + 'px';
+    canvas.style.height = (dh / dpr) + 'px';
+
+    S.vw = vw; S.vh = vh; S.dpr = dpr;
+    S.dw = dw; S.dh = dh;
+    S.cellCss = cellCss; S.cellDev = cellDev;
+    S.cell = cellDev / dpr;
+    S.gw = Math.ceil(dw / cellDev);
+    S.gh = Math.ceil(dh / cellDev);
+
+    off.width = S.gw;
+    off.height = S.gh;
+    S.imgData = offCtx.createImageData(S.gw, S.gh);
+    S.buf8 = S.imgData.data;
+    S.out32 = new Uint32Array(S.buf8.buffer);
+    S.buf32 = new Uint32Array(S.gw * S.gh);
+    S.matBuf = new Uint8Array(S.gw * S.gh);
+    S.detBuf = new Uint8Array(S.gw * S.gh);
+
+    buildDitherTiles(cellCss);
+    buildWorld();
+    readDimRects();
+  }
+
+  function renderFrame() {
+    readDimRects();
+    const easeT = S.palT < 1 ? S.palT * S.palT * (3 - 2 * S.palT) : 1;
+    const pal = blendPalettes(PALETTES[S.palFrom], PALETTES[S.palTo], easeT);
+    renderScene(pal);
+    applyColorAscii(pal);
+
+    offCtx.putImageData(S.imgData, 0, 0);
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(off, 0, 0, S.gw, S.gh, 0, 0, S.gw * S.cellDev, S.gh * S.cellDev);
+  }
+
+  let rafId = 0;
+  let lastTs = 0;
+
+  function tick(ts) {
+    rafId = 0;
+    if (document.hidden) return;
+    const dt = lastTs ? Math.min(0.05, (ts - lastTs) / 1000) : 0.016;
+    lastTs = ts;
+
+    S.time = (S.time + dt) % 10000;
+    if (S.palT < 1) S.palT = Math.min(1, S.palT + dt * 2.8);
+
+    const ease = 1 - Math.exp(-dt * 9);
+    const targetParX = S.ptrActive ? (S.ptrTargetX / S.vw - 0.5) * 2 : 0;
+    const targetParY = S.ptrActive ? (S.ptrTargetY / S.vh - 0.5) * 2 : 0;
+    S.parX += (targetParX - S.parX) * ease;
+    S.parY += (targetParY - S.parY) * ease;
+    if (S.ptrActive) {
+      if (S.ptrX < -1000) { S.ptrX = S.ptrTargetX; S.ptrY = S.ptrTargetY; }
+      else {
+        S.ptrX += (S.ptrTargetX - S.ptrX) * ease;
+        S.ptrY += (S.ptrTargetY - S.ptrY) * ease;
+      }
+    }
+    const targetAlpha = S.ptrActive ? 1 : 0;
+    S.ptrLensAlpha += (targetAlpha - S.ptrLensAlpha) * (1 - Math.exp(-dt * 11));
+
+    stepPhysics(dt);
+    renderFrame();
+
+    if (!prefersReduced) {
+      rafId = requestAnimationFrame(tick);
+    }
+  }
+
+  function scheduleLoop() {
+    if (!prefersReduced && !rafId && !document.hidden) {
+      lastTs = 0;
+      rafId = requestAnimationFrame(tick);
+    }
+  }
+
+  // =========================================================================
+  // INTERACTIVE CONTROLS & GESTURES (WIND DRAG, SEA WAVE CLICK, HOVER LENS)
+  // =========================================================================
+  function isParkedCorner(x, y) {
+    return x <= 14 && y <= 14;
+  }
+
+  window.addEventListener('pointermove', (ev) => {
+    const x = ev.clientX, y = ev.clientY;
+    if (isParkedCorner(x, y) && !S.dragging) {
+      S.ptrActive = false;
+      return;
+    }
+    S.ptrActive = true;
+    S.ptrTargetX = x;
+    S.ptrTargetY = y;
+
+    if (S.dragging) {
+      const dx = x - S.dragLastX;
+      const dy = y - S.dragLastY;
+      S.dragMoved += Math.hypot(dx, dy);
+      S.dragLastX = x;
+      S.dragLastY = y;
+
+      const totalDx = x - S.dragStartX;
+      const totalDy = y - S.dragStartY;
+      S.windTargetX = clamp(totalDx / 70, -3.4, 3.4);
+      S.windTargetY = clamp(totalDy / 140, -1.2, 1.2);
+      S.windEnergy = 1.0;
+
+      if (Math.hypot(dx, dy) > 4) {
+        const cx = x / S.cell;
+        const cy = y / S.cell;
+        spawnWindGust(cx, cy, clamp(dx * 5.2, -95, 95), clamp(dy * 3.0, -45, 45));
+      }
+    }
+  }, { passive: true });
+
+  canvas.addEventListener('pointerdown', (ev) => {
+    if (ev.button !== 0 && ev.pointerType === 'mouse') return;
+    S.dragging = true;
+    S.dragStartX = ev.clientX;
+    S.dragStartY = ev.clientY;
+    S.dragLastX = ev.clientX;
+    S.dragLastY = ev.clientY;
+    S.dragMoved = 0;
+    S.ptrActive = true;
+    S.ptrTargetX = ev.clientX;
+    S.ptrTargetY = ev.clientY;
+    canvas.classList.add('dragging');
+  });
+
+  window.addEventListener('pointerup', (ev) => {
+    if (!S.dragging) return;
+    S.dragging = false;
+    canvas.classList.remove('dragging');
+    const cx = ev.clientX / S.cell;
+    const cy = ev.clientY / S.cell;
+
+    if (S.dragMoved < 12) {
+      // Direct click: sea creates expanding wave rings, sky launches wheeling gulls
+      if (cy >= S.yWater - 2) {
+        spawnSeaWaveRing(cx, cy);
+      } else {
+        spawnSkyGulls(cx, cy);
+      }
+      if (prefersReduced) renderFrame();
+    } else {
+      // Release a cluster of crisp wind-gust ribbons along the steered vector
+      const vx = clamp(S.windTargetX * 32, -95, 95);
+      const vy = clamp(S.windTargetY * 22, -40, 40);
+      for (let i = 0; i < 6; i++) {
+        spawnWindGust(
+          clamp(cx + (pcg2(i, 61) - 0.5) * 48, 8, S.gw - 8),
+          clamp(cy + (pcg2(i, 83) - 0.5) * 32, 10, S.gh - 18),
+          vx, vy
+        );
+      }
+      if (prefersReduced) renderFrame();
+    }
+  });
+
+  window.addEventListener('pointerleave', () => {
+    if (!S.dragging) S.ptrActive = false;
+  });
+
+  // Dock palette switcher
+  const palButtons = document.querySelectorAll('[data-pal]');
+  palButtons.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const next = btn.dataset.pal;
+      if (!PALETTES[next]) return;
+      if (next !== S.palTo) {
+        S.palFrom = S.palTo;
+        S.palTo = next;
+        S.palT = prefersReduced ? 1 : 0;
+      }
+      document.body.dataset.pal = next;
+      palButtons.forEach((b) => {
+        const on = b.dataset.pal === next;
+        b.classList.toggle('active', on);
+        b.setAttribute('aria-pressed', String(on));
+      });
+      if (prefersReduced) renderFrame();
+    });
+  });
+
+  // Dock render mode switcher (Full-Color ASCII vs Pixel + Lens)
+  const modeButtons = document.querySelectorAll('[data-mode]');
+  modeButtons.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const next = btn.dataset.mode;
+      if (next !== 'ascii' && next !== 'lens') return;
+      S.renderMode = next;
+      modeButtons.forEach((b) => {
+        const on = b.dataset.mode === next;
+        b.classList.toggle('active', on);
+        b.setAttribute('aria-pressed', String(on));
+      });
+      if (prefersReduced) renderFrame();
+    });
+  });
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      if (rafId) { cancelAnimationFrame(rafId); rafId = 0; }
+    } else {
+      scheduleLoop();
+    }
+  });
+
+  let resizeTimer = 0;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      resize();
+      if (prefersReduced) renderFrame();
+    }, 60);
+  });
+
+  // Boot
+  initKineticWords();
+  resize();
+  renderFrame();
+  scheduleLoop();
+})();
+</script>
+</body>
+</html>

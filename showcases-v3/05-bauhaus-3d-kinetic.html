@@ -1,0 +1,1918 @@
+<!DOCTYPE html>
+<html lang="en" data-ground="paper">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Bauhaus Kinetic Pavilion — Polychromatic 3D SDF Architecture</title>
+<style>
+  :root {
+    --ground: #F6F1E7;
+    --ink: #18181D;
+    --ink-dim: rgba(24, 24, 29, 0.68);
+    --ink-muted: rgba(24, 24, 29, 0.48);
+    --vermilion: #F03A2F;
+    --cobalt: #1B5BFF;
+    --cadmium: #F7C600;
+    --charcoal: #18181D;
+    --surface: rgba(246, 241, 231, 0.80);
+    --surface-hover: rgba(235, 228, 214, 0.92);
+    --border: rgba(24, 24, 29, 0.16);
+    --border-active: rgba(27, 91, 255, 0.56);
+    --active-bg: rgba(27, 91, 255, 0.11);
+    --sep: rgba(24, 24, 29, 0.14);
+    --shadow-halo: 0 1px 10px rgba(246, 241, 231, 0.94);
+    --dock-shadow: 0 8px 28px rgba(24, 24, 29, 0.10);
+    --kicker: #1B5BFF;
+    --mono: ui-monospace, "SF Mono", "JetBrains Mono", "Cascadia Mono", Menlo, Consolas, monospace;
+    --sans: "Helvetica Neue", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  }
+
+  [data-ground="blueprint"] {
+    --ground: #081124;
+    --ink: #F2F8FF;
+    --ink-dim: rgba(210, 232, 255, 0.74);
+    --ink-muted: rgba(164, 206, 255, 0.52);
+    --surface: rgba(8, 17, 36, 0.76);
+    --surface-hover: rgba(16, 34, 68, 0.88);
+    --border: rgba(78, 178, 255, 0.24);
+    --border-active: rgba(56, 232, 255, 0.62);
+    --active-bg: rgba(56, 232, 255, 0.16);
+    --sep: rgba(164, 206, 255, 0.16);
+    --shadow-halo: 0 1px 12px rgba(8, 17, 36, 0.94);
+    --dock-shadow: 0 10px 30px rgba(2, 6, 16, 0.45);
+    --kicker: #38E8FF;
+  }
+
+  *, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--sans);
+    -webkit-font-smoothing: antialiased;
+    user-select: none;
+    transition: background-color 180ms ease, color 180ms ease;
+  }
+
+  #stage {
+    position: fixed;
+    inset: 0;
+    display: block;
+    width: 100vw;
+    height: 100dvh;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    touch-action: none;
+    cursor: grab;
+    z-index: 1;
+  }
+
+  #stage.dragging {
+    cursor: grabbing;
+  }
+
+  .hud-top {
+    position: fixed;
+    top: max(16px, env(safe-area-inset-top));
+    left: max(20px, env(safe-area-inset-left));
+    right: max(20px, env(safe-area-inset-right));
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    pointer-events: none;
+    z-index: 10;
+  }
+
+  .title-block {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding: 4px 6px;
+    max-width: min(580px, calc(100vw - 150px));
+  }
+
+  .kicker-row {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+
+  .bauhaus-mark {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    flex-shrink: 0;
+  }
+
+  .bauhaus-mark i {
+    display: block;
+    width: 6px;
+    height: 6px;
+  }
+
+  .bauhaus-mark .m-r { background: #F03A2F; border-radius: 50%; }
+  .bauhaus-mark .m-y { background: #F7C600; clip-path: polygon(50% 0%, 0% 100%, 100% 100%); }
+  .bauhaus-mark .m-b { background: #1B5BFF; }
+
+  .kicker {
+    font-family: var(--mono);
+    font-size: 10px;
+    line-height: 1.2;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--kicker);
+    text-shadow: var(--shadow-halo);
+  }
+
+  .title {
+    font-size: clamp(16px, 1.9vw, 22px);
+    font-weight: 600;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+    text-shadow: var(--shadow-halo);
+  }
+
+  .spec {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    line-height: 1.3;
+    letter-spacing: 0.02em;
+    color: var(--ink-dim);
+    text-shadow: var(--shadow-halo);
+  }
+
+  .top-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    pointer-events: auto;
+    flex-shrink: 0;
+  }
+
+  .icon-btn {
+    appearance: none;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--ink-dim);
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    padding: 6px 11px;
+    border-radius: 999px;
+    cursor: pointer;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    box-shadow: var(--dock-shadow);
+    transition: color 140ms ease, border-color 140ms ease, background-color 140ms ease;
+  }
+
+  .icon-btn:hover {
+    color: var(--ink);
+    background: var(--surface-hover);
+    border-color: var(--border-active);
+  }
+
+  .icon-btn[aria-pressed="true"] {
+    color: var(--ink);
+    border-color: var(--border-active);
+    background: var(--active-bg);
+  }
+
+  .dock-wrap {
+    position: fixed;
+    left: 50%;
+    bottom: max(16px, env(safe-area-inset-bottom));
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    max-width: calc(100vw - 20px);
+    z-index: 10;
+    pointer-events: none;
+  }
+
+  .dock {
+    pointer-events: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 3px;
+    padding: 5px 7px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    box-shadow: var(--dock-shadow);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  .dock-group {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+  }
+
+  .dock-sep {
+    width: 1px;
+    height: 16px;
+    margin: 0 5px;
+    background: var(--sep);
+    flex-shrink: 0;
+  }
+
+  .pill-btn {
+    appearance: none;
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--ink-dim);
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.02em;
+    padding: 6px 10px;
+    border-radius: 999px;
+    cursor: pointer;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    transition: color 140ms ease, border-color 140ms ease, background-color 140ms ease;
+  }
+
+  .pill-btn:hover {
+    color: var(--ink);
+    background: var(--surface-hover);
+  }
+
+  .pill-btn[aria-pressed="true"] {
+    color: var(--ink);
+    background: var(--active-bg);
+    border-color: var(--border-active);
+  }
+
+  .pill-btn:focus-visible,
+  .icon-btn:focus-visible {
+    outline: 2px solid var(--kicker);
+    outline-offset: 2px;
+  }
+
+  .kbd {
+    font-size: 9px;
+    opacity: 0.55;
+  }
+
+  .ground-swatch {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    background: linear-gradient(135deg, #F6F1E7 50%, #081124 50%);
+    flex-shrink: 0;
+  }
+
+  [data-ground="blueprint"] .ground-swatch {
+    background: linear-gradient(135deg, #081124 50%, #38E8FF 50%);
+  }
+
+  .hint {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    color: var(--ink-muted);
+    text-align: center;
+    text-shadow: var(--shadow-halo);
+  }
+
+  @media (max-width: 760px) {
+    .hud-top {
+      top: max(12px, env(safe-area-inset-top));
+      left: 12px;
+      right: 12px;
+      gap: 8px;
+    }
+
+    .title-block {
+      max-width: calc(100vw - 122px);
+    }
+
+    .title {
+      font-size: 15px;
+    }
+
+    .spec {
+      font-size: 9.5px;
+    }
+
+    .icon-btn {
+      padding: 5px 8px;
+      font-size: 9px;
+    }
+
+    .dock {
+      border-radius: 16px;
+      padding: 5px 6px;
+      row-gap: 4px;
+      max-width: calc(100vw - 16px);
+    }
+
+    .dock-sep {
+      display: none;
+    }
+
+    .pill-btn {
+      font-size: 10px;
+      padding: 5px 8px;
+    }
+
+    .kbd,
+    .hint {
+      display: none;
+    }
+  }
+</style>
+</head>
+<body>
+<canvas id="stage" aria-label="Bauhaus Kinetic Pavilion polychromatic 3D SDF ASCII and Braille interactive showcase"></canvas>
+
+<header class="hud-top">
+  <div class="title-block" data-dim>
+    <div class="kicker-row">
+      <span class="bauhaus-mark" aria-hidden="true"><i class="m-r"></i><i class="m-y"></i><i class="m-b"></i></span>
+      <span class="kicker" id="hud-kicker">BAUHAUS KINETIC PAVILION</span>
+    </div>
+    <h1 class="title" id="hud-title">Kinetic Mobile</h1>
+    <span class="spec" id="hud-spec">Polychromatic 3D SDF · Soft Shadows · Pigment ASCII</span>
+  </div>
+  <div class="top-actions">
+    <button type="button" class="icon-btn" id="btn-orbit" aria-pressed="true" title="Toggle auto-orbit (Space)">Orbit</button>
+    <button type="button" class="icon-btn" id="btn-reset" title="Reset camera (R)">Reset</button>
+  </div>
+</header>
+
+<div class="dock-wrap">
+  <nav class="dock" aria-label="Sculpture, render mode, and ground controls">
+    <div class="dock-group" role="group" aria-label="3D Sculpture">
+      <button type="button" class="pill-btn" data-sculpture="0" aria-pressed="true"><span class="kbd">1</span>Mobile</button>
+      <button type="button" class="pill-btn" data-sculpture="1" aria-pressed="false"><span class="kbd">2</span>Archway</button>
+      <button type="button" class="pill-btn" data-sculpture="2" aria-pressed="false"><span class="kbd">3</span>Orrery</button>
+    </div>
+    <span class="dock-sep" aria-hidden="true"></span>
+    <div class="dock-group" role="group" aria-label="Render Mode">
+      <button type="button" class="pill-btn" data-mode="0" aria-pressed="true"><span class="kbd">Q</span>Pigment</button>
+      <button type="button" class="pill-btn" data-mode="1" aria-pressed="false"><span class="kbd">W</span>Contour</button>
+      <button type="button" class="pill-btn" data-mode="2" aria-pressed="false"><span class="kbd">E</span>2&times;4 Braille</button>
+    </div>
+    <span class="dock-sep" aria-hidden="true"></span>
+    <div class="dock-group" role="group" aria-label="Ground Theme">
+      <button type="button" class="pill-btn" id="btn-ground" data-action="ground" aria-pressed="false" title="Flip gallery paper / midnight blueprint (G)">
+        <span class="ground-swatch" aria-hidden="true"></span>
+        <span id="ground-label">Paper</span>
+      </button>
+    </div>
+  </nav>
+  <div class="hint" data-dim>Drag to orbit &middot; Scroll to zoom &middot; 1&ndash;3 sculpture &middot; Q/W/E mode &middot; G paper/blueprint</div>
+</div>
+
+<script>
+(() => {
+  'use strict';
+
+  const SCULPTURE_META = [
+    {
+      kicker: 'BAUHAUS KINETIC PAVILION',
+      title: 'Kinetic Mobile',
+      desc: 'Vermilion · Cobalt · Cadmium · Cast Shadows',
+      yaw: -0.18,
+      pitch: 0.25,
+      dist: 4.45,
+    },
+    {
+      kicker: 'BAUHAUS ARCHITECTURAL STUDY',
+      title: 'Pavilion Archway',
+      desc: 'Cobalt Portal · Cantilever Beam · Sun-Disc',
+      yaw: 0.22,
+      pitch: 0.22,
+      dist: 4.65,
+    },
+    {
+      kicker: 'BAUHAUS CELESTIAL MECHANISM',
+      title: 'Solar Orrery',
+      desc: 'Nested Gimbal Rings · Vermilion Core · Moons',
+      yaw: 0.36,
+      pitch: 0.26,
+      dist: 4.50,
+    },
+  ];
+
+  const MODE_META = [
+    'Pigment ASCII',
+    'Blueprint Contours',
+    'Color 2×4 Braille',
+  ];
+
+  const MAX_PIXELS = 3840 * 2400;
+  const reducedMotionMQ = window.matchMedia
+    ? window.matchMedia('(prefers-reduced-motion: reduce)')
+    : { matches: false, addEventListener() {} };
+
+  const state = {
+    sculpture: 0,
+    mode: 0,
+    isLightGround: true,
+    autoOrbit: !reducedMotionMQ.matches,
+    reducedMotion: !!reducedMotionMQ.matches,
+    time: 2.1,
+    yaw: SCULPTURE_META[0].yaw,
+    pitch: SCULPTURE_META[0].pitch,
+    dist: SCULPTURE_META[0].dist,
+    targetYaw: SCULPTURE_META[0].yaw,
+    targetPitch: SCULPTURE_META[0].pitch,
+    targetDist: SCULPTURE_META[0].dist,
+    hoverX: 0,
+    hoverY: 0,
+    targetHoverX: 0,
+    targetHoverY: 0,
+    dragging: false,
+    lastPtrX: 0,
+    lastPtrY: 0,
+    needsRender: true,
+    hidden: document.hidden,
+    dimRects: new Float32Array(4 * 4),
+    dimCount: 0,
+  };
+
+  let canvas = document.getElementById('stage');
+  const hudKicker = document.getElementById('hud-kicker');
+  const hudTitle = document.getElementById('hud-title');
+  const hudSpec = document.getElementById('hud-spec');
+  const btnOrbit = document.getElementById('btn-orbit');
+  const btnReset = document.getElementById('btn-reset');
+  const btnGround = document.getElementById('btn-ground');
+  const groundLabel = document.getElementById('ground-label');
+  const sculptureBtns = [...document.querySelectorAll('[data-sculpture]')];
+  const modeBtns = [...document.querySelectorAll('[data-mode]')];
+
+  function updateHud() {
+    const sm = SCULPTURE_META[state.sculpture];
+    const groundName = state.isLightGround ? 'Paper' : 'Blueprint';
+    hudKicker.textContent = sm.kicker;
+    hudTitle.textContent = sm.title;
+    hudSpec.textContent = `${sm.desc} · ${MODE_META[state.mode]} · ${groundName}`;
+    document.documentElement.setAttribute('data-ground', state.isLightGround ? 'paper' : 'blueprint');
+    sculptureBtns.forEach((b) => {
+      b.setAttribute('aria-pressed', String(Number(b.dataset.sculpture) === state.sculpture));
+    });
+    modeBtns.forEach((b) => {
+      b.setAttribute('aria-pressed', String(Number(b.dataset.mode) === state.mode));
+    });
+    btnOrbit.setAttribute('aria-pressed', String(state.autoOrbit));
+    btnOrbit.textContent = state.autoOrbit ? 'Orbit' : 'Paused';
+    btnGround.setAttribute('aria-pressed', String(!state.isLightGround));
+    groundLabel.textContent = state.isLightGround ? 'Blueprint' : 'Paper';
+  }
+
+  function selectSculpture(idx) {
+    if (idx < 0 || idx > 2) return;
+    state.sculpture = idx;
+    const sm = SCULPTURE_META[idx];
+    state.targetYaw = sm.yaw;
+    state.targetPitch = sm.pitch;
+    state.targetDist = sm.dist;
+    if (state.reducedMotion) {
+      state.yaw = sm.yaw;
+      state.pitch = sm.pitch;
+      state.dist = sm.dist;
+    }
+    state.needsRender = true;
+    updateHud();
+  }
+
+  function selectMode(idx) {
+    if (idx < 0 || idx > 2) return;
+    state.mode = idx;
+    state.needsRender = true;
+    updateHud();
+  }
+
+  function toggleGround() {
+    state.isLightGround = !state.isLightGround;
+    state.needsRender = true;
+    updateHud();
+  }
+
+  function resetCamera() {
+    const sm = SCULPTURE_META[state.sculpture];
+    state.targetYaw = sm.yaw;
+    state.targetPitch = sm.pitch;
+    state.targetDist = sm.dist;
+    state.targetHoverX = 0;
+    state.targetHoverY = 0;
+    if (state.reducedMotion) {
+      state.yaw = sm.yaw;
+      state.pitch = sm.pitch;
+      state.dist = sm.dist;
+      state.hoverX = 0;
+      state.hoverY = 0;
+    }
+    state.needsRender = true;
+  }
+
+  sculptureBtns.forEach((b) => {
+    b.addEventListener('click', () => selectSculpture(Number(b.dataset.sculpture)));
+  });
+
+  modeBtns.forEach((b) => {
+    b.addEventListener('click', () => selectMode(Number(b.dataset.mode)));
+  });
+
+  btnGround.addEventListener('click', toggleGround);
+
+  btnOrbit.addEventListener('click', () => {
+    state.autoOrbit = !state.autoOrbit;
+    state.needsRender = true;
+    updateHud();
+  });
+
+  btnReset.addEventListener('click', resetCamera);
+
+  window.addEventListener('keydown', (e) => {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    const k = e.key.toLowerCase();
+    if (k === '1') selectSculpture(0);
+    else if (k === '2') selectSculpture(1);
+    else if (k === '3') selectSculpture(2);
+    else if (k === 'q') selectMode(0);
+    else if (k === 'w') selectMode(1);
+    else if (k === 'e') selectMode(2);
+    else if (k === 'g') toggleGround();
+    else if (k === 'r') resetCamera();
+    else if (e.code === 'Space') {
+      e.preventDefault();
+      state.autoOrbit = !state.autoOrbit;
+      state.needsRender = true;
+      updateHud();
+    }
+  });
+
+  if (reducedMotionMQ.addEventListener) {
+    reducedMotionMQ.addEventListener('change', (ev) => {
+      state.reducedMotion = ev.matches;
+      if (state.reducedMotion) {
+        state.autoOrbit = false;
+      }
+      state.needsRender = true;
+      updateHud();
+    });
+  }
+
+  document.addEventListener('visibilitychange', () => {
+    state.hidden = document.hidden;
+    if (!state.hidden) state.needsRender = true;
+  });
+
+  function bindCanvasInteractions(cv) {
+    cv.addEventListener('pointerdown', (e) => {
+      if (e.button !== 0 && e.pointerType === 'mouse') return;
+      state.dragging = true;
+      state.lastPtrX = e.clientX;
+      state.lastPtrY = e.clientY;
+      cv.classList.add('dragging');
+      try { cv.setPointerCapture(e.pointerId); } catch (_) {}
+      state.needsRender = true;
+    });
+
+    cv.addEventListener('pointermove', (e) => {
+      const vw = Math.max(window.innerWidth, 1);
+      const vh = Math.max(window.innerHeight, 1);
+      if (state.dragging) {
+        const dx = e.clientX - state.lastPtrX;
+        const dy = e.clientY - state.lastPtrY;
+        state.lastPtrX = e.clientX;
+        state.lastPtrY = e.clientY;
+        state.targetYaw -= dx * 0.0075;
+        state.targetPitch = Math.max(0.06, Math.min(1.18, state.targetPitch + dy * 0.0062));
+        if (state.reducedMotion) {
+          state.yaw = state.targetYaw;
+          state.pitch = state.targetPitch;
+        }
+        state.needsRender = true;
+      } else {
+        state.targetHoverX = (e.clientX / vw) * 2 - 1;
+        state.targetHoverY = (e.clientY / vh) * 2 - 1;
+        if (!state.reducedMotion) {
+          state.needsRender = true;
+        }
+      }
+    });
+
+    const endDrag = (e) => {
+      if (!state.dragging) return;
+      state.dragging = false;
+      cv.classList.remove('dragging');
+      try { cv.releasePointerCapture(e.pointerId); } catch (_) {}
+      state.needsRender = true;
+    };
+
+    cv.addEventListener('pointerup', endDrag);
+    cv.addEventListener('pointercancel', endDrag);
+    cv.addEventListener('pointerleave', () => {
+      state.targetHoverX = 0;
+      state.targetHoverY = 0;
+      if (!state.reducedMotion) state.needsRender = true;
+    });
+
+    cv.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      state.targetDist = Math.max(3.1, Math.min(7.8, state.targetDist + e.deltaY * 0.0032));
+      if (state.reducedMotion) state.dist = state.targetDist;
+      state.needsRender = true;
+    }, { passive: false });
+  }
+
+  function readDimRects(vw, vh) {
+    const els = document.querySelectorAll('[data-dim]');
+    let count = 0;
+    for (let i = 0; i < els.length && count < 4; i++) {
+      const r = els[i].getBoundingClientRect();
+      if (r.width <= 0 || r.height <= 0) continue;
+      state.dimRects[count * 4 + 0] = Math.max(0, (r.left - 8) / vw);
+      state.dimRects[count * 4 + 1] = Math.max(0, (r.top - 6) / vh);
+      state.dimRects[count * 4 + 2] = Math.min(1, (r.right + 8) / vw);
+      state.dimRects[count * 4 + 3] = Math.min(1, (r.bottom + 6) / vh);
+      count++;
+    }
+    state.dimCount = count;
+  }
+
+  function computeGridMetrics() {
+    const vw = Math.max(1, window.innerWidth);
+    const vh = Math.max(1, window.innerHeight);
+    const dpr = Math.min(window.devicePixelRatio || 1, 2.5);
+    const cellCss = vw < 760 ? 1 : 2;
+    let cw = Math.round(vw * dpr);
+    let ch = Math.round(vh * dpr);
+    let scale = 1;
+    if (cw * ch > MAX_PIXELS) {
+      scale = Math.sqrt(MAX_PIXELS / (cw * ch));
+      cw = Math.max(1, Math.floor(cw * scale));
+      ch = Math.max(1, Math.floor(ch * scale));
+    }
+    const cellDev = Math.max(1, Math.round(cellCss * dpr * scale));
+    const gw = Math.max(12, Math.ceil(cw / cellDev));
+    const gh = Math.max(12, Math.ceil(ch / cellDev));
+    const glw = Math.max(2, Math.ceil(gw / 6));
+    const glh = Math.max(2, Math.ceil(gh / 9));
+    return { vw, vh, dpr, cellCss, cellDev, cw, ch, gw, gh, glw, glh };
+  }
+
+  // =========================================================================
+  // WebGL2 3-Pass Polychromatic Dual-MRT Raymarched SDF Engine
+  // Pass 1 (SCENE): MRT RGBA8 x 2 -> uColorTex (pigment RGB, ink) & uNormTex (normal XY, edge, matId/5)
+  // Pass 2 (GLYPHPASS): 6x9 tile True-Color Pigment ASCII / Blueprint Directional Contours
+  // Pass 3 (BLIT): Single y-flip, packed 5x7 GLYPH_17 or True-Color GPU 2x4 Braille
+  // =========================================================================
+
+  const VERT_SRC = `#version 300 es
+precision highp float;
+const vec2 POS[3] = vec2[3](vec2(-1.0, -1.0), vec2(3.0, -1.0), vec2(-1.0, 3.0));
+void main() {
+  gl_Position = vec4(POS[gl_VertexID], 0.0, 1.0);
+}`;
+
+  const SCENE_FRAG_SRC = `#version 300 es
+precision highp float;
+precision highp int;
+
+uniform ivec2 uGrid;
+uniform float uTime;
+uniform float uYaw;
+uniform float uPitch;
+uniform float uDist;
+uniform int uSculpture;
+uniform float uIsLightBg;
+
+layout(location = 0) out vec4 outColor;
+layout(location = 1) out vec4 outNorm;
+
+const float FLOOR_Y = -1.36;
+
+mat2 rot2(float a) {
+  float c = cos(a), s = sin(a);
+  return mat2(c, -s, s, c);
+}
+
+vec2 opU(vec2 a, vec2 b) {
+  return a.x < b.x ? a : b;
+}
+
+float sdSphere(vec3 p, float r) {
+  return length(p) - r;
+}
+
+float sdBox(vec3 p, vec3 b) {
+  vec3 q = abs(p) - b;
+  return length(max(q, 0.0)) + min(max(q.x, max(q.y, q.z)), 0.0);
+}
+
+float sdRoundBox(vec3 p, vec3 b, float r) {
+  vec3 q = abs(p) - b;
+  return length(max(q, 0.0)) + min(max(q.x, max(q.y, q.z)), 0.0) - r;
+}
+
+float sdTorus(vec3 p, vec2 t) {
+  vec2 q = vec2(length(p.xz) - t.x, p.y);
+  return length(q) - t.y;
+}
+
+float sdCapsule(vec3 p, vec3 a, vec3 b, float r) {
+  vec3 pa = p - a, ba = b - a;
+  float h = clamp(dot(pa, ba) / dot(ba, ba), 0.0, 1.0);
+  return length(pa - ba * h) - r;
+}
+
+float sdCylinderY(vec3 p, float r, float h) {
+  vec2 d = abs(vec2(length(p.xz), p.y)) - vec2(r, h);
+  return min(max(d.x, d.y), 0.0) + length(max(d, 0.0));
+}
+
+float sdCylinderZ(vec3 p, float r, float h) {
+  vec2 d = abs(vec2(length(p.xy), p.z)) - vec2(r, h);
+  return min(max(d.x, d.y), 0.0) + length(max(d, 0.0));
+}
+
+// =========================================================================
+// Sculpture 0: Kinetic Mobile
+// Suspended Vermilion sphere, counter-rotating Cadmium torus ring,
+// tilted Cobalt arch column, and Charcoal counterweight balance bar
+// Spread across distinct sculptural silhouettes with dramatic floor shadows
+// =========================================================================
+vec2 mapMobile(vec3 p) {
+  float t = uTime;
+  vec2 res = vec2(1e5, 0.0);
+
+  // Subtle kinetic sway on the upper balance assembly
+  vec3 pm = p;
+  pm.xz = rot2(sin(t * 0.42) * 0.36) * pm.xz;
+  float rock = 0.08 * sin(t * 1.05);
+  vec3 pBar = pm - vec3(0.06, 0.56, 0.0);
+  pBar.xy = rot2(rock) * pBar.xy;
+
+  // 1. Vermilion Red suspended sphere (mat 1) — commanding upper-right focal mass
+  vec3 sphPos = vec3(1.10, -0.02 + 0.08 * sin(t * 1.2), 0.16);
+  float dSph = sdSphere(pBar - sphPos, 0.58);
+  res = opU(res, vec2(dSph, 1.0));
+
+  // Small Vermilion counterweight orb suspended from the far-left tip
+  float dPlumb = sdSphere(pBar - vec3(-1.38, -0.18, -0.04), 0.18);
+  res = opU(res, vec2(dPlumb, 1.0));
+
+  // 2. Counter-rotating Cadmium Yellow torus ring (mat 3) — sweeping central ring
+  vec3 pt = p - vec3(0.14, 0.04, -0.06);
+  pt.xz = rot2(-t * 0.52) * pt.xz;
+  pt.yz = rot2(0.64 + 0.14 * sin(t * 0.78)) * pt.yz;
+  pt.xy = rot2(0.28) * pt.xy;
+  float dTorus = sdTorus(pt, vec2(1.16, 0.165));
+  res = opU(res, vec2(dTorus, 3.0));
+
+  // Cadmium spinning finial disc above the central fulcrum
+  vec3 pTopDisc = pBar - vec3(0.0, 0.44, 0.0);
+  pTopDisc.xz = rot2(t * 0.75) * pTopDisc.xz;
+  float dTopDisc = sdCylinderZ(pTopDisc, 0.24, 0.055) - 0.02;
+  res = opU(res, vec2(dTopDisc, 3.0));
+
+  // 3. Tilted Cobalt Blue Bauhaus arch column (mat 2) — bold left architectural anchor
+  vec3 pa = p - vec3(-1.08, -0.32, 0.22);
+  pa.xz = rot2(0.26 + 0.18 * sin(t * 0.48)) * pa.xz;
+  pa.xy = rot2(0.14 + 0.04 * cos(t * 0.85)) * pa.xy;
+  float archBody = min(
+    sdRoundBox(pa - vec3(0.0, -0.22, 0.0), vec3(0.56, 0.50, 0.20), 0.03),
+    sdCylinderZ(pa - vec3(0.0, 0.28, 0.0), 0.59, 0.23)
+  );
+  float archCut = min(
+    sdBox(pa - vec3(0.0, -0.36, 0.0), vec3(0.30, 0.62, 0.38)),
+    sdCylinderZ(pa - vec3(0.0, 0.22, 0.0), 0.30, 0.38)
+  );
+  float dArch = max(archBody, -archCut);
+  res = opU(res, vec2(dArch, 2.0));
+
+  // 4. Matte Charcoal counterweight balance bar, mast & geometric block (mat 4)
+  float dBeam = sdCapsule(pBar, vec3(-1.46, 0.26, -0.04), vec3(1.14, -0.14, 0.16), 0.072);
+  float dMast = sdCapsule(pm, vec3(0.06, 0.98, 0.0), vec3(0.06, -0.82, 0.0), 0.062);
+  float dBase = sdCylinderY(pm - vec3(0.06, -0.86, 0.0), 0.30, 0.06) - 0.02;
+  float dDrop = sdCapsule(pBar, vec3(-1.38, 0.25, -0.04), vec3(-1.38, -0.04, -0.04), 0.038);
+  vec3 pCw = pBar - vec3(-1.38, 0.26, -0.04);
+  pCw.xy = rot2(0.14) * pCw.xy;
+  float dCw = sdRoundBox(pCw, vec3(0.18, 0.24, 0.18), 0.03);
+  float dFulc = sdSphere(pm - vec3(0.06, 0.56, 0.0), 0.15);
+  float dCharcoal = min(min(min(dBeam, dMast), min(dDrop, dCw)), min(dFulc, dBase));
+  res = opU(res, vec2(dCharcoal, 4.0));
+
+  return res;
+}
+
+// =========================================================================
+// Sculpture 1: Pavilion Archway
+// Monumental Bauhaus stepped colonnade, wide Cobalt semicircular portal,
+// floating Vermilion sun-disc, Cadmium cantilevered beam & Charcoal plinth
+// =========================================================================
+vec2 mapArchway(vec3 p) {
+  float t = uTime;
+  vec2 res = vec2(1e5, 0.0);
+
+  vec3 q = p;
+  q.xz = rot2(sin(t * 0.32) * 0.28) * q.xz;
+
+  // 1. Matte Charcoal sleek stepped architectural plinth & far-right fin (mat 4)
+  float step1 = sdRoundBox(q - vec3(0.0, -1.20, 0.0), vec3(1.62, 0.08, 0.84), 0.02);
+  float step2 = sdRoundBox(q - vec3(-0.08, -1.04, 0.0), vec3(1.30, 0.07, 0.66), 0.02);
+  float fin = sdRoundBox(q - vec3(1.38, -0.22, -0.22), vec3(0.11, 0.90, 0.34), 0.02);
+  float dPlinth = min(min(step1, step2), fin);
+  res = opU(res, vec2(dPlinth, 4.0));
+
+  // 2. Monumental Cobalt Blue semicircular portal archway & left colonnade pier (mat 2)
+  vec3 pa = q - vec3(-0.14, -0.14, 0.04);
+  float outerWall = sdRoundBox(pa, vec3(1.04, 0.84, 0.24), 0.025);
+  float portalArch = min(
+    sdBox(pa - vec3(0.0, -0.34, 0.0), vec3(0.54, 0.60, 0.44)),
+    sdCylinderZ(pa - vec3(0.0, 0.12, 0.0), 0.54, 0.44)
+  );
+  float dPortal = max(outerWall, -portalArch);
+  float dColL = sdRoundBox(q - vec3(-1.42, -0.44, 0.22), vec3(0.17, 0.68, 0.18), 0.02);
+  res = opU(res, vec2(min(dPortal, dColL), 2.0));
+
+  // 3. Cadmium Yellow cantilevered modernist horizontal beam (mat 3)
+  float slide = 0.09 * sin(t * 0.9);
+  float dBeam = sdRoundBox(q - vec3(0.32 + slide, 0.66, 0.20), vec3(1.36, 0.16, 0.22), 0.025);
+  float dCadStep = sdRoundBox(q - vec3(0.98, -0.84, 0.38), vec3(0.34, 0.15, 0.22), 0.02);
+  res = opU(res, vec2(min(dBeam, dCadStep), 3.0));
+
+  // 4. Floating Vermilion Red sun-disc & sculptural cube (mat 1)
+  vec3 ps = q - vec3(0.56, 1.24 + 0.06 * sin(t * 1.15), -0.02);
+  ps.xz = rot2(t * 0.55) * ps.xz;
+  float dSunDisc = sdCylinderZ(ps, 0.46, 0.12) - 0.025;
+  float dRedCube = sdRoundBox(q - vec3(-0.92, -0.74, 0.44), vec3(0.22, 0.22, 0.22), 0.025);
+  res = opU(res, vec2(min(dSunDisc, dRedCube), 1.0));
+
+  return res;
+}
+
+// =========================================================================
+// Sculpture 2: Solar Orrery
+// Nested Cadmium/Cobalt gimbal rings orbiting a Vermilion core & moons
+// =========================================================================
+vec2 mapOrrery(vec3 p) {
+  float t = uTime;
+  vec2 res = vec2(1e5, 0.0);
+  vec3 c = p - vec3(0.0, 0.18, 0.0);
+
+  // 1. Vermilion Red solar core (mat 1)
+  float dCore = sdSphere(c, 0.46);
+  res = opU(res, vec2(dCore, 1.0));
+
+  // 2. Outer Cadmium Yellow gimbal ring (mat 3)
+  vec3 g1 = c;
+  g1.xz = rot2(t * 0.34) * g1.xz;
+  g1.yz = rot2(0.44 + 0.16 * sin(t * 0.5)) * g1.yz;
+  float dRing1 = sdTorus(g1, vec2(1.36, 0.105));
+
+  // Inner Cadmium gimbal ring (mat 3)
+  vec3 g3 = c;
+  g3.xy = rot2(-t * 0.62 + 0.4) * g3.xy;
+  g3.xz = rot2(0.85) * g3.xz;
+  float dRing3 = sdTorus(g3, vec2(0.74, 0.075));
+  res = opU(res, vec2(min(dRing1, dRing3), 3.0));
+
+  // 3. Middle Cobalt Blue gimbal ring & orbiting Cobalt cube moon (mat 2)
+  vec3 g2 = c;
+  g2.xy = rot2(t * 0.48 + 0.55) * g2.xy;
+  g2.yz = rot2(1.18) * g2.yz;
+  float dRing2 = sdTorus(g2, vec2(1.06, 0.095));
+
+  float mAng = t * 0.56 + 0.9;
+  vec3 moonP = c - vec3(cos(mAng) * 1.54, 0.28 * sin(mAng * 1.2), sin(mAng) * 1.54);
+  moonP.xz = rot2(t * 0.8) * moonP.xz;
+  moonP.xy = rot2(0.65) * moonP.xy;
+  float dMoonBlue = sdRoundBox(moonP, vec3(0.18), 0.035);
+  res = opU(res, vec2(min(dRing2, dMoonBlue), 2.0));
+
+  // 4. Matte Charcoal polar axle, pivot collars & counterweight satellite (mat 4)
+  vec3 ax = g1;
+  float dAxle = sdCapsule(ax, vec3(0.0, -1.36, 0.0), vec3(0.0, 1.36, 0.0), 0.042);
+  float dPin1 = sdSphere(ax - vec3(0.0, 1.36, 0.0), 0.11);
+  float dPin2 = sdSphere(ax - vec3(0.0, -1.36, 0.0), 0.11);
+  float satAng = mAng + 3.14159;
+  vec3 satP = c - vec3(cos(satAng) * 1.48, -0.22 * sin(satAng), sin(satAng) * 1.48);
+  float dSat = sdSphere(satP, 0.17);
+  float dCharcoal = min(min(dAxle, min(dPin1, dPin2)), dSat);
+  res = opU(res, vec2(dCharcoal, 4.0));
+
+  // Small Vermilion moonlet orbiting the opposite side
+  vec3 miniP = c - vec3(cos(satAng + 0.52) * 1.18, 0.44 * cos(satAng), sin(satAng + 0.52) * 1.18);
+  res = opU(res, vec2(sdSphere(miniP, 0.13), 1.0));
+
+  return res;
+}
+
+vec2 mapSculpture(vec3 p) {
+  if (uSculpture == 0) return mapMobile(p);
+  if (uSculpture == 1) return mapArchway(p);
+  return mapOrrery(p);
+}
+
+vec3 calcNormal(vec3 p) {
+  const vec2 e = vec2(0.0022, -0.0022);
+  return normalize(
+    e.xyy * mapSculpture(p + e.xyy).x +
+    e.yyx * mapSculpture(p + e.yyx).x +
+    e.yxy * mapSculpture(p + e.yxy).x +
+    e.xxx * mapSculpture(p + e.xxx).x
+  );
+}
+
+float softShadow(vec3 ro, vec3 rd, float mint, float maxt, float k) {
+  float res = 1.0;
+  float t = mint;
+  for (int i = 0; i < 20; i++) {
+    float h = mapSculpture(ro + rd * t).x;
+    res = min(res, k * h / t);
+    t += clamp(h, 0.035, 0.34);
+    if (res < 0.02 || t > maxt) break;
+  }
+  return clamp(res, 0.0, 1.0);
+}
+
+float calcAO(vec3 p, vec3 n) {
+  float occ = 0.0;
+  float sca = 1.0;
+  for (int i = 0; i < 5; i++) {
+    float h = 0.04 + 0.11 * float(i);
+    float d = mapSculpture(p + n * h).x;
+    occ += (h - d) * sca;
+    sca *= 0.72;
+  }
+  return clamp(1.0 - 1.9 * occ, 0.15, 1.0);
+}
+
+void shadeMaterial(float matId, vec3 p, vec3 n, vec3 rd, vec3 lightDir, out vec3 col, out float ink) {
+  float ndl = max(dot(n, lightDir), 0.0);
+  float wrap = clamp((dot(n, lightDir) + 0.25) / 1.25, 0.0, 1.0);
+  float skyFill = 0.5 + 0.5 * n.y;
+  float ao = calcAO(p, n);
+  float sh = softShadow(p + n * 0.025, lightDir, 0.04, 4.5, 10.0);
+  float lit = ndl * (0.35 + 0.65 * sh);
+
+  vec3 hVec = normalize(lightDir - rd);
+  float spec = pow(max(dot(n, hVec), 0.0), 22.0) * sh;
+  float ndv = max(dot(n, -rd), 0.0);
+  float fres = pow(1.0 - ndv, 2.6);
+
+  if (uIsLightBg > 0.5) {
+    // Warm Gallery Paper (#F6F1E7) — vibrant sunlit Bauhaus screenprint pigments
+    vec3 hiCol, midCol, shCol;
+    float baseInk;
+    if (matId < 1.5) {
+      // Mat 1: Vermilion Red (#F03A2F)
+      hiCol  = vec3(0.985, 0.365, 0.255);
+      midCol = vec3(0.941, 0.227, 0.184);
+      shCol  = vec3(0.655, 0.102, 0.098);
+      baseInk = 0.44;
+    } else if (matId < 2.5) {
+      // Mat 2: Cobalt Blue (#1B5BFF)
+      hiCol  = vec3(0.245, 0.485, 1.000);
+      midCol = vec3(0.106, 0.357, 1.000);
+      shCol  = vec3(0.048, 0.165, 0.665);
+      baseInk = 0.44;
+    } else if (matId < 3.5) {
+      // Mat 3: Cadmium Yellow (#F7C600) — rich golden ochre shadows so it pops on cream paper
+      hiCol  = vec3(0.969, 0.776, 0.000);
+      midCol = vec3(0.898, 0.665, 0.000);
+      shCol  = vec3(0.680, 0.445, 0.000);
+      baseInk = 0.50;
+    } else {
+      // Mat 4: Matte Charcoal (#18181D)
+      hiCol  = vec3(0.265, 0.265, 0.310);
+      midCol = vec3(0.115, 0.115, 0.145);
+      shCol  = vec3(0.062, 0.062, 0.082);
+      baseInk = 0.54;
+    }
+
+    float shade = clamp(lit * 0.78 + skyFill * 0.22 * ao, 0.0, 1.0);
+    col = shade > 0.52
+      ? mix(midCol, hiCol, smoothstep(0.52, 0.96, shade))
+      : mix(shCol, midCol, smoothstep(0.08, 0.52, shade));
+    col = mix(col, mix(hiCol, vec3(1.0, 0.97, 0.92), 0.35), spec * 0.45);
+    col *= (0.82 + 0.18 * ao);
+
+    // Light-ground ink weight: sculpted shading from crisp highlight to bold shaded core
+    float shadowWeight = 1.0 - clamp(lit * 0.74 + spec * 0.40 + skyFill * 0.14, 0.0, 1.0);
+    ink = clamp(baseInk + shadowWeight * 0.50 + (1.0 - ao) * 0.18 + fres * 0.10, 0.34, 0.98);
+  } else {
+    // Midnight Blueprint (#081124) — luminous drafting pigments
+    vec3 hiCol, midCol, shCol;
+    if (matId < 1.5) {
+      // Luminous Coral-Vermilion
+      hiCol  = vec3(1.000, 0.610, 0.520);
+      midCol = vec3(1.000, 0.355, 0.320);
+      shCol  = vec3(0.660, 0.165, 0.200);
+    } else if (matId < 2.5) {
+      // Electric Blueprint Cyan-Cobalt
+      hiCol  = vec3(0.580, 0.945, 1.000);
+      midCol = vec3(0.185, 0.725, 1.000);
+      shCol  = vec3(0.105, 0.340, 0.780);
+    } else if (matId < 3.5) {
+      // Drafting Cadmium Gold
+      hiCol  = vec3(1.000, 0.945, 0.640);
+      midCol = vec3(1.000, 0.820, 0.240);
+      shCol  = vec3(0.700, 0.460, 0.060);
+    } else {
+      // Crisp Drafting White / Ice Silver
+      hiCol  = vec3(0.980, 0.995, 1.000);
+      midCol = vec3(0.760, 0.875, 0.990);
+      shCol  = vec3(0.360, 0.510, 0.740);
+    }
+
+    float shade = clamp(wrap * (0.45 + 0.55 * sh) * 0.80 + skyFill * 0.20 * ao, 0.0, 1.0);
+    col = shade > 0.50
+      ? mix(midCol, hiCol, smoothstep(0.50, 0.96, shade))
+      : mix(shCol, midCol, smoothstep(0.06, 0.50, shade));
+    col = mix(col, vec3(0.94, 0.98, 1.0), clamp(spec * 0.55 + fres * 0.32, 0.0, 0.72));
+
+    // Dark-ground ink weight: bright lit facets + glowing drafting rims
+    ink = clamp(0.28 + lit * 0.56 + spec * 0.36 + fres * 0.34 + skyFill * 0.12 * ao, 0.24, 0.98);
+  }
+}
+
+void main() {
+  float aspect = float(uGrid.x) / max(float(uGrid.y), 1.0);
+  vec2 uv = (gl_FragCoord.xy / vec2(uGrid)) * 2.0 - 1.0;
+  vec2 p = vec2(uv.x * aspect, -uv.y);
+
+  // Portrait framing compensation so wide sculptures never clip horizontally on 390px mobile
+  float effDist = uDist * max(1.0, 1.15 / max(aspect, 0.42));
+  vec3 target = vec3(0.0, -0.20, 0.0);
+  vec3 ro = target + effDist * vec3(
+    cos(uPitch) * sin(uYaw),
+    sin(uPitch),
+    cos(uPitch) * cos(uYaw)
+  );
+  vec3 ww = normalize(target - ro);
+  vec3 uu = normalize(cross(ww, vec3(0.0, 1.0, 0.0)));
+  vec3 vv = cross(uu, ww);
+  vec3 rd = normalize(p.x * uu + p.y * vv + 1.85 * ww);
+
+  vec3 lightDir = normalize(vec3(0.68, 0.74, 0.42));
+  vec3 bgCol = uIsLightBg > 0.5
+    ? vec3(0.965, 0.945, 0.906) // #F6F1E7 Warm Gallery Paper
+    : vec3(0.031, 0.067, 0.141); // #081124 Midnight Blueprint
+
+  // Raymarch 3D sculpture
+  float tMax = 16.0;
+  float tFloor = 1e5;
+  if (rd.y < -0.004) {
+    float tf = (FLOOR_Y - ro.y) / rd.y;
+    if (tf > 0.0 && tf < 18.0) {
+      tFloor = tf;
+      tMax = min(tMax, tf);
+    }
+  }
+
+  float t = 0.05;
+  float hitMat = 0.0;
+  float minDist = 1e5;
+  for (int i = 0; i < 84; i++) {
+    vec3 pos = ro + rd * t;
+    vec2 h = mapSculpture(pos);
+    minDist = min(minDist, h.x);
+    if (h.x < 0.0022) {
+      hitMat = h.y;
+      break;
+    }
+    t += h.x * 0.92;
+    if (t > tMax) break;
+  }
+
+  if (hitMat > 0.5) {
+    vec3 hp = ro + rd * t;
+    vec3 n = calcNormal(hp);
+    vec3 col;
+    float ink;
+    shadeMaterial(hitMat, hp, n, rd, lightDir, col, ink);
+
+    // Screen-space normal + silhouette & crease edge detection for Blueprint Contours
+    vec2 sn = vec2(dot(n, uu), dot(n, vv));
+    float snLen = length(sn);
+    vec2 snDir = snLen > 1e-4 ? sn / snLen : vec2(0.0, 1.0);
+    float ndv = max(dot(n, -rd), 0.0);
+    float silEdge = smoothstep(0.54, 0.84, 1.0 - ndv);
+
+    // Detect sharp architectural creases & material junctions
+    float eps = 0.045;
+    vec3 n1 = calcNormal(hp + uu * eps);
+    vec3 n2 = calcNormal(hp + vv * eps);
+    float crease = smoothstep(0.84, 0.45, min(dot(n, n1), dot(n, n2)));
+    float m1 = mapSculpture(hp + uu * eps).y;
+    float m2 = mapSculpture(hp + vv * eps).y;
+    float matSeam = (abs(m1 - hitMat) > 0.5 || abs(m2 - hitMat) > 0.5) ? 0.92 : 0.0;
+    float edgeStr = clamp(max(silEdge, max(crease * 0.92, matSeam)), 0.0, 1.0);
+
+    outColor = vec4(clamp(col, 0.0, 1.0), clamp(ink, 0.0, 1.0));
+    outNorm = vec4(snDir * 0.5 + 0.5, edgeStr, clamp(hitMat / 5.0, 0.2, 1.0));
+    return;
+  }
+
+  // Analytical drafted gallery floor with real-time soft penumbra cast shadows
+  if (tFloor < 18.0) {
+    vec3 fp = ro + rd * tFloor;
+    float rDist = length(fp.xz);
+    float floorFade = smoothstep(7.8, 2.2, rDist);
+
+    if (floorFade > 0.01) {
+      // Soft penumbra cast shadow from the sculpture onto the floor
+      float shadow = softShadow(fp + vec3(0.0, 0.018, 0.0), lightDir, 0.06, 8.2, 4.6);
+      float shAmt = (1.0 - shadow) * smoothstep(6.8, 1.8, rDist);
+
+      // Architectural perspective coordinate grid (1.0 unit major lines + origin drafting circle)
+      vec2 gf = abs(fract(fp.xz + 0.5) - 0.5);
+      float lineW = 0.036 + rDist * 0.0065;
+      float gridMajor = 1.0 - smoothstep(lineW * 0.42, lineW * 1.45, min(gf.x, gf.y));
+      float ringDraft = 1.0 - smoothstep(lineW * 0.48, lineW * 1.60, abs(rDist - 2.15));
+      float axisCross = (1.0 - smoothstep(lineW * 0.52, lineW * 1.65, min(abs(fp.x), abs(fp.z)))) * smoothstep(3.6, 1.4, rDist);
+      float gridMask = clamp(max(gridMajor * 0.82, max(ringDraft * 0.88, axisCross)), 0.0, 1.0) * floorFade;
+
+      if (uIsLightBg > 0.5) {
+        // Warm Gallery Paper: subtle drafted taupe grid (#C7BEB0) + soft penumbra shadow glyphs (#8B8376)
+        vec3 gridCol = vec3(0.725, 0.684, 0.622);
+        vec3 shadPen = vec3(0.740, 0.700, 0.638); // #BDB3A3 outer penumbra
+        vec3 shadCore = vec3(0.495, 0.462, 0.415); // #7E766A soft umbra
+        vec3 shCol = mix(shadPen, shadCore, smoothstep(0.16, 0.86, shAmt));
+
+        float shInk = shAmt > 0.04 ? clamp(shAmt * 0.56, 0.0, 0.60) : 0.0;
+        float grInk = gridMask > 0.08 ? gridMask * 0.28 : 0.0;
+        float totalInk = max(shInk, grInk);
+        vec3 fCol = shInk >= grInk ? shCol : mix(gridCol, shadCore, shAmt * 0.6);
+
+        outColor = vec4(totalInk > 0.01 ? fCol : bgCol, totalInk);
+        outNorm = vec4(0.5, 0.5, 0.0, 0.0);
+        return;
+      } else {
+        // Midnight Blueprint: crisp cyan drafting grid + architectural shadow projection
+        vec3 gridCol = vec3(0.185, 0.485, 0.840);
+        vec3 shadCol = vec3(0.145, 0.365, 0.660);
+        vec3 shadRim = vec3(0.280, 0.780, 1.000);
+        float rimBand = smoothstep(0.08, 0.35, shAmt) * smoothstep(0.82, 0.38, shAmt);
+        float shInk = shAmt > 0.06 ? clamp(shAmt * 0.32 + rimBand * 0.16, 0.0, 0.44) : 0.0;
+        float grInk = gridMask > 0.08 ? gridMask * 0.32 * (1.0 - shAmt * 0.45) : 0.0;
+        float totalInk = max(shInk, grInk);
+        vec3 fCol = shInk >= grInk ? mix(shadCol, shadRim, rimBand * 0.75) : gridCol;
+
+        outColor = vec4(totalInk > 0.01 ? fCol : bgCol, totalInk);
+        outNorm = vec4(0.5, 0.5, 0.0, 0.0);
+        return;
+      }
+    }
+  }
+
+  // Spotless gallery paper / deep midnight blueprint background
+  outColor = vec4(bgCol, 0.0);
+  outNorm = vec4(0.5, 0.5, 0.0, 0.0);
+}`;
+
+  const GLYPH_FRAG_SRC = `#version 300 es
+precision highp float;
+precision highp int;
+
+uniform highp sampler2D uColorTex;
+uniform highp sampler2D uNormTex;
+uniform ivec2 uGrid;
+uniform int uMode; // 0 = True-Color Pigment ASCII, 1 = Blueprint Directional Contours
+uniform float uIsLightBg;
+uniform vec4 uDimRects[4];
+uniform int uDimCount;
+out vec4 oc;
+
+const int BAYER[16] = int[16](0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5);
+const float RAMP[10] = float[10](0.08, 0.16, 0.25, 0.35, 0.45, 0.55, 0.65, 0.74, 0.83, 0.91);
+// Indices into GLYPH_17 for ' .,:=-+*#%@'
+const int LUM_MAP[11] = int[11](0, 1, 2, 3, 5, 6, 7, 8, 9, 10, 11);
+const int HATCH_MAP[7] = int[7](0, 1, 2, 3, 5, 6, 7);
+
+void main() {
+  ivec2 gc = ivec2(gl_FragCoord.xy);
+  ivec2 c0 = gc * ivec2(6, 9);
+
+  float inkSum = 0.0, inkMax = 0.0, n = 0.0;
+  float objInkSum = 0.0;
+  vec3 colSum = vec3(0.0);
+  float colW = 0.0;
+  vec3 objColSum = vec3(0.0);
+  float objColW = 0.0;
+
+  float sumNx = 0.0, sumNy = 0.0, maxEdge = 0.0;
+  int objCount = 0;
+  float minMat = 9.0, maxMat = -1.0;
+
+  // 2D silhouette gradient inside the 6x9 tile for crisp unbroken architectural outlines
+  float leftObj = 0.0, rightObj = 0.0, topObj = 0.0, botObj = 0.0;
+
+  for (int y = 0; y < 9; y++) {
+    for (int x = 0; x < 6; x++) {
+      ivec2 tc = c0 + ivec2(x, y);
+      if (tc.x >= uGrid.x || tc.y >= uGrid.y) continue;
+      vec4 cs = texelFetch(uColorTex, tc, 0);
+      vec4 ns = texelFetch(uNormTex, tc, 0);
+      float ink = cs.a;
+      float isObj = ns.a > 0.12 ? 1.0 : 0.0;
+
+      inkSum += ink;
+      inkMax = max(inkMax, ink);
+      n += 1.0;
+
+      if (ink > 0.01) {
+        float w = ink * ink + 0.04;
+        colSum += cs.rgb * w;
+        colW += w;
+      }
+
+      if (isObj > 0.5) {
+        objCount++;
+        objInkSum += ink;
+        float ow = ink + 0.15;
+        objColSum += cs.rgb * ow;
+        objColW += ow;
+        minMat = min(minMat, ns.a);
+        maxMat = max(maxMat, ns.a);
+        if (x < 3) leftObj += 1.0; else rightObj += 1.0;
+        if (y < 4) topObj += 1.0; else if (y > 4) botObj += 1.0;
+
+        float e = ns.b;
+        if (e > 0.15) {
+          vec2 en = ns.rg * 2.0 - 1.0;
+          sumNx += en.x * e;
+          sumNy += en.y * e;
+          maxEdge = max(maxEdge, e);
+        }
+      }
+    }
+  }
+
+  if (n < 1.0) {
+    oc = vec4(0.0);
+    return;
+  }
+
+  float m = inkSum / n;
+  float objFrac = float(objCount) / n;
+
+  // Content-aware legibility ([data-dim]): soften floor grid ticks behind HUD copy
+  vec2 tileUv = (vec2(c0) + vec2(3.0, 4.5)) / vec2(uGrid);
+  float dimFloor = 1.0;
+  for (int i = 0; i < 4; i++) {
+    if (i >= uDimCount) break;
+    vec4 r = uDimRects[i];
+    if (tileUv.x >= r.x && tileUv.x <= r.z && tileUv.y >= r.y && tileUv.y <= r.w) {
+      dimFloor = 0.22;
+    }
+  }
+  if (objCount == 0) {
+    m *= dimFloor;
+    inkMax *= dimFloor;
+  }
+
+  // Dominant tile pigment RGB (prefer crisp sculpture pigment on silhouette edges)
+  vec3 tileRgb = objColW > 0.05
+    ? (objColSum / objColW)
+    : (colW > 0.001 ? (colSum / colW) : (uIsLightBg > 0.5 ? vec3(0.18, 0.17, 0.16) : vec3(0.45, 0.78, 1.0)));
+
+  // Preserve crisp thin features (balance bar, gimbal rings, drafted floor grid hairlines)
+  float mEff = objCount >= 4 ? mix(m, inkMax, 0.32) : (inkMax > 0.14 ? mix(m, inkMax, 0.56) : m);
+  float th = (float(BAYER[((gc.y & 3) << 2) | (gc.x & 3)]) + 0.5) / 16.0;
+
+  // Law 3: Clean floor gate ink > 0.06 so warm cream paper / midnight navy stays spotless
+  float md = mEff > 0.06 ? clamp(mEff + (th - 0.5) * 0.11, 0.0, 1.0) : 0.0;
+  int rk = 0;
+  for (int i = 0; i < 10; i++) rk += md > RAMP[i] ? 1 : 0;
+  int gi = LUM_MAP[rk];
+
+  // Mode 1: Blueprint Directional Contours (- _ | / \ over crisp light interior hatching)
+  if (uMode == 1) {
+    bool isSil = (objCount > 2 && objCount < int(n) - 3);
+    bool isMatSeam = (objCount >= 6 && (maxMat - minMat) > 0.14);
+    bool isContour = isSil || isMatSeam || (maxEdge > 0.42 && objCount >= 5);
+
+    if (isContour) {
+      // Combine analytical surface normal with 2D tile silhouette boundary gradient
+      vec2 grad = vec2(-(rightObj - leftObj), (botObj - topObj)) * 0.35;
+      vec2 dir = vec2(sumNx, sumNy);
+      if (isSil && length(grad) > 0.25) {
+        dir = normalize(dir * 0.45 + normalize(grad) * 0.85);
+      }
+      if (length(dir) > 0.08) {
+        float ang = atan(-dir.x, dir.y);
+        float ca = cos(ang);
+        float sa = sin(ang);
+        if (abs(ca) > 0.91) {
+          gi = dir.y < 0.0 ? 15 : 5; // '_' bottom edge, '-' top edge
+        } else if (abs(sa) > 0.91) {
+          gi = 14; // '|'
+        } else if (sa * ca > 0.0) {
+          gi = 12; // '/'
+        } else {
+          gi = 13; // '\\'
+        }
+      } else {
+        gi = 7; // '+' architectural corner junction
+      }
+      // Bold architectural drafting stroke pigment
+      if (uIsLightBg > 0.5) {
+        tileRgb = mix(tileRgb * 0.72, vec3(0.094, 0.094, 0.114), 0.32);
+      } else {
+        tileRgb = mix(tileRgb, vec3(0.88, 0.97, 1.0), 0.42);
+      }
+    } else if (objCount > 0) {
+      // Interior faces: airy architectural cross-hatching so contour lines command hierarchy
+      float hatchVal = clamp((objInkSum / max(float(objCount), 1.0)) * 0.62 + (th - 0.5) * 0.10, 0.0, 1.0);
+      int hk = clamp(int(floor(hatchVal * 6.5)), 0, 6);
+      gi = HATCH_MAP[hk];
+      if (uIsLightBg > 0.5) {
+        tileRgb = mix(tileRgb, vec3(0.965, 0.945, 0.906), 0.16);
+      } else {
+        tileRgb = tileRgb * 0.82;
+      }
+    } else {
+      // Floor shadows & grid stay delicate architectural dots/ticks
+      int fk = clamp(int(floor(md * 5.2)), 0, 4);
+      gi = HATCH_MAP[fk];
+    }
+  }
+
+  oc = vec4(clamp(tileRgb, 0.0, 1.0), float(gi) / 255.0);
+}`;
+
+  const BLIT_FRAG_SRC = `#version 300 es
+precision highp float;
+precision highp int;
+
+uniform highp sampler2D uColorTex;
+uniform highp sampler2D uGly;
+uniform ivec2 uGrid;
+uniform ivec2 uGlyGrid;
+uniform int uCellDev;
+uniform int uCanvasH;
+uniform int uMode; // 0 = Pigment ASCII, 1 = Blueprint Contours, 2 = Color GPU 2x4 Braille
+uniform vec3 uBgColor;
+uniform float uIsLightBg;
+out vec4 oc;
+
+const int BAYER[16] = int[16](0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5);
+
+// Pre-packed EXTENDED_17 5x7 bitmap glyphs from scripts/pack-glyphs.mjs
+const uint GLYPH_17[34] = uint[34](
+  0u, 0u /* " " */,
+  0u, 128u /* "." */,
+  0u, 4232u /* "," */,
+  128u, 128u /* ":" */,
+  310u, 0u /* "~" */,
+  14u, 0u /* "-" */,
+  992u, 31744u /* "=" */,
+  4255u, 4224u /* "+" */,
+  4782u, 21632u /* "*" */,
+  338922u, 32074u /* "#" */,
+  847052u, 28256u /* "%" */,
+  476917u, 24078u /* "@" */,
+  34884u, 8464u /* "/" */,
+  532740u, 2113u /* "\\" */,
+  135300u, 4228u /* "|" */,
+  0u, 31u /* "_" */,
+  1048575u, 32767u /* "█" */
+);
+
+void main() {
+  // Single y-flip from top-down FBOs to default framebuffer
+  ivec2 px = ivec2(gl_FragCoord.xy);
+  ivec2 c = ivec2(px.x / uCellDev, (uCanvasH - 1 - px.y) / uCellDev);
+  c = clamp(c, ivec2(0), uGrid - 1);
+
+  if (uMode == 2) {
+    // True-Color Zero-Readback GPU 2x4 Braille (5x9 tile with 2x4 dot matrix)
+    ivec2 tile = ivec2(5, 9);
+    ivec2 bc = c / tile;
+    ivec2 q = c - bc * tile;
+    bool isDot = ((q.x == 1 || q.x == 3) && (q.y == 1 || q.y == 3 || q.y == 5 || q.y == 7));
+    if (!isDot) {
+      oc = vec4(uBgColor, 1.0);
+      return;
+    }
+    int bx = q.x == 1 ? 0 : 1;
+    int by = (q.y - 1) / 2;
+    ivec2 subOrigin = bc * tile + ivec2(bx * 2 + 1, by * 2 + 1);
+    float val = 0.0, pk = 0.0;
+    vec3 colSum = vec3(0.0);
+    float colW = 0.0;
+    for (int dy = 0; dy < 2; dy++) {
+      for (int dx = 0; dx < 2; dx++) {
+        vec4 s = texelFetch(uColorTex, min(subOrigin + ivec2(dx, dy), uGrid - 1), 0);
+        val += s.a;
+        pk = max(pk, s.a);
+        float w = s.a + 0.01;
+        colSum += s.rgb * w;
+        colW += w;
+      }
+    }
+    val = max(val * 0.25, pk * 0.68);
+    ivec2 gSub = ivec2(bc.x * 2 + bx, bc.y * 4 + by);
+    float th = (float(BAYER[((gSub.y & 3) << 2) | (gSub.x & 3)]) + 0.5) / 16.0;
+    bool lit = (val > 0.045) && (pow(val, 0.70) > th * 0.78);
+    vec3 dotRgb = colSum / max(colW, 0.001);
+    // Dot-area luminance compensation so 2x4 Braille matches Pigment ASCII visual punch
+    dotRgb = uIsLightBg > 0.5
+      ? clamp(dotRgb * 0.88, 0.0, 1.0)
+      : clamp(dotRgb * 1.24 + 0.05, 0.0, 1.0);
+    oc = vec4(lit ? dotRgb : uBgColor, 1.0);
+    return;
+  }
+
+  // Mode 0 & Mode 1: Crisp packed 5x7 bitmap glyph inside 6x9 cell tile
+  ivec2 gc = min(c / ivec2(6, 9), uGlyGrid - 1);
+  ivec2 q = c - gc * ivec2(6, 9);
+  vec4 g = texelFetch(uGly, gc, 0);
+  int idx = clamp(int(floor(g.a * 255.0 + 0.5)), 0, 16);
+  bool on = false;
+  if (idx > 0 && q.x < 5 && q.y < 7) {
+    int b = q.y * 5 + q.x;
+    uint wd = b < 20 ? GLYPH_17[idx * 2] : GLYPH_17[idx * 2 + 1];
+    on = ((wd >> uint(b < 20 ? 19 - b : 34 - b)) & 1u) == 1u;
+  }
+  oc = vec4(on ? g.rgb : uBgColor, 1.0);
+}`;
+
+  function createWebGL2Renderer(cv) {
+    const gl = cv.getContext('webgl2', {
+      alpha: false,
+      antialias: false,
+      depth: false,
+      stencil: false,
+      powerPreference: 'high-performance',
+      preserveDrawingBuffer: false,
+    });
+    if (!gl) return null;
+
+    function compile(type, src, label) {
+      const sh = gl.createShader(type);
+      gl.shaderSource(sh, src);
+      gl.compileShader(sh);
+      if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) {
+        console.error(`[WebGL2 ${label}] shader compile error:`, gl.getShaderInfoLog(sh));
+        gl.deleteShader(sh);
+        return null;
+      }
+      return sh;
+    }
+
+    function link(vs, fs, label) {
+      const p = gl.createProgram();
+      gl.attachShader(p, vs);
+      gl.attachShader(p, fs);
+      gl.linkProgram(p);
+      if (!gl.getProgramParameter(p, gl.LINK_STATUS)) {
+        console.error(`[WebGL2 ${label}] program link error:`, gl.getProgramInfoLog(p));
+        gl.deleteProgram(p);
+        return null;
+      }
+      return p;
+    }
+
+    const vs = compile(gl.VERTEX_SHADER, VERT_SRC, 'VERT');
+    const fsScene = compile(gl.FRAGMENT_SHADER, SCENE_FRAG_SRC, 'SCENE');
+    const fsGly = compile(gl.FRAGMENT_SHADER, GLYPH_FRAG_SRC, 'GLYPHPASS');
+    const fsBlit = compile(gl.FRAGMENT_SHADER, BLIT_FRAG_SRC, 'BLIT');
+    if (!vs || !fsScene || !fsGly || !fsBlit) return null;
+
+    const progScene = link(vs, fsScene, 'SCENE');
+    const progGly = link(vs, fsGly, 'GLYPHPASS');
+    const progBlit = link(vs, fsBlit, 'BLIT');
+    gl.deleteShader(vs);
+    gl.deleteShader(fsScene);
+    gl.deleteShader(fsGly);
+    gl.deleteShader(fsBlit);
+    if (!progScene || !progGly || !progBlit) return null;
+
+    const vao = gl.createVertexArray();
+    gl.bindVertexArray(vao);
+
+    const locScene = {
+      uGrid: gl.getUniformLocation(progScene, 'uGrid'),
+      uTime: gl.getUniformLocation(progScene, 'uTime'),
+      uYaw: gl.getUniformLocation(progScene, 'uYaw'),
+      uPitch: gl.getUniformLocation(progScene, 'uPitch'),
+      uDist: gl.getUniformLocation(progScene, 'uDist'),
+      uSculpture: gl.getUniformLocation(progScene, 'uSculpture'),
+      uIsLightBg: gl.getUniformLocation(progScene, 'uIsLightBg'),
+    };
+    const locGly = {
+      uColorTex: gl.getUniformLocation(progGly, 'uColorTex'),
+      uNormTex: gl.getUniformLocation(progGly, 'uNormTex'),
+      uGrid: gl.getUniformLocation(progGly, 'uGrid'),
+      uMode: gl.getUniformLocation(progGly, 'uMode'),
+      uIsLightBg: gl.getUniformLocation(progGly, 'uIsLightBg'),
+      uDimRects: gl.getUniformLocation(progGly, 'uDimRects'),
+      uDimCount: gl.getUniformLocation(progGly, 'uDimCount'),
+    };
+    const locBlit = {
+      uColorTex: gl.getUniformLocation(progBlit, 'uColorTex'),
+      uGly: gl.getUniformLocation(progBlit, 'uGly'),
+      uGrid: gl.getUniformLocation(progBlit, 'uGrid'),
+      uGlyGrid: gl.getUniformLocation(progBlit, 'uGlyGrid'),
+      uCellDev: gl.getUniformLocation(progBlit, 'uCellDev'),
+      uCanvasH: gl.getUniformLocation(progBlit, 'uCanvasH'),
+      uMode: gl.getUniformLocation(progBlit, 'uMode'),
+      uBgColor: gl.getUniformLocation(progBlit, 'uBgColor'),
+      uIsLightBg: gl.getUniformLocation(progBlit, 'uIsLightBg'),
+    };
+
+    function makeTex() {
+      const tex = gl.createTexture();
+      gl.bindTexture(gl.TEXTURE_2D, tex);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      return tex;
+    }
+
+    // Dual-Attachment MRT FBO for Pass 1
+    const texColor = makeTex();
+    const texNorm = makeTex();
+    const fbScene = gl.createFramebuffer();
+    gl.bindFramebuffer(gl.FRAMEBUFFER, fbScene);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texColor, 0);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT1, gl.TEXTURE_2D, texNorm, 0);
+    gl.drawBuffers([gl.COLOR_ATTACHMENT0, gl.COLOR_ATTACHMENT1]);
+
+    // Single-Attachment FBO for Pass 2 (GLYPHPASS)
+    const texGly = makeTex();
+    const fbGly = gl.createFramebuffer();
+    gl.bindFramebuffer(gl.FRAMEBUFFER, fbGly);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texGly, 0);
+    gl.drawBuffers([gl.COLOR_ATTACHMENT0]);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+
+    let metrics = computeGridMetrics();
+    let sceneW = 0, sceneH = 0, glyW = 0, glyH = 0;
+    let lost = false;
+
+    function allocBuffers() {
+      metrics = computeGridMetrics();
+      if (cv.width !== metrics.cw || cv.height !== metrics.ch) {
+        cv.width = metrics.cw;
+        cv.height = metrics.ch;
+      }
+      if (sceneW !== metrics.gw || sceneH !== metrics.gh) {
+        gl.bindTexture(gl.TEXTURE_2D, texColor);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, metrics.gw, metrics.gh, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+        gl.bindTexture(gl.TEXTURE_2D, texNorm);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, metrics.gw, metrics.gh, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+        sceneW = metrics.gw;
+        sceneH = metrics.gh;
+      }
+      if (glyW !== metrics.glw || glyH !== metrics.glh) {
+        gl.bindTexture(gl.TEXTURE_2D, texGly);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, metrics.glw, metrics.glh, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+        glyW = metrics.glw;
+        glyH = metrics.glh;
+      }
+
+      gl.bindFramebuffer(gl.FRAMEBUFFER, fbScene);
+      const stScene = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, fbGly);
+      const stGly = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+      if (stScene !== gl.FRAMEBUFFER_COMPLETE || stGly !== gl.FRAMEBUFFER_COMPLETE) {
+        console.error('[WebGL2 MRT] incomplete framebuffer:', stScene, stGly);
+        return false;
+      }
+      return true;
+    }
+
+    if (!allocBuffers()) return null;
+
+    cv.addEventListener('webglcontextlost', (e) => {
+      e.preventDefault();
+      lost = true;
+    });
+
+    cv.addEventListener('webglcontextrestored', () => {
+      lost = false;
+      sceneW = 0;
+      glyW = 0;
+      allocBuffers();
+      state.needsRender = true;
+    });
+
+    return {
+      resize() {
+        if (!lost) allocBuffers();
+      },
+      render() {
+        if (lost) return;
+        readDimRects(metrics.vw, metrics.vh);
+
+        const isLight = state.isLightGround ? 1.0 : 0.0;
+        const effYaw = state.yaw + (state.reducedMotion ? 0 : state.hoverX * 0.16);
+        const effPitch = Math.max(0.06, Math.min(1.18, state.pitch - (state.reducedMotion ? 0 : state.hoverY * 0.11)));
+
+        gl.bindVertexArray(vao);
+
+        // Pass 1: Dual-Attachment MRT Raymarched Polychromatic SDF Scene
+        gl.bindFramebuffer(gl.FRAMEBUFFER, fbScene);
+        gl.drawBuffers([gl.COLOR_ATTACHMENT0, gl.COLOR_ATTACHMENT1]);
+        gl.viewport(0, 0, metrics.gw, metrics.gh);
+        gl.useProgram(progScene);
+        gl.uniform2i(locScene.uGrid, metrics.gw, metrics.gh);
+        gl.uniform1f(locScene.uTime, state.time);
+        gl.uniform1f(locScene.uYaw, effYaw);
+        gl.uniform1f(locScene.uPitch, effPitch);
+        gl.uniform1f(locScene.uDist, state.dist);
+        gl.uniform1i(locScene.uSculpture, state.sculpture);
+        gl.uniform1f(locScene.uIsLightBg, isLight);
+        gl.drawArrays(gl.TRIANGLES, 0, 3);
+
+        // Pass 2: 6x9 Tile Glyph Selection (Pigment ASCII / Blueprint Directional Contours)
+        if (state.mode !== 2) {
+          gl.bindFramebuffer(gl.FRAMEBUFFER, fbGly);
+          gl.drawBuffers([gl.COLOR_ATTACHMENT0]);
+          gl.viewport(0, 0, metrics.glw, metrics.glh);
+          gl.useProgram(progGly);
+          gl.activeTexture(gl.TEXTURE0);
+          gl.bindTexture(gl.TEXTURE_2D, texColor);
+          gl.uniform1i(locGly.uColorTex, 0);
+          gl.activeTexture(gl.TEXTURE1);
+          gl.bindTexture(gl.TEXTURE_2D, texNorm);
+          gl.uniform1i(locGly.uNormTex, 1);
+          gl.uniform2i(locGly.uGrid, metrics.gw, metrics.gh);
+          gl.uniform1i(locGly.uMode, state.mode);
+          gl.uniform1f(locGly.uIsLightBg, isLight);
+          gl.uniform4fv(locGly.uDimRects, state.dimRects);
+          gl.uniform1i(locGly.uDimCount, state.dimCount);
+          gl.drawArrays(gl.TRIANGLES, 0, 3);
+        }
+
+        // Pass 3: Single y-flip Pixel-Locked Blit (5x7 Bitmap ASCII or True-Color 2x4 Braille)
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+        gl.viewport(0, 0, metrics.cw, metrics.ch);
+        gl.useProgram(progBlit);
+        gl.activeTexture(gl.TEXTURE0);
+        gl.bindTexture(gl.TEXTURE_2D, texColor);
+        gl.uniform1i(locBlit.uColorTex, 0);
+        gl.activeTexture(gl.TEXTURE1);
+        gl.bindTexture(gl.TEXTURE_2D, texGly);
+        gl.uniform1i(locBlit.uGly, 1);
+        gl.uniform2i(locBlit.uGrid, metrics.gw, metrics.gh);
+        gl.uniform2i(locBlit.uGlyGrid, metrics.glw, metrics.glh);
+        gl.uniform1i(locBlit.uCellDev, metrics.cellDev);
+        gl.uniform1i(locBlit.uCanvasH, metrics.ch);
+        gl.uniform1i(locBlit.uMode, state.mode);
+        if (state.isLightGround) {
+          gl.uniform3f(locBlit.uBgColor, 0.965, 0.945, 0.906);
+        } else {
+          gl.uniform3f(locBlit.uBgColor, 0.031, 0.067, 0.141);
+        }
+        gl.uniform1f(locBlit.uIsLightBg, isLight);
+        gl.drawArrays(gl.TRIANGLES, 0, 3);
+      },
+    };
+  }
+
+  // =========================================================================
+  // Safe Cloned-Canvas 2D Fallback Raymarcher (Color-Bucketed ASCII & Braille)
+  // =========================================================================
+  function create2DFallbackRenderer(cv) {
+    const ctx = cv.getContext('2d', { alpha: false });
+    if (!ctx) return null;
+
+    const RAMP = ' .,:=-+*#%@';
+    const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
+    const PAPER_PAL = ['#8B8376', '#F03A2F', '#1B5BFF', '#E5AD00', '#18181D'];
+    const BLUE_PAL = ['#2BA8E8', '#FF5A52', '#38E8FF', '#FFD447', '#F2F8FF'];
+
+    let vw = 1, vh = 1, dpr = 1, cols = 80, rows = 40, cellW = 10, cellH = 16;
+
+    function resize() {
+      vw = Math.max(1, window.innerWidth);
+      vh = Math.max(1, window.innerHeight);
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      cv.width = Math.round(vw * dpr);
+      cv.height = Math.round(vh * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      const fontSize = vw < 760 ? 8 : 13;
+      ctx.font = `600 ${fontSize}px ui-monospace, "SF Mono", Menlo, Consolas, monospace`;
+      ctx.textBaseline = 'top';
+      cellW = Math.max(5, Math.ceil(ctx.measureText('M').width));
+      cellH = Math.max(8, Math.ceil(fontSize * 1.18));
+      cols = Math.max(20, Math.ceil(vw / cellW));
+      rows = Math.max(12, Math.ceil(vh / cellH));
+    }
+
+    function sdfMobile(x, y, z, t) {
+      const ca = Math.cos(t * 0.28), sa = Math.sin(t * 0.28);
+      const rx = x * ca - z * sa, rz = x * sa + z * ca;
+      let d = Math.hypot(rx - 0.9, y - 0.46, rz - 0.04) - 0.56;
+      let m = 1;
+      // Cadmium torus
+      const tc = Math.cos(-t * 0.48), ts = Math.sin(-t * 0.48);
+      const tx = x * tc - z * ts, tz = x * ts + z * tc;
+      const ty = y - 0.14;
+      const qx = Math.hypot(tx, tz) - 1.06;
+      const dt = Math.hypot(qx, ty) - 0.16;
+      if (dt < d) { d = dt; m = 3; }
+      // Cobalt monolith
+      const bx = Math.abs(x + 0.74) - 0.42;
+      const by = Math.abs(y + 0.24) - 0.62;
+      const bz = Math.abs(z + 0.14) - 0.20;
+      const db = Math.hypot(Math.max(bx, 0), Math.max(by, 0), Math.max(bz, 0)) + Math.min(Math.max(bx, by, bz), 0);
+      if (db < d) { d = db; m = 2; }
+      // Charcoal crossbar
+      const bar = Math.hypot(Math.max(Math.abs(rx) - 1.1, 0), y - 0.44, rz) - 0.08;
+      if (bar < d) { d = bar; m = 4; }
+      return [d, m];
+    }
+
+    function sampleRay(ro, rd, t) {
+      let dist = 0.1, mat = 0;
+      for (let i = 0; i < 36; i++) {
+        const px = ro[0] + rd[0] * dist;
+        const py = ro[1] + rd[1] * dist;
+        const pz = ro[2] + rd[2] * dist;
+        const [h, m] = sdfMobile(px, py, pz, t);
+        if (h < 0.025) { mat = m; break; }
+        dist += h;
+        if (dist > 14) break;
+      }
+      if (mat > 0) {
+        const px = ro[0] + rd[0] * dist;
+        const py = ro[1] + rd[1] * dist;
+        const pz = ro[2] + rd[2] * dist;
+        const e = 0.02;
+        const nx = sdfMobile(px + e, py, pz, t)[0] - sdfMobile(px - e, py, pz, t)[0];
+        const ny = sdfMobile(px, py + e, pz, t)[0] - sdfMobile(px, py - e, pz, t)[0];
+        const nz = sdfMobile(px, py, pz + e, t)[0] - sdfMobile(px, py, pz - e, t)[0];
+        const nl = Math.hypot(nx, ny, nz) || 1;
+        const ndl = Math.max(0, (nx * 0.58 + ny * 0.88 + nz * 0.46) / nl);
+        return [mat, state.isLightGround ? 0.92 - ndl * 0.48 : 0.30 + ndl * 0.65];
+      }
+      if (rd[1] < -0.02) {
+        const tf = (-1.36 - ro[1]) / rd[1];
+        if (tf > 0 && tf < 14) {
+          const fx = ro[0] + rd[0] * tf, fz = ro[2] + rd[2] * tf;
+          if (Math.hypot(fx, fz) < 4.5) {
+            const gx = Math.abs(((fx + 0.5) % 1 + 1) % 1 - 0.5);
+            const gz = Math.abs(((fz + 0.5) % 1 + 1) % 1 - 0.5);
+            if (Math.min(gx, gz) < 0.05) return [0, 0.22];
+          }
+        }
+      }
+      return [-1, 0];
+    }
+
+    resize();
+    return {
+      resize,
+      render() {
+        const bg = state.isLightGround ? '#F6F1E7' : '#081124';
+        const pal = state.isLightGround ? PAPER_PAL : BLUE_PAL;
+        ctx.fillStyle = bg;
+        ctx.fillRect(0, 0, vw, vh);
+
+        const aspect = vw / Math.max(vh, 1);
+        const effDist = state.dist * Math.max(1.0, 1.15 / Math.max(aspect, 0.42));
+        const yaw = state.yaw + (state.reducedMotion ? 0 : state.hoverX * 0.16);
+        const pitch = Math.max(0.06, Math.min(1.18, state.pitch - (state.reducedMotion ? 0 : state.hoverY * 0.11)));
+        const ro = [
+          effDist * Math.cos(pitch) * Math.sin(yaw),
+          -0.04 + effDist * Math.sin(pitch),
+          effDist * Math.cos(pitch) * Math.cos(yaw),
+        ];
+        const wl = Math.hypot(-ro[0], -0.04 - ro[1], -ro[2]) || 1;
+        const ww = [-ro[0] / wl, (-0.04 - ro[1]) / wl, -ro[2] / wl];
+        const ul = Math.hypot(-ww[2], ww[0]) || 1;
+        const uu = [-ww[2] / ul, 0, ww[0] / ul];
+        const vv = [
+          uu[1] * ww[2] - uu[2] * ww[1],
+          uu[2] * ww[0] - uu[0] * ww[2],
+          uu[0] * ww[1] - uu[1] * ww[0],
+        ];
+
+        const buckets = [[], [], [], [], []];
+        for (let r = 0; r < rows; r++) {
+          for (let c = 0; c < cols; c++) {
+            const u = ((c + 0.5) / cols) * 2 - 1;
+            const v = ((r + 0.5) / rows) * 2 - 1;
+            const px = u * aspect, py = -v;
+            const rx = px * uu[0] + py * vv[0] + 1.88 * ww[0];
+            const ry = px * uu[1] + py * vv[1] + 1.88 * ww[1];
+            const rz = px * uu[2] + py * vv[2] + 1.88 * ww[2];
+            const rl = Math.hypot(rx, ry, rz) || 1;
+            const [mat, ink] = sampleRay(ro, [rx / rl, ry / rl, rz / rl], state.time);
+            if (mat < 0 || ink <= 0.06) continue;
+            const th = (BAYER[((r & 3) << 2) | (c & 3)] + 0.5) / 16;
+            let ch;
+            if (state.mode === 2) {
+              const bits = ink > 0.72 ? 0xff : (ink > 0.45 ? 0xe7 : 0x24);
+              ch = String.fromCharCode(0x2800 | bits);
+            } else {
+              const idx = Math.max(1, Math.min(RAMP.length - 1, Math.floor((ink + (th - 0.5) * 0.1) * RAMP.length)));
+              ch = RAMP[idx];
+            }
+            buckets[mat].push([ch, c * cellW, r * cellH]);
+          }
+        }
+        for (let b = 0; b < buckets.length; b++) {
+          if (!buckets[b].length) continue;
+          ctx.fillStyle = pal[b];
+          for (const [ch, x, y] of buckets[b]) ctx.fillText(ch, x, y);
+        }
+      },
+    };
+  }
+
+  // Safe WebGL2 init -> clone/replace <canvas> before 2D fallback (Law 9)
+  let renderer = createWebGL2Renderer(canvas);
+  if (!renderer) {
+    console.error('[Bauhaus3D] WebGL2 unavailable or shader/MRT failed; cloning canvas for 2D fallback.');
+    const cloned = canvas.cloneNode(false);
+    canvas.replaceWith(cloned);
+    canvas = cloned;
+    renderer = create2DFallbackRenderer(canvas);
+  }
+
+  bindCanvasInteractions(canvas);
+  updateHud();
+
+  let resizeTimer = 0;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      if (renderer) renderer.resize();
+      state.needsRender = true;
+    }, 60);
+  });
+
+  let lastTs = performance.now();
+  function frame(ts) {
+    requestAnimationFrame(frame);
+    const dt = Math.min(0.05, Math.max(0.001, (ts - lastTs) / 1000));
+    lastTs = ts;
+    if (state.hidden || !renderer) return;
+
+    const ease = 1 - Math.exp(-dt * 9.0);
+    let moving = false;
+
+    if (!state.reducedMotion) {
+      state.time = (state.time + dt) % 3600;
+      if (state.autoOrbit && !state.dragging) {
+        state.targetYaw += dt * 0.15;
+      }
+      moving = true;
+    }
+
+    const dYaw = state.targetYaw - state.yaw;
+    const dPitch = state.targetPitch - state.pitch;
+    const dDist = state.targetDist - state.dist;
+    const dHx = state.targetHoverX - state.hoverX;
+    const dHy = state.targetHoverY - state.hoverY;
+
+    if (Math.abs(dYaw) + Math.abs(dPitch) + Math.abs(dDist) + Math.abs(dHx) + Math.abs(dHy) > 0.0004) {
+      state.yaw += dYaw * ease;
+      state.pitch += dPitch * ease;
+      state.dist += dDist * ease;
+      state.hoverX += dHx * ease;
+      state.hoverY += dHy * ease;
+      moving = true;
+    }
+
+    if (moving || state.needsRender) {
+      renderer.render();
+      state.needsRender = false;
+    }
+  }
+
+  // Render frame 0 immediately so reduced-motion & initial capture are crisp
+  if (renderer) {
+    renderer.render();
+    state.needsRender = false;
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

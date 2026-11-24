@@ -1,0 +1,23 @@
+{
+  "name": "ascii-animation",
+  "version": "3.0.0",
+  "description": "Create crisp, GPU-accelerated ASCII, Bayer 4x4 dithered, full-scale bright polychromatic illustrated worlds, live Gray-Scott PDE simulations, multi-material 3D SDF/Braille sculptures, and kinetic typographic animations.",
+  "author": {
+    "name": "abdraiymbek"
+  },
+  "repository": "https://github.com/abdraiymbek/ascii-animation",
+  "license": "MIT",
+  "keywords": [
+    "ascii",
+    "ascii-animation",
+    "bayer-dithering",
+    "webgl2",
+    "shaders",
+    "braille",
+    "pixel-art",
+    "reaction-diffusion",
+    "sdf-raymarching",
+    "frontend"
+  ],
+  "skills": "skills"
+}

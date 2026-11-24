@@ -1,0 +1,2584 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Neon Rain in Pixel Kyoto — Nocturnal 5×7 ASCII &amp; Color Braille Canal</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #070A1B;
+    color: #EEF4FF;
+    font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+  }
+
+  #stage {
+    position: fixed;
+    inset: 0;
+    display: block;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: crisp-edges;
+    image-rendering: pixelated;
+    cursor: crosshair;
+  }
+
+  /* Minimal Editorial Title in Upper-Left Twilight Sky */
+  .hero {
+    position: fixed;
+    top: clamp(16px, 3vh, 30px);
+    left: clamp(18px, 3.4vw, 44px);
+    max-width: min(390px, 60vw);
+    z-index: 10;
+    pointer-events: none;
+  }
+
+  .eyebrow {
+    font-family: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: clamp(9.5px, 0.95vw, 11px);
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: #7AF7FF;
+    text-shadow: 0 1px 12px rgba(7, 10, 27, 0.92), 0 0 18px rgba(20, 200, 216, 0.36);
+    margin-bottom: 5px;
+    line-height: 1.25;
+  }
+
+  .title {
+    font-size: clamp(24px, 3.6vw, 44px);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1.02;
+    color: #F7F9FF;
+    text-shadow: 0 2px 20px rgba(7, 10, 27, 0.94), 0 1px 4px rgba(7, 10, 27, 0.88);
+    margin-bottom: 6px;
+  }
+
+  .sub {
+    font-size: clamp(11.5px, 1.1vw, 13.5px);
+    font-weight: 500;
+    line-height: 1.38;
+    color: rgba(232, 238, 255, 0.88);
+    text-shadow: 0 1px 14px rgba(7, 10, 27, 0.94), 0 1px 3px rgba(7, 10, 27, 0.88);
+    margin-bottom: 6px;
+  }
+
+  .hint {
+    font-family: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: clamp(9px, 0.86vw, 10.5px);
+    letter-spacing: 0.035em;
+    color: rgba(255, 214, 158, 0.84);
+    text-shadow: 0 1px 12px rgba(7, 10, 27, 0.96);
+  }
+
+  /* Stepped 4x4 Bayer Reveal (--dz1..--dz7) */
+  @keyframes dz {
+    0%   { opacity: 0; }
+    5%   { opacity: 1; -webkit-mask-image: var(--dz1); mask-image: var(--dz1); }
+    18%  { opacity: 1; -webkit-mask-image: var(--dz2); mask-image: var(--dz2); }
+    31%  { opacity: 1; -webkit-mask-image: var(--dz3); mask-image: var(--dz3); }
+    44%  { opacity: 1; -webkit-mask-image: var(--dz4); mask-image: var(--dz4); }
+    57%  { opacity: 1; -webkit-mask-image: var(--dz5); mask-image: var(--dz5); }
+    70%  { opacity: 1; -webkit-mask-image: var(--dz6); mask-image: var(--dz6); }
+    83%  { opacity: 1; -webkit-mask-image: var(--dz7); mask-image: var(--dz7); }
+    100% { opacity: 1; -webkit-mask-image: none; mask-image: none; }
+  }
+  @keyframes dzr {
+    from { transform: translateY(0.12em); }
+  }
+  .kin .w {
+    display: inline-block;
+    opacity: 0;
+    padding-block: 0.22em;
+    margin-block: -0.22em;
+    -webkit-mask-size: var(--dzs, 12px) var(--dzs, 12px);
+    mask-size: var(--dzs, 12px) var(--dzs, 12px);
+  }
+  .kin.in .w {
+    opacity: 1;
+    animation: dz 420ms step-end both, dzr 600ms cubic-bezier(.16, 1, .3, 1) both;
+    animation-delay: calc(var(--bd, 0ms) + var(--i) * 24ms);
+  }
+
+  /* Whisper-Quiet Midnight Dock */
+  .dock-wrap {
+    position: fixed;
+    left: 50%;
+    bottom: clamp(12px, 2.2vh, 22px);
+    transform: translateX(-50%);
+    z-index: 20;
+    max-width: calc(100vw - 16px);
+  }
+
+  .dock {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: nowrap;
+    gap: 4px;
+    padding: 5px;
+    border-radius: 999px;
+    background: rgba(9, 13, 32, 0.76);
+    border: 1px solid rgba(122, 247, 255, 0.18);
+    box-shadow: 0 10px 32px rgba(3, 5, 16, 0.68), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(14px) saturate(1.3);
+    -webkit-backdrop-filter: blur(14px) saturate(1.3);
+  }
+
+  .dock-group {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+  }
+
+  .dock-sep {
+    width: 1px;
+    height: 18px;
+    margin: 0 4px;
+    background: rgba(164, 188, 255, 0.2);
+    flex-shrink: 0;
+  }
+
+  .dock button {
+    appearance: none;
+    border: 0;
+    background: transparent;
+    color: rgba(226, 236, 255, 0.82);
+    font-family: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.015em;
+    padding: 7px 11px;
+    border-radius: 999px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 180ms ease, color 180ms ease, transform 120ms ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .dock button:hover {
+    background: rgba(122, 247, 255, 0.11);
+    color: #FFFFFF;
+  }
+
+  .dock button:active {
+    transform: scale(0.96);
+  }
+
+  .dock button.active {
+    background: #FF4D42;
+    color: #FFF9F2;
+    box-shadow: 0 2px 12px rgba(255, 59, 48, 0.42);
+  }
+
+  .dock-group[data-group="weather"] button.active {
+    background: #14C8D8;
+    color: #061221;
+    box-shadow: 0 2px 12px rgba(20, 200, 216, 0.4);
+  }
+
+  @media (max-width: 760px) {
+    .hero {
+      top: 16px;
+      left: 16px;
+      max-width: calc(100vw - 32px);
+    }
+    .sub {
+      font-size: 11.5px;
+      margin-bottom: 5px;
+    }
+    .hint {
+      font-size: 9.5px;
+    }
+    .dock {
+      flex-wrap: wrap;
+      border-radius: 18px;
+      padding: 5px 6px;
+      gap: 4px;
+    }
+    .dock-sep {
+      display: none;
+    }
+    .dock button {
+      font-size: 10.5px;
+      padding: 6px 9px;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .kin .w {
+      opacity: 1 !important;
+      animation: none !important;
+      -webkit-mask-image: none !important;
+      mask-image: none !important;
+      transform: none !important;
+    }
+  }
+</style>
+</head>
+<body>
+  <canvas id="stage" aria-label="Neon Rain in Pixel Kyoto interactive nocturnal canal scene"></canvas>
+
+  <header class="hero">
+    <div class="eyebrow kin" data-dim style="--bd:0ms">KYOTO · PONTOCHO CANAL · 23:42</div>
+    <h1 class="title kin" data-dim style="--bd:80ms">Neon Rain</h1>
+    <p class="sub kin" data-dim style="--bd:160ms">Luminous midnight machiya, swaying vermilion lanterns, and liquid canal reflections.</p>
+    <p class="hint kin" data-dim style="--bd:230ms">Click sky for fireworks · Hover to shelter rain · Click viaduct or press T for train</p>
+  </header>
+
+  <nav class="dock-wrap" aria-label="Render mode and weather controls">
+    <div class="dock">
+      <div class="dock-group" data-group="mode" role="group" aria-label="Render Mode">
+        <button id="btn-ascii" data-mode="ascii" class="active" type="button">ASCII Night</button>
+        <button id="btn-lens" data-mode="lens" type="button">Pixel + Lens</button>
+        <button id="btn-braille" data-mode="braille" type="button">Color Braille</button>
+      </div>
+      <div class="dock-sep" aria-hidden="true"></div>
+      <div class="dock-group" data-group="weather" role="group" aria-label="Weather">
+        <button id="btn-monsoon" data-weather="monsoon" class="active" type="button">Monsoon</button>
+        <button id="btn-mist" data-weather="mist" type="button">Gentle Mist</button>
+        <button id="btn-festival" data-weather="festival" type="button">Festival</button>
+      </div>
+    </div>
+  </nav>
+
+<script>
+(() => {
+  'use strict';
+
+  /* ---------- Core Constants & Utilities ---------- */
+  const BAYER = [0,8,2,10, 12,4,14,6, 3,11,1,9, 15,7,13,5].map(v => (v + 0.5) / 16);
+  const IS_LE = new Uint8Array(new Uint32Array([0x01020304]).buffer)[0] === 4;
+  const MAX_PIXELS = 3840 * 2400;
+
+  const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
+  const lerp = (a, b, t) => a + (b - a) * t;
+
+  function packRGB(r, g, b) {
+    r = r < 0 ? 0 : r > 255 ? 255 : r | 0;
+    g = g < 0 ? 0 : g > 255 ? 255 : g | 0;
+    b = b < 0 ? 0 : b > 255 ? 255 : b | 0;
+    return IS_LE ? ((255 << 24) | (b << 16) | (g << 8) | r) >>> 0
+                 : ((r << 24) | (g << 16) | (b << 8) | 255) >>> 0;
+  }
+
+  function hexRGB(hex) {
+    const n = parseInt(hex.slice(1), 16);
+    return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+  }
+
+  function hexPack(hex) {
+    const [r, g, b] = hexRGB(hex);
+    return packRGB(r, g, b);
+  }
+
+  function pcg2(x, y) {
+    let vx = (Math.imul(x | 0, 1664525) + 1013904223) >>> 0;
+    let vy = (Math.imul(y | 0, 1664525) + 1013904223) >>> 0;
+    vx = (vx + Math.imul(vy, 1664525)) >>> 0;
+    vy = (vy + Math.imul(vx, 1664525)) >>> 0;
+    vx ^= vx >>> 16;
+    vy ^= vy >>> 16;
+    vx = (vx + Math.imul(vy, 1664525)) >>> 0;
+    vy = (vy + Math.imul(vx, 1664525)) >>> 0;
+    vx ^= vx >>> 16;
+    vy ^= vy >>> 16;
+    return (vx ^ vy) >>> 0;
+  }
+
+  function hash01(x, y, salt = 0) {
+    return pcg2(x + salt * 37, y + salt * 7919) / 4294967296;
+  }
+
+  /* ---------- SCENE_24 Packed 5x7 Bitmap Glyphs ---------- */
+  // Exact 24-glyph set from pack-glyphs.mjs:
+  // 0:' ' 1:'.' 2:',' 3:':' 4:'~' 5:'-' 6:'=' 7:'+' 8:'*' 9:'#' 10:'%' 11:'@'
+  // 12:'/' 13:'\' 14:'|' 15:'_' 16:'█' 17:'^' 18:'v' 19:'o' 20:'"' 21:';' 22:'[' 23:']'
+  const SCENE_24_ROWS = [
+    ['.....','.....','.....','.....','.....','.....','.....'], // 0 ' '
+    ['.....','.....','.....','.....','.....','..#..','.....'], // 1 '.'
+    ['.....','.....','.....','.....','..#..','..#..','.#...'], // 2 ','
+    ['.....','.....','..#..','.....','.....','..#..','.....'], // 3 ':'
+    ['.....','.....','.#..#','#.##.','.....','.....','.....'], // 4 '~'
+    ['.....','.....','.....','.###.','.....','.....','.....'], // 5 '-'
+    ['.....','.....','#####','.....','#####','.....','.....'], // 6 '='
+    ['.....','..#..','..#..','#####','..#..','..#..','.....'], // 7 '+'
+    ['.....','..#..','#.#.#','.###.','#.#.#','..#..','.....'], // 8 '*'
+    ['.#.#.','.#.#.','#####','.#.#.','#####','.#.#.','.#.#.'], // 9 '#'
+    ['##..#','##.##','..##.','.##..','##.##','#..##','.....'], // 10 '%'
+    ['.###.','#...#','#.###','#.#.#','#.###','#....','.###.'], // 11 '@'
+    ['....#','...#.','...#.','..#..','.#...','.#...','#....'], // 12 '/'
+    ['#....','.#...','.#...','..#..','...#.','...#.','....#'], // 13 '\'
+    ['..#..','..#..','..#..','..#..','..#..','..#..','..#..'], // 14 '|'
+    ['.....','.....','.....','.....','.....','.....','#####'], // 15 '_'
+    ['#####','#####','#####','#####','#####','#####','#####'], // 16 '█'
+    ['..#..','.#.#.','#...#','.....','.....','.....','.....'], // 17 '^'
+    ['.....','.....','.....','#...#','.#.#.','..#..','.....'], // 18 'v'
+    ['.....','.....','.###.','#...#','#...#','.###.','.....'], // 19 'o'
+    ['.#.#.','.#.#.','.....','.....','.....','.....','.....'], // 20 '"'
+    ['.....','.....','..#..','.....','..#..','..#..','.#...'], // 21 ';'
+    ['.###.','.#...','.#...','.#...','.#...','.#...','.###.'], // 22 '['
+    ['.###.','...#.','...#.','...#.','...#.','...#.','.###.'], // 23 ']'
+  ];
+
+  const GLYPH_BITS = new Uint8Array(SCENE_24_ROWS.length * 35);
+  for (let g = 0; g < SCENE_24_ROWS.length; g++) {
+    const rows = SCENE_24_ROWS[g];
+    for (let y = 0; y < 7; y++) {
+      for (let x = 0; x < 5; x++) {
+        GLYPH_BITS[g * 35 + y * 5 + x] = rows[y][x] === '#' ? 1 : 0;
+      }
+    }
+  }
+
+  /* ---------- Semantic Material IDs ---------- */
+  const MAT_SKY       = 0;
+  const MAT_CLOUD     = 1;
+  const MAT_HILL      = 2;
+  const MAT_ROOF      = 3;
+  const MAT_WALL      = 4;
+  const MAT_BRIDGE    = 5;
+  const MAT_WATER     = 6;
+  const MAT_REFLECT   = 7;
+  const MAT_STEAM     = 8;
+  const MAT_RAIN      = 9;
+  const MAT_SPLASH    = 10;
+  const MAT_MOON      = 11;
+  const MAT_STAR      = 12;
+  const MAT_AMBER     = 13;
+  const MAT_LANTERN   = 14;
+  const MAT_CYAN      = 15;
+  const MAT_CORAL     = 16;
+  const MAT_TRAIN     = 17;
+  const MAT_FIREWORK  = 18;
+  const MAT_GLOW      = 19;
+
+  /* ---------- Curated Kyoto Neon Rain Palette ---------- */
+  const PAL = {
+    ground:      hexRGB('#070A1B'),
+    groundP:     hexPack('#070A1B'),
+    brailleBgP:  hexPack('#060918'),
+    sky0:        hexRGB('#0B0E24'),
+    sky1:        hexRGB('#161B3F'),
+    sky2:        hexRGB('#292252'),
+    sky3:        hexRGB('#4D2B63'),
+    skyGlow:     hexRGB('#673678'),
+    cloudDark:   hexRGB('#1E224A'),
+    cloudTop:    hexRGB('#3A376E'),
+    cloudBelly:  hexRGB('#5E377A'),
+    hillFar:     hexRGB('#131733'),
+    hillNear:    hexRGB('#0E1228'),
+    archDark:    hexRGB('#090C1C'),
+    archMid:     hexRGB('#141933'),
+    archLit:     hexRGB('#242E52'),
+    archRim:     hexRGB('#354470'),
+    stone0:      hexRGB('#11162C'),
+    stone1:      hexRGB('#1D2545'),
+    stoneWet:    hexRGB('#2E3C66'),
+    water0:      hexRGB('#080C20'),
+    water1:      hexRGB('#0E1432'),
+    water2:      hexRGB('#151D42'),
+    amberDeep:   hexRGB('#C96A1B'),
+    amberMid:    hexRGB('#FFB647'),
+    amberHot:    hexRGB('#FFF3C4'),
+    vermDark:    hexRGB('#A61C28'),
+    vermMain:    hexRGB('#FF3B30'),
+    vermGlow:    hexRGB('#FF8E53'),
+    vermCore:    hexRGB('#FFF2B2'),
+    cyanDark:    hexRGB('#0B4F6C'),
+    cyanMain:    hexRGB('#14C8D8'),
+    cyanHot:     hexRGB('#7AF7FF'),
+    cyanCore:    hexRGB('#E8FFFF'),
+    coralDark:   hexRGB('#8F1D3A'),
+    coralMain:   hexRGB('#FF4D6D'),
+    coralHot:    hexRGB('#FFA6B9'),
+    coralCore:   hexRGB('#FFF0F4'),
+    moonHalo:    hexRGB('#4A4B88'),
+    moonEdge:    hexRGB('#B8C8F5'),
+    moonCore:    hexRGB('#F0F5FF'),
+    moonCrater:  hexRGB('#96A8DA'),
+    rainDim:     hexRGB('#6E88C9'),
+    rainBright:  hexRGB('#AEE2FF'),
+    steamLight:  hexRGB('#BAC7EA'),
+    steamMid:    hexRGB('#6874A8'),
+  };
+
+  /* ---------- Stepped 4x4 Bayer Reveal Setup ---------- */
+  function buildDitherTiles(cell) {
+    const cSize = Math.max(2, Math.round(cell || 3));
+    const u = cSize * Math.min(3, Math.ceil(window.devicePixelRatio || 1));
+    const cv = document.createElement('canvas');
+    cv.width = cv.height = u * 4;
+    const g = cv.getContext('2d');
+    const root = document.documentElement.style;
+    g.fillStyle = '#fff';
+    for (let k = 1; k <= 7; k++) {
+      g.clearRect(0, 0, u * 4, u * 4);
+      for (let i = 0; i < 16; i++) {
+        if (BAYER[i] < k / 8) g.fillRect((i & 3) * u, (i >> 2) * u, u, u);
+      }
+      root.setProperty('--dz' + k, `url(${cv.toDataURL()})`);
+    }
+    root.setProperty('--dzs', (cSize * 4) + 'px');
+  }
+
+  function setupKineticText() {
+    document.querySelectorAll('.kin').forEach((el) => {
+      const words = el.textContent.trim().split(/\s+/);
+      el.textContent = '';
+      words.forEach((word, i) => {
+        const sp = document.createElement('span');
+        sp.className = 'w';
+        sp.style.setProperty('--i', i);
+        sp.textContent = word;
+        el.appendChild(sp);
+        if (i < words.length - 1) el.appendChild(document.createTextNode(' '));
+      });
+    });
+    requestAnimationFrame(() => {
+      document.querySelectorAll('.kin').forEach((el) => el.classList.add('in'));
+    });
+  }
+
+  /* ---------- Engine State ---------- */
+  const canvas = document.getElementById('stage');
+  const ctx = canvas.getContext('2d', { alpha: false });
+  const offCv = document.createElement('canvas');
+  const offCtx = offCv.getContext('2d', { alpha: false });
+
+  const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+  let reducedMotion = reducedMotionQuery.matches;
+
+  const S = {
+    mode: 'ascii',        // 'ascii' | 'lens' | 'braille'
+    weather: 'monsoon',   // 'monsoon' | 'mist' | 'festival'
+    vw: 1440,
+    vh: 900,
+    dpr: 1,
+    cellCss: 2,
+    cellDev: 2,
+    dw: 1440,
+    dh: 900,
+    gw: 720,
+    gh: 450,
+    waterY: 292,
+    viaductY: 208,
+    landScale: 450,
+    leftEdge: 223,
+    rightEdge: 497,
+    t: 0,
+    ptrRawX: -999,
+    ptrRawY: -999,
+    ptrX: -999,
+    ptrY: -999,
+    ptrVx: 0,
+    ptrActive: 0,
+    dimRects: [],
+    // Buffers
+    basePix: null,
+    baseMat: null,
+    baseLum: null,
+    pixBuf: null,
+    matBuf: null,
+    lumBuf: null,
+    outImg: null,
+    outU32: null,
+    // Dynamic scene entities
+    lanterns: [],
+    eaveY: null,
+    signs: [],
+    clouds: [],
+    steams: [],
+    rainCount: 200,
+    rainX: null,
+    rainY: null,
+    rainVx: null,
+    rainVy: null,
+    rainLen: null,
+    rainDepth: null,
+    splashes: [],
+    ripples: [],
+    fireworks: [],
+    festivalTimer: 1.8,
+    train: {
+      active: true,
+      x: 0.44, // normalized 0..1 across scene width
+      dir: 1,
+      speed: 0.145,
+      cooldown: 6.5,
+    },
+  };
+
+  /* ---------- Pixel Write Helpers ---------- */
+  function setCell(pix, mat, lum, x, y, r, g, b, m, lOverride) {
+    if (x < 0 || x >= S.gw || y < 0 || y >= S.gh) return;
+    const idx = y * S.gw + x;
+    pix[idx] = packRGB(r, g, b);
+    mat[idx] = m;
+    lum[idx] = lOverride !== undefined ? lOverride : ((r * 77 + g * 150 + b * 29) >> 8);
+  }
+
+  function blendCell(pix, mat, lum, x, y, r, g, b, alpha, mOverride) {
+    if (x < 0 || x >= S.gw || y < 0 || y >= S.gh) return;
+    const idx = y * S.gw + x;
+    const cur = pix[idx];
+    const cr = IS_LE ? (cur & 255) : ((cur >>> 24) & 255);
+    const cg = IS_LE ? ((cur >>> 8) & 255) : ((cur >>> 16) & 255);
+    const cb = IS_LE ? ((cur >>> 16) & 255) : ((cur >>> 8) & 255);
+    const nr = (cr + (r - cr) * alpha) | 0;
+    const ng = (cg + (g - cg) * alpha) | 0;
+    const nb = (cb + (b - cb) * alpha) | 0;
+    pix[idx] = packRGB(nr, ng, nb);
+    if (mOverride !== undefined) mat[idx] = mOverride;
+    const nl = (nr * 77 + ng * 150 + nb * 29) >> 8;
+    if (nl > lum[idx]) lum[idx] = nl;
+  }
+
+  function addGlowBayer(cx, cy, rad, colA, colB, strength, maxY) {
+    const gw = S.gw, gh = S.gh;
+    const x0 = Math.max(0, Math.floor(cx - rad));
+    const x1 = Math.min(gw - 1, Math.ceil(cx + rad));
+    const y0 = Math.max(0, Math.floor(cy - rad));
+    const y1 = Math.min(maxY !== undefined ? maxY : gh - 1, Math.ceil(cy + rad));
+    const invR = 1 / Math.max(1, rad);
+    const pix = S.pixBuf, mat = S.matBuf, lum = S.lumBuf;
+    for (let y = y0; y <= y1; y++) {
+      const dy = (y - cy) * invR;
+      const dy2 = dy * dy;
+      const row = y * gw;
+      for (let x = x0; x <= x1; x++) {
+        const dx = (x - cx) * invR;
+        const d2 = dx * dx + dy2;
+        if (d2 >= 1) continue;
+        const f = Math.pow(1 - Math.sqrt(d2), 1.65) * strength;
+        const th = BAYER[((y & 3) << 2) | (x & 3)];
+        if (f <= th * 0.62) continue;
+        const idx = row + x;
+        const curM = mat[idx];
+        // Don't muddy bright emissive cores
+        if (curM === MAT_LANTERN || curM === MAT_CYAN || curM === MAT_CORAL || curM === MAT_AMBER || curM === MAT_FIREWORK) continue;
+        const c = f > 0.42 ? colA : colB;
+        const cur = pix[idx];
+        const cr = IS_LE ? (cur & 255) : ((cur >>> 24) & 255);
+        const cg = IS_LE ? ((cur >>> 8) & 255) : ((cur >>> 16) & 255);
+        const cb = IS_LE ? ((cur >>> 16) & 255) : ((cur >>> 8) & 255);
+        const mixA = Math.min(0.68, f * 0.75);
+        const nr = Math.min(255, (cr + c[0] * mixA) | 0);
+        const ng = Math.min(255, (cg + c[1] * mixA) | 0);
+        const nb = Math.min(255, (cb + c[2] * mixA) | 0);
+        pix[idx] = packRGB(nr, ng, nb);
+        const nl = (nr * 77 + ng * 150 + nb * 29) >> 8;
+        if (nl > lum[idx]) lum[idx] = nl;
+        if (curM === MAT_SKY || curM === MAT_WALL || curM === MAT_ROOF) {
+          if (f > 0.34) mat[idx] = MAT_GLOW;
+        }
+      }
+    }
+  }
+
+  function fillRect(pix, mat, lum, x0, y0, w, h, rgb, m) {
+    const gw = S.gw, gh = S.gh;
+    const xs = Math.max(0, x0 | 0), xe = Math.min(gw, (x0 + w) | 0);
+    const ys = Math.max(0, y0 | 0), ye = Math.min(gh, (y0 + h) | 0);
+    const p = packRGB(rgb[0], rgb[1], rgb[2]);
+    const l = (rgb[0] * 77 + rgb[1] * 150 + rgb[2] * 29) >> 8;
+    for (let y = ys; y < ye; y++) {
+      const row = y * gw;
+      for (let x = xs; x < xe; x++) {
+        pix[row + x] = p;
+        mat[row + x] = m;
+        lum[row + x] = l;
+      }
+    }
+  }
+
+  /* ---------- Content-Aware [data-dim] Rect Reading ---------- */
+  function readDimRects() {
+    const rects = [];
+    const scaleX = S.gw / Math.max(1, S.vw);
+    const scaleY = S.gh / Math.max(1, S.vh);
+    document.querySelectorAll('[data-dim]').forEach((el) => {
+      const r = el.getBoundingClientRect();
+      if (r.width > 0 && r.height > 0) {
+        rects.push({
+          x0: (r.left - 14) * scaleX,
+          y0: (r.top - 10) * scaleY,
+          x1: (r.right + 18) * scaleX,
+          y1: (r.bottom + 12) * scaleY,
+        });
+      }
+    });
+    S.dimRects = rects;
+  }
+
+  function dimWeightAt(gx, gy) {
+    let d = 0;
+    const rects = S.dimRects;
+    for (let i = 0; i < rects.length; i++) {
+      const r = rects[i];
+      const dx = gx < r.x0 ? r.x0 - gx : gx > r.x1 ? gx - r.x1 : 0;
+      const dy = gy < r.y0 ? r.y0 - gy : gy > r.y1 ? gy - r.y1 : 0;
+      const dist2 = dx * dx + dy * dy;
+      if (dist2 === 0) return 1;
+      if (dist2 < 280) {
+        const w = Math.exp(-dist2 / 110);
+        if (w > d) d = w;
+      }
+    }
+    return d;
+  }
+
+  /* ---------- Build Static Base Architecture (Cached on Resize) ---------- */
+  function buildStaticBase() {
+    const gw = S.gw, gh = S.gh;
+    const pix = S.basePix;
+    const mat = S.baseMat;
+    const lum = S.baseLum;
+    const waterY = S.waterY;
+    const ls = S.landScale;
+    const isMob = S.vw < 760;
+
+    S.eaveY = new Int16Array(gw);
+    S.eaveY.fill(waterY);
+    S.lanterns = [];
+    S.signs = [];
+
+    /* --- Plane 0: Stepped Bayer Twilight Sky Bands --- */
+    const b1 = Math.round(waterY * 0.22);
+    const b2 = Math.round(waterY * 0.45);
+    const b3 = Math.round(waterY * 0.68);
+    const b4 = Math.round(waterY * 0.86);
+    const seamH = Math.max(5, Math.round(ls * 0.026));
+
+    const skyCols = [PAL.sky0, PAL.sky1, PAL.sky2, PAL.sky3, PAL.skyGlow];
+    const seams = [b1, b2, b3, b4];
+
+    for (let y = 0; y < waterY; y++) {
+      const row = y * gw;
+      let band = 0;
+      for (let s = 0; s < seams.length; s++) {
+        if (y >= seams[s]) band = s + 1;
+      }
+      // Check proximity to nearest seam
+      let nearSeam = -1;
+      for (let s = 0; s < seams.length; s++) {
+        if (Math.abs(y - seams[s]) <= seamH) { nearSeam = s; break; }
+      }
+      for (let x = 0; x < gw; x++) {
+        let c = skyCols[band];
+        if (nearSeam >= 0) {
+          const ys = seams[nearSeam];
+          const t = clamp((y - (ys - seamH)) / (seamH * 2), 0, 1);
+          const wave = Math.sin(x * 0.065 + nearSeam * 1.9) * 0.14 + Math.cos(x * 0.17) * 0.08;
+          const th = BAYER[((y & 3) << 2) | (x & 3)];
+          c = (t + wave) > th ? skyCols[nearSeam + 1] : skyCols[nearSeam];
+        }
+        // Subtle tactile print micro-weave
+        const weave = ((x + y) & 1) === 0 ? 2 : -1;
+        const r = clamp(c[0] + weave, 0, 255);
+        const g = clamp(c[1] + weave, 0, 255);
+        const b = clamp(c[2] + weave, 0, 255);
+        pix[row + x] = packRGB(r, g, b);
+        mat[row + x] = MAT_SKY;
+        lum[row + x] = (r * 77 + g * 150 + b * 29) >> 8;
+      }
+    }
+
+    // Initialize base dark water below waterY
+    for (let y = waterY; y < gh; y++) {
+      const row = y * gw;
+      const t = (y - waterY) / Math.max(1, gh - waterY);
+      const c = t < 0.45 ? PAL.water1 : PAL.water0;
+      const p = packRGB(c[0], c[1], c[2]);
+      const l = (c[0] * 77 + c[1] * 150 + c[2] * 29) >> 8;
+      for (let x = 0; x < gw; x++) {
+        pix[row + x] = p;
+        mat[row + x] = MAT_WATER;
+        lum[row + x] = l;
+      }
+    }
+
+    /* --- Pale Glowing Moon (Clear of Upper-Left Hero Title on Desktop & Mobile!) --- */
+    const moonX = Math.round(gw * (isMob ? 0.79 : 0.76));
+    const moonY = Math.round(gh * (isMob ? 0.245 : 0.14));
+    const moonR = Math.max(6, Math.round(ls * (isMob ? 0.044 : 0.042)));
+    const haloR = Math.round(moonR * 2.9);
+
+    for (let y = Math.max(0, moonY - haloR); y <= Math.min(waterY - 1, moonY + haloR); y++) {
+      for (let x = Math.max(0, moonX - haloR); x <= Math.min(gw - 1, moonX + haloR); x++) {
+        const dx = x - moonX, dy = y - moonY;
+        const d = Math.hypot(dx, dy);
+        const th = BAYER[((y & 3) << 2) | (x & 3)];
+        if (d <= moonR) {
+          // Subtle crescent/mare shading
+          const nx = dx / moonR, ny = dy / moonR;
+          const crater = Math.sin(nx * 4.3 + 0.8) * Math.cos(ny * 3.9 - 0.5);
+          let col = PAL.moonCore;
+          if (nx * 0.6 + ny * 0.4 > 0.42 + th * 0.25) col = PAL.moonEdge;
+          else if (crater > 0.42 && d < moonR * 0.82) col = PAL.moonCrater;
+          setCell(pix, mat, lum, x, y, col[0], col[1], col[2], MAT_MOON, 245);
+        } else if (d < haloR) {
+          const hf = Math.pow(1 - (d - moonR) / (haloR - moonR), 1.85);
+          if (hf > th * 0.85) {
+            const c = hf > 0.48 ? PAL.moonEdge : PAL.moonHalo;
+            blendCell(pix, mat, lum, x, y, c[0], c[1], c[2], hf * 0.58);
+          }
+        }
+      }
+    }
+
+    /* --- Single-Texel Deterministic Stars (Zero Clumping, Respects [data-dim]) --- */
+    for (let y = 2; y < Math.round(waterY * 0.52); y++) {
+      const fade = 1 - y / (waterY * 0.52);
+      for (let x = 2; x < gw - 2; x++) {
+        const h = hash01(x, y, 101);
+        if (h < 0.0028 * fade) {
+          if (dimWeightAt(x, y) > 0.35) continue;
+          const dMoon = Math.hypot(x - moonX, y - moonY);
+          if (dMoon < moonR * 1.9) continue;
+          const bright = h < 0.00055 * fade;
+          const col = bright ? [242, 248, 255] : [168, 190, 244];
+          setCell(pix, mat, lum, x, y, col[0], col[1], col[2], MAT_STAR, bright ? 242 : 185);
+        }
+      }
+    }
+
+    /* --- Plane 1: Far Misty Kyoto Hills & Distant 5-Tier Pagoda Silhouette --- */
+    const hillBaseY = waterY - Math.round(ls * 0.14);
+    for (let x = 0; x < gw; x++) {
+      const u = x / gw;
+      const h1 = Math.sin(u * 6.2 + 0.6) * ls * 0.055 + Math.cos(u * 13.4) * ls * 0.022 + ls * 0.07;
+      const top1 = Math.round(hillBaseY - h1);
+      for (let y = Math.max(0, top1); y < waterY; y++) {
+        const th = BAYER[((y & 3) << 2) | (x & 3)];
+        const mist = clamp((y - top1) / Math.max(8, ls * 0.08), 0, 1);
+        const col = mist > th ? PAL.hillNear : PAL.hillFar;
+        setCell(pix, mat, lum, x, y, col[0], col[1], col[2], MAT_HILL);
+      }
+    }
+
+    // 5-Tier Yasaka-Inspired Kyoto Pagoda Silhouette
+    const pagX = Math.round(gw * (isMob ? 0.56 : 0.545));
+    const pagBaseY = waterY - Math.round(ls * 0.19);
+    const pagH = Math.round(ls * (isMob ? 0.31 : 0.33));
+    const pagBaseW = Math.max(18, Math.round(ls * (isMob ? 0.145 : 0.155)));
+    drawPagoda(pix, mat, lum, pagX, pagBaseY, pagBaseW, pagH);
+
+    /* --- Elevated Viaduct Bridge Spanning Midground --- */
+    const viaductY = S.viaductY;
+    const deckH = Math.max(4, Math.round(ls * 0.022));
+    // Viaduct deck beam
+    fillRect(pix, mat, lum, 0, viaductY, gw, deckH, PAL.archMid, MAT_BRIDGE);
+    fillRect(pix, mat, lum, 0, viaductY, gw, 1, PAL.archRim, MAT_BRIDGE);
+    fillRect(pix, mat, lum, 0, viaductY + deckH - 1, gw, 1, PAL.archDark, MAT_BRIDGE);
+
+    // Viaduct stone/concrete arched piers
+    const pierSpan = Math.max(24, Math.round(ls * 0.135));
+    const pierW = Math.max(4, Math.round(ls * 0.024));
+    for (let px = Math.round(pierSpan * 0.5); px < gw; px += pierSpan) {
+      fillRect(pix, mat, lum, px - (pierW >> 1), viaductY + deckH, pierW, waterY - (viaductY + deckH), PAL.archDark, MAT_BRIDGE);
+      // Highlight inner left edge of pier
+      fillRect(pix, mat, lum, px - (pierW >> 1), viaductY + deckH, 1, waterY - (viaductY + deckH), PAL.archMid, MAT_BRIDGE);
+      // Arch haunches between piers
+      const archR = Math.round((pierSpan - pierW) * 0.5);
+      const archCX = px + (pierSpan >> 1);
+      const archH = Math.max(4, Math.round(archR * 0.38));
+      for (let ay = 0; ay < archH; ay++) {
+        for (let ax = -archR; ax <= archR; ax++) {
+          const nx = ax / Math.max(1, archR);
+          const curveY = Math.round((1 - Math.sqrt(Math.max(0, 1 - nx * nx))) * archH);
+          if (ay <= curveY) {
+            setCell(pix, mat, lum, archCX + ax, viaductY + deckH + ay, PAL.archDark[0], PAL.archDark[1], PAL.archDark[2], MAT_BRIDGE);
+          }
+        }
+      }
+      // Subtle cyan/amber track signal pinpoints along viaduct
+      if (px > S.leftEdge && px < S.rightEdge) {
+        const isCyan = ((px / pierSpan) | 0) % 2 === 0;
+        const sc = isCyan ? PAL.cyanHot : PAL.amberMid;
+        setCell(pix, mat, lum, px, viaductY - 2, sc[0], sc[1], sc[2], isCyan ? MAT_CYAN : MAT_AMBER, 232);
+        setCell(pix, mat, lum, px, viaductY - 1, PAL.archLit[0], PAL.archLit[1], PAL.archLit[2], MAT_BRIDGE);
+      }
+    }
+
+    /* --- Plane 2: Left & Right Traditional Machiya Facades --- */
+    buildMachiyaDistrict(pix, mat, lum);
+
+    /* --- Plane 3: Stone Canal Embankments & Arched Wooden Footbridge --- */
+    buildEmbankmentsAndBridge(pix, mat, lum);
+  }
+
+  function drawPagoda(pix, mat, lum, cx, baseY, baseW, totalH) {
+    const tiers = 5;
+    const tierH = Math.max(5, Math.round((totalH * 0.78) / tiers));
+    let curY = baseY;
+
+    for (let i = 0; i < tiers; i++) {
+      const f = 1 - i * 0.145;
+      const bodyW = Math.max(6, Math.round(baseW * f * 0.54));
+      const eaveW = Math.max(10, Math.round(baseW * f));
+      const bodyH = Math.max(3, Math.round(tierH * 0.56));
+      const roofH = Math.max(3, tierH - bodyH);
+
+      // Core timber story
+      fillRect(pix, mat, lum, cx - (bodyW >> 1), curY - bodyH, bodyW, bodyH, PAL.archDark, MAT_WALL);
+      // Warm glowing amber pagoda sanctuary slit on tiers 0, 2, 4
+      if (i % 2 === 0 && bodyW >= 8) {
+        const ww = Math.max(2, Math.round(bodyW * 0.34));
+        const wh = Math.max(1, bodyH - 2);
+        fillRect(pix, mat, lum, cx - (ww >> 1), curY - bodyH + 1, ww, wh, PAL.amberMid, MAT_AMBER);
+        setCell(pix, mat, lum, cx, curY - bodyH + 1, PAL.amberHot[0], PAL.amberHot[1], PAL.amberHot[2], MAT_AMBER, 245);
+      }
+
+      // Upturned curved kawara roof
+      const roofBot = curY - bodyH;
+      for (let ry = 0; ry < roofH; ry++) {
+        const rf = ry / Math.max(1, roofH);
+        const halfW = Math.round(lerp(eaveW * 0.5, bodyW * 0.56, rf));
+        for (let dx = -halfW; dx <= halfW; dx++) {
+          const edgeRatio = Math.abs(dx) / Math.max(1, halfW);
+          // Graceful upturned corner tips!
+          const lift = edgeRatio > 0.72 ? Math.round((edgeRatio - 0.72) * 5.5) : 0;
+          const py = roofBot - ry - lift;
+          const isRim = (ry === roofH - 1) || (edgeRatio > 0.85 && ry === 0);
+          const col = isRim ? PAL.archRim : (ry === 0 ? PAL.archDark : PAL.archMid);
+          setCell(pix, mat, lum, cx + dx, py, col[0], col[1], col[2], MAT_ROOF);
+        }
+      }
+      curY -= tierH;
+    }
+
+    // Tall bronze sorin spire finial
+    const spireH = Math.max(8, Math.round(totalH * 0.28));
+    for (let sy = 0; sy < spireH; sy++) {
+      const col = sy % 3 === 0 ? PAL.archRim : PAL.archLit;
+      setCell(pix, mat, lum, cx, curY - sy, col[0], col[1], col[2], MAT_ROOF);
+      if (sy < Math.round(spireH * 0.45)) {
+        setCell(pix, mat, lum, cx - 1, curY - sy, PAL.archMid[0], PAL.archMid[1], PAL.archMid[2], MAT_ROOF);
+        setCell(pix, mat, lum, cx + 1, curY - sy, PAL.archMid[0], PAL.archMid[1], PAL.archMid[2], MAT_ROOF);
+      }
+    }
+    // Delicate crimson/amber spire beacon tip
+    setCell(pix, mat, lum, cx, curY - spireH, PAL.vermGlow[0], PAL.vermGlow[1], PAL.vermGlow[2], MAT_LANTERN, 235);
+  }
+
+  function drawShojiWindow(pix, mat, lum, x0, y0, w, h, warmVariant) {
+    if (w < 4 || h < 4) return;
+    // Outer cedar frame
+    fillRect(pix, mat, lum, x0 - 1, y0 - 1, w + 2, h + 2, PAL.archDark, MAT_WALL);
+    for (let dy = 0; dy < h; dy++) {
+      for (let dx = 0; dx < w; dx++) {
+        // Subtle paper luminance gradient (warm core -> amber edges)
+        const nx = (dx + 0.5) / w - 0.5;
+        const ny = (dy + 0.5) / h - 0.5;
+        const d = Math.hypot(nx * 1.4, ny * 1.4);
+        let col = d < 0.34 ? PAL.amberHot : d < 0.68 ? PAL.amberMid : PAL.amberDeep;
+        if (warmVariant === 1 && d < 0.45) col = [255, 224, 152];
+        setCell(pix, mat, lum, x0 + dx, y0 + dy, col[0], col[1], col[2], MAT_AMBER, d < 0.34 ? 248 : 220);
+      }
+    }
+    // Crisp dark cedar shoji muntin lattice bars
+    const vStep = Math.max(3, Math.round(w / 3));
+    const hStep = Math.max(3, Math.round(h / 2));
+    for (let dx = vStep; dx < w - 1; dx += vStep) {
+      fillRect(pix, mat, lum, x0 + dx, y0, 1, h, PAL.archMid, MAT_WALL);
+    }
+    for (let dy = hStep; dy < h - 1; dy += hStep) {
+      fillRect(pix, mat, lum, x0, y0 + dy, w, 1, PAL.archMid, MAT_WALL);
+    }
+  }
+
+  function drawTiledRoof(pix, mat, lum, x0, x1, yBot, roofH, overhangL, overhangR) {
+    const startX = x0 - overhangL;
+    const endX = x1 + overhangR;
+    const width = Math.max(1, endX - startX);
+    for (let ry = 0; ry < roofH; ry++) {
+      const f = ry / Math.max(1, roofH - 1);
+      const insetL = Math.round(overhangL * f + (x1 - x0) * 0.08 * f);
+      const insetR = Math.round(overhangR * f + (x1 - x0) * 0.08 * f);
+      const lx = startX + insetL;
+      const rx = endX - insetR;
+      const py = yBot - ry;
+      for (let x = lx; x <= rx; x++) {
+        // Upturned outer eave corners
+        const isLeftTip = x < x0 && ry < 2;
+        const isRightTip = x > x1 && ry < 2;
+        const pyAdj = (isLeftTip || isRightTip) ? py - 1 : py;
+        const isRidge = ry === roofH - 1;
+        const isTileLine = ((x - startX) % 4 === 0) && ry < roofH - 1;
+        const col = isRidge ? PAL.archRim : isTileLine ? PAL.archLit : (ry === 0 ? PAL.archDark : PAL.archMid);
+        setCell(pix, mat, lum, x, pyAdj, col[0], col[1], col[2], MAT_ROOF);
+        if (x >= 0 && x < S.gw && pyAdj < S.eaveY[x]) {
+          S.eaveY[x] = pyAdj;
+        }
+      }
+    }
+  }
+
+  function drawNeonSign(pix, mat, lum, x0, y0, w, h, kind, seed) {
+    const isCyan = kind === 'cyan';
+    const dark = isCyan ? PAL.cyanDark : PAL.coralDark;
+    const main = isCyan ? PAL.cyanMain : PAL.coralMain;
+    const hot = isCyan ? PAL.cyanHot : PAL.coralHot;
+    const core = isCyan ? PAL.cyanCore : PAL.coralCore;
+    const mId = isCyan ? MAT_CYAN : MAT_CORAL;
+
+    // Metal mounting bracket + dark outer casing
+    fillRect(pix, mat, lum, x0 - 1, y0 - 1, w + 2, h + 2, PAL.archDark, MAT_WALL);
+    // Luminous neon border
+    fillRect(pix, mat, lum, x0, y0, w, h, dark, mId);
+    fillRect(pix, mat, lum, x0, y0, w, 1, main, mId);
+    fillRect(pix, mat, lum, x0, y0 + h - 1, w, 1, main, mId);
+    fillRect(pix, mat, lum, x0, y0, 1, h, main, mId);
+    fillRect(pix, mat, lum, x0 + w - 1, y0, 1, h, main, mId);
+
+    // Stylized vertical geometric pixel-kana/kanji strokes inside signboard
+    const innerW = Math.max(3, w - 4);
+    const charStep = Math.max(5, Math.min(8, innerW + 2));
+    let cy = y0 + 3;
+    let idx = 0;
+    while (cy + charStep - 2 < y0 + h - 2) {
+      const pat = (seed + idx * 7) % 5;
+      const cx0 = x0 + 2;
+      const ch = Math.max(3, charStep - 2);
+      if (pat === 0) {
+        // Horizontal + center vertical + lower bar (like 工 / テ)
+        fillRect(pix, mat, lum, cx0, cy, innerW, 1, hot, mId);
+        fillRect(pix, mat, lum, cx0 + (innerW >> 1), cy, 1, ch, core, mId);
+        fillRect(pix, mat, lum, cx0, cy + ch - 1, innerW, 1, hot, mId);
+      } else if (pat === 1) {
+        // Boxed kanji radical (like 日 / 口)
+        fillRect(pix, mat, lum, cx0, cy, innerW, 1, core, mId);
+        fillRect(pix, mat, lum, cx0, cy + ch - 1, innerW, 1, hot, mId);
+        fillRect(pix, mat, lum, cx0, cy, 1, ch, hot, mId);
+        fillRect(pix, mat, lum, cx0 + innerW - 1, cy, 1, ch, hot, mId);
+        fillRect(pix, mat, lum, cx0 + 1, cy + (ch >> 1), Math.max(1, innerW - 2), 1, core, mId);
+      } else if (pat === 2) {
+        // Vertical bar + angled side stroke (like カ / キ)
+        fillRect(pix, mat, lum, cx0, cy + 1, innerW, 1, core, mId);
+        fillRect(pix, mat, lum, cx0, cy + ch - 2, innerW, 1, hot, mId);
+        fillRect(pix, mat, lum, cx0 + (innerW >> 1), cy, 1, ch, core, mId);
+      } else if (pat === 3) {
+        // Twin strokes + sweep (like ラ / ニ)
+        fillRect(pix, mat, lum, cx0 + 1, cy, Math.max(1, innerW - 2), 1, core, mId);
+        fillRect(pix, mat, lum, cx0, cy + 2, innerW, 1, hot, mId);
+        fillRect(pix, mat, lum, cx0 + innerW - 1, cy + 2, 1, Math.max(1, ch - 2), hot, mId);
+        fillRect(pix, mat, lum, cx0 + 1, cy + ch - 1, Math.max(1, innerW - 1), 1, core, mId);
+      } else {
+        // Crossed timber glyph (like 木 / 呑)
+        fillRect(pix, mat, lum, cx0, cy + 1, innerW, 1, hot, mId);
+        fillRect(pix, mat, lum, cx0 + (innerW >> 1), cy, 1, ch, core, mId);
+        setCell(pix, mat, lum, cx0, cy + ch - 1, core[0], core[1], core[2], mId, 250);
+        setCell(pix, mat, lum, cx0 + innerW - 1, cy + ch - 1, core[0], core[1], core[2], mId, 250);
+      }
+      cy += charStep + 1;
+      idx++;
+    }
+
+    S.signs.push({
+      x: x0 + (w >> 1),
+      y: y0 + (h >> 1),
+      x0, y0, w, h,
+      kind,
+      phase: seed * 1.37,
+    });
+  }
+
+  function buildMachiyaDistrict(pix, mat, lum) {
+    const gw = S.gw, waterY = S.waterY, ls = S.landScale;
+    const isMob = S.vw < 760;
+    const leftEdge = S.leftEdge;
+    const rightEdge = S.rightEdge;
+    const bankY = waterY - Math.max(6, Math.round(ls * 0.032));
+
+    /* ===== LEFT BANK: 2-3 Tiered Machiya + Cozy Ramen Stall ===== */
+    // Far-left tall machiya (kept cleanly below upper-left hero title safe zone!)
+    const lTallTop = isMob ? Math.round(waterY - ls * 0.39) : Math.round(waterY - ls * 0.385);
+    const lTallW = Math.round(leftEdge * 0.56);
+    fillRect(pix, mat, lum, 0, lTallTop, lTallW, bankY - lTallTop, PAL.archDark, MAT_WALL);
+    // Vertical cedar lattice ribs
+    for (let x = 2; x < lTallW; x += 4) {
+      fillRect(pix, mat, lum, x, lTallTop + 4, 1, bankY - lTallTop - 4, PAL.archMid, MAT_WALL);
+    }
+    drawTiledRoof(pix, mat, lum, 0, lTallW, lTallTop, Math.max(7, Math.round(ls * 0.042)), 0, Math.max(4, Math.round(ls * 0.025)));
+    // Upper shoji windows on tall left machiya
+    const winW = Math.max(7, Math.round(ls * 0.042));
+    const winH = Math.max(6, Math.round(ls * 0.036));
+    drawShojiWindow(pix, mat, lum, Math.round(lTallW * 0.14), lTallTop + Math.round(ls * 0.045), winW, winH, 0);
+    drawShojiWindow(pix, mat, lum, Math.round(lTallW * 0.52), lTallTop + Math.round(ls * 0.045), winW, winH, 1);
+
+    // Mid-left waterfront machiya stepping down toward canal
+    const lMidX0 = Math.round(leftEdge * 0.36);
+    const lMidTop = Math.round(waterY - ls * (isMob ? 0.30 : 0.32));
+    fillRect(pix, mat, lum, lMidX0, lMidTop, leftEdge - lMidX0, bankY - lMidTop, PAL.archMid, MAT_WALL);
+    fillRect(pix, mat, lum, leftEdge - 2, lMidTop, 2, bankY - lMidTop, PAL.archLit, MAT_WALL);
+    for (let x = lMidX0 + 3; x < leftEdge - 2; x += 4) {
+      fillRect(pix, mat, lum, x, lMidTop + 3, 1, bankY - lMidTop - 3, PAL.archDark, MAT_WALL);
+    }
+    drawTiledRoof(pix, mat, lum, lMidX0, leftEdge, lMidTop, Math.max(7, Math.round(ls * 0.042)), Math.max(3, Math.round(ls * 0.02)), Math.max(5, Math.round(ls * 0.032)));
+
+    // Second-floor balcony & glowing shoji window facing the canal
+    const lMidWinX = lMidX0 + Math.round((leftEdge - lMidX0) * 0.24);
+    const lMidWinY = lMidTop + Math.round(ls * 0.042);
+    const lMidWinW = Math.max(8, Math.round((leftEdge - lMidX0) * 0.48));
+    drawShojiWindow(pix, mat, lum, lMidWinX, lMidWinY, lMidWinW, winH + 1, 0);
+    // Mid-story tiled awning eave
+    const lAwningY = Math.round(bankY - ls * 0.135);
+    drawTiledRoof(pix, mat, lum, Math.round(leftEdge * 0.16), leftEdge + Math.round(ls * 0.02), lAwningY, Math.max(5, Math.round(ls * 0.028)), 2, Math.max(4, Math.round(ls * 0.024)));
+
+    // Cozy Waterfront Ramen Stall under left awning
+    const stallX0 = Math.round(leftEdge * 0.24);
+    const stallW = Math.max(16, leftEdge - stallX0 - 3);
+    const stallH = Math.max(10, bankY - lAwningY - 2);
+    // Warm amber ramen stall interior glow
+    fillRect(pix, mat, lum, stallX0, lAwningY + 1, stallW, stallH, PAL.amberDeep, MAT_AMBER);
+    fillRect(pix, mat, lum, stallX0 + 2, lAwningY + 2, Math.max(2, stallW - 4), Math.max(2, stallH - 4), PAL.amberMid, MAT_AMBER);
+    fillRect(pix, mat, lum, stallX0 + 4, lAwningY + Math.round(stallH * 0.35), Math.max(2, stallW - 8), Math.max(2, Math.round(stallH * 0.3)), PAL.amberHot, MAT_AMBER);
+    // Hanging indigo & coral noren curtain flaps across top of stall
+    const norenH = Math.max(3, Math.round(stallH * 0.36));
+    const flaps = 4;
+    const flapW = Math.max(2, Math.floor((stallW - flaps) / flaps));
+    for (let f = 0; f < flaps; f++) {
+      const fx = stallX0 + f * (flapW + 1);
+      const nc = f % 2 === 0 ? [32, 48, 96] : PAL.coralDark;
+      fillRect(pix, mat, lum, fx, lAwningY + 1, flapW, norenH, nc, MAT_WALL);
+      fillRect(pix, mat, lum, fx + (flapW >> 1), lAwningY + 2, 1, Math.max(1, norenH - 2), PAL.amberHot, MAT_AMBER);
+    }
+    // Wooden ramen counter bar
+    fillRect(pix, mat, lum, stallX0 - 1, bankY - 3, stallW + 2, 3, PAL.archDark, MAT_WALL);
+    fillRect(pix, mat, lum, stallX0 - 1, bankY - 3, stallW + 2, 1, PAL.archRim, MAT_WALL);
+
+    // Seed ramen steam emitters right above stall counter
+    S.steams = [];
+    for (let i = 0; i < 6; i++) {
+      S.steams.push({
+        baseX: stallX0 + stallW * (0.2 + i * 0.13),
+        baseY: bankY - 3,
+        phase: i * 1.15,
+        speed: 0.42 + (i % 3) * 0.12,
+        drift: 0.3 + (i % 2) * 0.15,
+      });
+    }
+
+    // Left vertical Neon Signboards (Electric Cyan + Hot Coral)
+    const signW = Math.max(8, Math.round(ls * 0.036));
+    const signH = Math.max(24, Math.round(ls * 0.125));
+    drawNeonSign(pix, mat, lum, leftEdge - Math.round(signW * 0.2), lMidTop + Math.round(ls * 0.03), signW, signH, 'cyan', 1);
+    drawNeonSign(pix, mat, lum, Math.max(4, lMidX0 - Math.round(signW * 0.65)), lTallTop + Math.round(ls * 0.11), Math.max(7, signW - 1), Math.round(signH * 0.85), 'coral', 3);
+
+    /* ===== RIGHT BANK: 2-3 Tiered Machiya Tea-Houses & Izakaya ===== */
+    const rOuterX0 = rightEdge + Math.round((gw - rightEdge) * 0.42);
+    const rTallTop = Math.round(waterY - ls * (isMob ? 0.38 : 0.39));
+    fillRect(pix, mat, lum, rOuterX0, rTallTop, gw - rOuterX0, bankY - rTallTop, PAL.archDark, MAT_WALL);
+    for (let x = rOuterX0 + 3; x < gw; x += 4) {
+      fillRect(pix, mat, lum, x, rTallTop + 4, 1, bankY - rTallTop - 4, PAL.archMid, MAT_WALL);
+    }
+    drawTiledRoof(pix, mat, lum, rOuterX0, gw, rTallTop, Math.max(7, Math.round(ls * 0.042)), Math.max(4, Math.round(ls * 0.025)), 0);
+    drawShojiWindow(pix, mat, lum, rOuterX0 + Math.round((gw - rOuterX0) * 0.18), rTallTop + Math.round(ls * 0.045), winW, winH, 1);
+    drawShojiWindow(pix, mat, lum, rOuterX0 + Math.round((gw - rOuterX0) * 0.58), rTallTop + Math.round(ls * 0.045), winW, winH, 0);
+
+    // Mid-right waterfront machiya facing canal
+    const rMidX1 = Math.min(gw, rightEdge + Math.round((gw - rightEdge) * 0.64));
+    const rMidTop = Math.round(waterY - ls * (isMob ? 0.29 : 0.315));
+    fillRect(pix, mat, lum, rightEdge, rMidTop, rMidX1 - rightEdge, bankY - rMidTop, PAL.archMid, MAT_WALL);
+    fillRect(pix, mat, lum, rightEdge, rMidTop, 2, bankY - rMidTop, PAL.archLit, MAT_WALL);
+    for (let x = rightEdge + 4; x < rMidX1; x += 4) {
+      fillRect(pix, mat, lum, x, rMidTop + 3, 1, bankY - rMidTop - 3, PAL.archDark, MAT_WALL);
+    }
+    drawTiledRoof(pix, mat, lum, rightEdge, rMidX1, rMidTop, Math.max(7, Math.round(ls * 0.042)), Math.max(5, Math.round(ls * 0.032)), Math.max(3, Math.round(ls * 0.02)));
+
+    // Upper & ground-floor glowing shoji windows on right machiya
+    const rWinW = Math.max(8, Math.round((rMidX1 - rightEdge) * 0.48));
+    const rWinX = rightEdge + Math.round((rMidX1 - rightEdge) * 0.24);
+    drawShojiWindow(pix, mat, lum, rWinX, rMidTop + Math.round(ls * 0.045), rWinW, winH + 1, 1);
+
+    const rAwningY = Math.round(bankY - ls * 0.135);
+    drawTiledRoof(pix, mat, lum, rightEdge - Math.round(ls * 0.02), Math.min(gw, rMidX1 + 4), rAwningY, Math.max(5, Math.round(ls * 0.028)), Math.max(4, Math.round(ls * 0.024)), 2);
+    drawShojiWindow(pix, mat, lum, rightEdge + Math.round((rMidX1 - rightEdge) * 0.14), rAwningY + 4, Math.max(9, Math.round((rMidX1 - rightEdge) * 0.62)), Math.max(7, bankY - rAwningY - 7), 0);
+
+    // Right vertical Neon Signboards (Hot Coral jutting over canal + Electric Cyan upper)
+    drawNeonSign(pix, mat, lum, rightEdge - Math.round(signW * 0.8), rMidTop + Math.round(ls * 0.035), signW, signH, 'coral', 2);
+    drawNeonSign(pix, mat, lum, Math.min(gw - signW - 2, rMidX1 - Math.round(signW * 0.2)), rTallTop + Math.round(ls * 0.10), Math.max(7, signW - 1), Math.round(signH * 0.88), 'cyan', 4);
+
+    /* ===== Seed Swaying Vermilion Paper Lanterns (Chochin) ===== */
+    // Catenary string hanging from left machiya eave out over canal
+    const lAnchorX = leftEdge + Math.round(ls * 0.01);
+    const rAnchorX = rightEdge - Math.round(ls * 0.01);
+    const leftEaveLantY = lAwningY + 3;
+    const rightEaveLantY = rAwningY + 3;
+
+    // 4 lanterns strung along left waterfront eave
+    for (let i = 0; i < 4; i++) {
+      const lx = Math.round(lerp(leftEdge * 0.18, lAnchorX, i / 3));
+      const sag = Math.round(Math.sin((i / 3) * Math.PI) * ls * 0.014);
+      S.lanterns.push({
+        ax: lx, ay: leftEaveLantY + sag,
+        cordLen: Math.max(4, Math.round(ls * 0.018)),
+        rx: Math.max(2.6, ls * 0.011),
+        ry: Math.max(3.6, ls * 0.015),
+        angle: 0, vel: 0,
+        phase: i * 0.9 + 0.3,
+        glowR: Math.max(12, Math.round(ls * 0.056)),
+      });
+    }
+    // 4 lanterns strung along right waterfront eave
+    for (let i = 0; i < 4; i++) {
+      const lx = Math.round(lerp(rAnchorX, gw - (gw - rightEdge) * 0.18, i / 3));
+      const sag = Math.round(Math.sin((i / 3) * Math.PI) * ls * 0.014);
+      S.lanterns.push({
+        ax: lx, ay: rightEaveLantY + sag,
+        cordLen: Math.max(4, Math.round(ls * 0.018)),
+        rx: Math.max(2.6, ls * 0.011),
+        ry: Math.max(3.6, ls * 0.015),
+        angle: 0, vel: 0,
+        phase: i * 1.1 + 2.1,
+        glowR: Math.max(12, Math.round(ls * 0.056)),
+      });
+    }
+    // 2 upper-story hanging chochin lanterns flanking the canal vista
+    S.lanterns.push({
+      ax: leftEdge + Math.round(ls * 0.018), ay: lMidTop + 2,
+      cordLen: Math.max(5, Math.round(ls * 0.022)),
+      rx: Math.max(2.8, ls * 0.012), ry: Math.max(3.8, ls * 0.016),
+      angle: 0, vel: 0, phase: 4.2,
+      glowR: Math.max(13, Math.round(ls * 0.06)),
+    });
+    S.lanterns.push({
+      ax: rightEdge - Math.round(ls * 0.018), ay: rMidTop + 2,
+      cordLen: Math.max(5, Math.round(ls * 0.022)),
+      rx: Math.max(2.8, ls * 0.012), ry: Math.max(3.8, ls * 0.016),
+      angle: 0, vel: 0, phase: 5.5,
+      glowR: Math.max(13, Math.round(ls * 0.06)),
+    });
+
+    // Festival overhead catenary cable across upper canal (3 swaying mid-span lanterns!)
+    const cableY0 = Math.round(Math.min(lMidTop, rMidTop) + ls * 0.02);
+    for (let i = 1; i <= 3; i++) {
+      const f = i / 4;
+      const lx = Math.round(lerp(leftEdge, rightEdge, f));
+      const sag = Math.round(Math.sin(f * Math.PI) * ls * 0.048);
+      S.lanterns.push({
+        ax: lx, ay: cableY0 + sag,
+        cordLen: Math.max(4, Math.round(ls * 0.016)),
+        rx: Math.max(2.6, ls * 0.011), ry: Math.max(3.5, ls * 0.014),
+        angle: 0, vel: 0, phase: i * 1.45 + 1.2,
+        glowR: Math.max(13, Math.round(ls * 0.06)),
+        cable: true,
+      });
+    }
+    // Draw thin catenary wire across canal
+    for (let x = leftEdge; x <= rightEdge; x++) {
+      const f = (x - leftEdge) / Math.max(1, rightEdge - leftEdge);
+      const cy = cableY0 + Math.round(Math.sin(f * Math.PI) * ls * 0.048);
+      setCell(pix, mat, lum, x, cy, PAL.archMid[0], PAL.archMid[1], PAL.archMid[2], MAT_WALL);
+    }
+  }
+
+  function buildEmbankmentsAndBridge(pix, mat, lum) {
+    const gw = S.gw, waterY = S.waterY, ls = S.landScale;
+    const leftEdge = S.leftEdge, rightEdge = S.rightEdge;
+    const wallH = Math.max(6, Math.round(ls * 0.032));
+    const bankY = waterY - wallH;
+
+    // Left & right stone canal embankment walls
+    const drawEmbankment = (x0, x1) => {
+      for (let y = bankY; y < waterY; y++) {
+        const course = ((y - bankY) / 3) | 0;
+        const isMortarH = (y - bankY) % 3 === 0;
+        for (let x = x0; x < x1; x++) {
+          const isMortarV = ((x + course * 4) % 8) === 0;
+          const isTop = y === bankY;
+          const isWet = y >= waterY - 2;
+          const col = isTop ? PAL.stoneWet
+                    : (isMortarH || isMortarV) ? PAL.archDark
+                    : isWet ? PAL.stone0 : PAL.stone1;
+          setCell(pix, mat, lum, x, y, col[0], col[1], col[2], MAT_WALL);
+        }
+      }
+    };
+    drawEmbankment(0, leftEdge + 2);
+    drawEmbankment(rightEdge - 2, gw);
+
+    // Arched Wooden Canal Footbridge (Taiko-bashi) spanning the midground
+    const bx0 = Math.max(0, leftEdge - Math.round(gw * 0.025));
+    const bx1 = Math.min(gw - 1, rightEdge + Math.round(gw * 0.025));
+    const bSpan = Math.max(1, bx1 - bx0);
+    const archRise = Math.max(8, Math.round(ls * 0.064));
+    const deckThick = Math.max(4, Math.round(ls * 0.024));
+    const railH = Math.max(5, Math.round(ls * 0.03));
+
+    const archTopAt = (x) => {
+      const u = ((x - bx0) / bSpan) * 2 - 1; // -1..1
+      return Math.round(waterY - Math.round(ls * 0.012) - (1 - u * u) * archRise);
+    };
+
+    // Bridge deck & timber arch
+    for (let x = bx0; x <= bx1; x++) {
+      const topY = archTopAt(x);
+      // Deck timber thickness (slightly thicker near abutments)
+      const u = Math.abs(((x - bx0) / bSpan) * 2 - 1);
+      const thick = deckThick + Math.round(u * u * deckThick * 0.75);
+      for (let dy = 0; dy < thick; dy++) {
+        const py = topY + dy;
+        if (py >= waterY) break;
+        const col = dy === 0 ? PAL.archRim : dy === 1 ? PAL.archLit : dy === thick - 1 ? PAL.archDark : PAL.archMid;
+        setCell(pix, mat, lum, x, py, col[0], col[1], col[2], MAT_BRIDGE);
+      }
+      // Curved upper wooden handrail & mid-rail
+      const railY = topY - railH;
+      setCell(pix, mat, lum, x, railY, PAL.archRim[0], PAL.archRim[1], PAL.archRim[2], MAT_BRIDGE);
+      setCell(pix, mat, lum, x, railY + 1, PAL.archDark[0], PAL.archDark[1], PAL.archDark[2], MAT_BRIDGE);
+      setCell(pix, mat, lum, x, topY - (railH >> 1), PAL.archMid[0], PAL.archMid[1], PAL.archMid[2], MAT_BRIDGE);
+      if (railY < S.eaveY[x]) S.eaveY[x] = railY;
+    }
+
+    // Vertical wooden balusters & 5 glowing vermilion/amber rail lanterns on giboshi posts!
+    const balStep = Math.max(5, Math.round(bSpan / 18));
+    for (let x = bx0; x <= bx1; x += balStep) {
+      const topY = archTopAt(x);
+      fillRect(pix, mat, lum, x, topY - railH, 1, railH, PAL.archLit, MAT_BRIDGE);
+    }
+
+    const lampCount = 5;
+    for (let i = 0; i < lampCount; i++) {
+      const f = i / (lampCount - 1);
+      const lx = Math.round(lerp(bx0 + Math.round(bSpan * 0.08), bx1 - Math.round(bSpan * 0.08), f));
+      const topY = archTopAt(lx);
+      const postTop = topY - railH - Math.max(3, Math.round(ls * 0.015));
+      // Sturdy wooden post
+      fillRect(pix, mat, lum, lx - 1, postTop, 3, topY - postTop, PAL.archDark, MAT_BRIDGE);
+      fillRect(pix, mat, lum, lx, postTop, 1, topY - postTop, PAL.archLit, MAT_BRIDGE);
+      // Generous warm glowing bridge rail lantern (reads crisply in ASCII, Braille & Pixel+Lens!)
+      fillRect(pix, mat, lum, lx - 2, postTop - 4, 5, 4, PAL.vermMain, MAT_LANTERN);
+      fillRect(pix, mat, lum, lx - 1, postTop - 3, 3, 2, PAL.vermGlow, MAT_LANTERN);
+      setCell(pix, mat, lum, lx, postTop - 3, PAL.vermCore[0], PAL.vermCore[1], PAL.vermCore[2], MAT_LANTERN, 255);
+      setCell(pix, mat, lum, lx, postTop - 2, PAL.vermCore[0], PAL.vermCore[1], PAL.vermCore[2], MAT_LANTERN, 255);
+      fillRect(pix, mat, lum, lx - 2, postTop - 5, 5, 1, PAL.archDark, MAT_BRIDGE);
+      fillRect(pix, mat, lum, lx - 1, postTop - 5, 3, 1, PAL.archRim, MAT_BRIDGE);
+      // Register as static glowing lantern halo for live lighting pass
+      S.lanterns.push({
+        ax: lx, ay: postTop - 2,
+        cordLen: 0,
+        rx: 0, ry: 0,
+        angle: 0, vel: 0, phase: i * 0.7,
+        glowR: Math.max(13, Math.round(ls * 0.052)),
+        fixed: true,
+      });
+    }
+  }
+
+  /* ---------- Dynamic Entity Initialization ---------- */
+  function initDynamicEntities() {
+    const gw = S.gw, gh = S.gh, waterY = S.waterY, ls = S.landScale;
+
+    // Drifting night clouds
+    S.clouds = [];
+    for (let i = 0; i < 7; i++) {
+      S.clouds.push({
+        x: ((i * 0.165 + 0.05) % 1) * gw,
+        y: waterY * (0.12 + (i % 4) * 0.145),
+        w: Math.max(24, Math.round(gw * (0.13 + (i % 3) * 0.055))),
+        h: Math.max(5, Math.round(ls * (0.022 + (i % 2) * 0.012))),
+        speed: 3.2 + (i % 3) * 1.8,
+        seed: i * 19 + 7,
+      });
+    }
+
+    // Rain particle pool
+    const n = S.vw < 760 ? 140 : 220;
+    S.rainCount = n;
+    S.rainX = new Float32Array(n);
+    S.rainY = new Float32Array(n);
+    S.rainVx = new Float32Array(n);
+    S.rainVy = new Float32Array(n);
+    S.rainLen = new Float32Array(n);
+    S.rainDepth = new Float32Array(n);
+
+    for (let i = 0; i < n; i++) {
+      const depth = 0.55 + hash01(i, 1, 13) * 0.75;
+      S.rainX[i] = hash01(i, 2, 17) * (gw + 40) - 20;
+      S.rainY[i] = hash01(i, 3, 19) * gh;
+      S.rainDepth[i] = depth;
+      S.rainLen[i] = (3.5 + depth * 4.5) * (S.cellCss === 3 ? 0.85 : 1.15);
+      S.rainVy[i] = (145 + depth * 115) * (S.cellCss === 3 ? 0.75 : 1.0);
+      S.rainVx[i] = -S.rainVy[i] * 0.24;
+    }
+
+    S.splashes = [];
+    S.ripples = [];
+    S.fireworks = [];
+
+    // Pre-populate a few crisp canal splashes so even reduced-motion frame looks vividly alive!
+    for (let i = 0; i < 10; i++) {
+      S.splashes.push({
+        x: Math.round(lerp(gw * 0.12, gw * 0.88, hash01(i, 7, 29))),
+        y: Math.round(lerp(waterY + 4, gh - 12, hash01(i, 8, 31))),
+        age: (i % 3) * 0.11,
+        maxAge: 0.34,
+        tint: i % 3 === 0 ? PAL.cyanHot : i % 3 === 1 ? PAL.vermGlow : PAL.rainBright,
+      });
+    }
+  }
+
+  /* ---------- Interactive Spawners ---------- */
+  const FW_PALETTES = [
+    { core: [255, 252, 232], mid: [255, 196, 74], outer: [255, 77, 109], halo: [255, 110, 82] },   // Gold + Coral
+    { core: [236, 255, 255], mid: [122, 247, 255], outer: [20, 200, 216], halo: [70, 210, 255] }, // Electric Cyan
+    { core: [255, 244, 210], mid: [255, 142, 83], outer: [255, 59, 48], halo: [255, 92, 62] },    // Vermilion Gold
+    { core: [255, 240, 252], mid: [245, 134, 255], outer: [122, 247, 255], halo: [195, 102, 255] }, // Violet Cyan
+  ];
+
+  function spawnFirework(gx, gy, immediateBloom = true) {
+    const waterY = S.waterY;
+    const clampedY = clamp(gy, Math.round(S.gh * 0.09), Math.round(waterY * 0.68));
+    const clampedX = clamp(gx, Math.round(S.gw * 0.14), Math.round(S.gw * 0.86));
+    const pal = FW_PALETTES[(S.fireworks.length + ((clampedX + clampedY) | 0)) % FW_PALETTES.length];
+    const pal2 = FW_PALETTES[(S.fireworks.length + 1 + ((clampedX) | 0)) % FW_PALETTES.length];
+
+    const count = 42;
+    const sparks = [];
+    const baseSpeed = Math.max(30, S.landScale * 0.195);
+    const seedR = immediateBloom ? Math.max(4, S.landScale * 0.022) : 0;
+    for (let i = 0; i < count; i++) {
+      const ring = i < 26 ? 1.0 : 0.54;
+      const ang = (i / (i < 26 ? 26 : 16)) * Math.PI * 2 + (hash01(i, clampedX | 0, 53) - 0.5) * 0.14;
+      const spd = baseSpeed * ring * (0.84 + hash01(i, clampedY | 0, 59) * 0.34);
+      const vx = Math.cos(ang) * spd;
+      const vy = Math.sin(ang) * spd;
+      const sx = clampedX + Math.cos(ang) * seedR * ring;
+      const sy = clampedY + Math.sin(ang) * seedR * ring;
+      sparks.push({
+        x: sx,
+        y: sy,
+        vx,
+        vy,
+        trail: immediateBloom ? [clampedX, clampedY, sx, sy] : [],
+        useAlt: i >= 26,
+        twinkle: hash01(i, 3, 61) * 6.28,
+      });
+    }
+    S.fireworks.push({
+      x: clampedX,
+      y: clampedY,
+      age: immediateBloom ? 0.08 : 0,
+      maxAge: 2.25,
+      pal,
+      pal2,
+      sparks,
+    });
+    if (S.fireworks.length > 6) S.fireworks.shift();
+  }
+
+  function dispatchTrain(dirOverride) {
+    const tr = S.train;
+    const dir = dirOverride || (tr.dir > 0 ? -1 : 1);
+    tr.active = true;
+    tr.dir = dir;
+    tr.x = dir > 0 ? -0.22 : 1.22;
+    tr.speed = 0.15 + Math.random() * 0.03;
+    tr.cooldown = 8.5;
+  }
+
+  function spawnRipple(gx, gy) {
+    S.ripples.push({
+      x: gx,
+      y: clamp(gy, S.waterY + 3, S.gh - 6),
+      age: 0,
+      maxAge: 1.5,
+      maxR: Math.max(18, S.landScale * 0.11),
+    });
+    if (S.ripples.length > 6) S.ripples.shift();
+  }
+
+  /* ---------- Simulation Step ---------- */
+  function stepSim(dt) {
+    S.t = (S.t + dt) % 3600;
+    const gw = S.gw, gh = S.gh, waterY = S.waterY;
+
+    // Exponential pointer easing (Law 8)
+    const ease = 1 - Math.exp(-dt * 9.5);
+    if (S.ptrRawX >= 0) {
+      const prevX = S.ptrX < 0 ? S.ptrRawX : S.ptrX;
+      if (S.ptrX < 0) { S.ptrX = S.ptrRawX; S.ptrY = S.ptrRawY; }
+      else {
+        S.ptrX += (S.ptrRawX - S.ptrX) * ease;
+        S.ptrY += (S.ptrRawY - S.ptrY) * ease;
+      }
+      S.ptrVx = lerp(S.ptrVx, (S.ptrX - prevX) / Math.max(0.008, dt), 0.25);
+      S.ptrActive = Math.min(1, S.ptrActive + dt * 5.0);
+    } else {
+      S.ptrActive = Math.max(0, S.ptrActive - dt * 3.5);
+      S.ptrVx *= Math.exp(-dt * 6);
+    }
+
+    // Shared wind field
+    const weatherWind = S.weather === 'monsoon' ? 1.0 : S.weather === 'mist' ? 0.35 : 0.6;
+
+    // Clouds drift
+    for (let i = 0; i < S.clouds.length; i++) {
+      const c = S.clouds[i];
+      c.x += c.speed * (0.65 + weatherWind * 0.45) * dt;
+      if (c.x - c.w > gw + 10) c.x = -c.w - 10;
+    }
+
+    // Commuter train on viaduct
+    const tr = S.train;
+    if (tr.active) {
+      tr.x += tr.dir * tr.speed * dt;
+      if ((tr.dir > 0 && tr.x > 1.28) || (tr.dir < 0 && tr.x < -0.28)) {
+        tr.active = false;
+        tr.cooldown = 7.5 + (S.weather === 'festival' ? -2.0 : 1.0);
+      }
+    } else {
+      tr.cooldown -= dt;
+      if (tr.cooldown <= 0) dispatchTrain(tr.dir > 0 ? -1 : 1);
+    }
+
+    // Swaying vermilion paper lanterns (damped pendulum + shared wind + pointer breeze!)
+    const ptrCellX = S.ptrX >= 0 ? (S.ptrX / S.vw) * gw : -999;
+    const ptrCellY = S.ptrY >= 0 ? (S.ptrY / S.vh) * gh : -999;
+    const ptrRadCell = 85 * (gw / Math.max(1, S.vw));
+
+    for (let i = 0; i < S.lanterns.length; i++) {
+      const L = S.lanterns[i];
+      if (L.fixed) continue;
+      const windTorque = (Math.sin(S.t * 2.1 + L.phase + L.ax * 0.02) * 0.28 +
+                          Math.sin(S.t * 4.3 + L.phase * 1.7) * 0.09 - 0.14) * weatherWind;
+      let ptrTorque = 0;
+      if (S.ptrActive > 0.05) {
+        const dx = L.ax - ptrCellX, dy = L.ay - ptrCellY;
+        const dist = Math.hypot(dx, dy);
+        if (dist < ptrRadCell) {
+          const w = 1 - dist / ptrRadCell;
+          const pushDir = dx >= 0 ? 1 : -1;
+          ptrTorque = (pushDir * 0.9 + clamp(S.ptrVx * 0.0025, -1.2, 1.2)) * w * S.ptrActive * 2.4;
+        }
+      }
+      const accel = -14.0 * (L.angle - windTorque) - 3.4 * L.vel + ptrTorque * 9.0;
+      L.vel += accel * dt;
+      L.angle = clamp(L.angle + L.vel * dt, -0.58, 0.58);
+    }
+
+    // Rain physics + pointer umbrella/wind pocket deflection + puddle/eave splashes
+    const activeRain = S.weather === 'monsoon' ? S.rainCount
+                     : S.weather === 'festival' ? Math.round(S.rainCount * 0.38)
+                     : Math.round(S.rainCount * 0.28);
+    const speedScale = S.weather === 'monsoon' ? 1.0 : S.weather === 'mist' ? 0.52 : 0.72;
+    const umbR = 54 * (gw / Math.max(1, S.vw));
+    const umbCX = ptrCellX;
+    const umbCY = ptrCellY - umbR * 0.12;
+
+    for (let i = 0; i < activeRain; i++) {
+      let x = S.rainX[i];
+      let y = S.rainY[i];
+      let vx = S.rainVx[i] * speedScale;
+      let vy = S.rainVy[i] * speedScale;
+
+      // Subtle aerodynamic deflection around pointer umbrella dome
+      if (S.ptrActive > 0.05) {
+        const dx = x - umbCX;
+        const dy = y - umbCY;
+        const d2 = dx * dx + dy * dy;
+        if (d2 < umbR * umbR * 1.35 && dy < umbR * 0.55) {
+          const d = Math.max(2, Math.sqrt(d2));
+          const push = (1 - d / (umbR * 1.16)) * S.ptrActive;
+          if (push > 0) {
+            vx += (dx >= 0 ? 1 : -1) * push * 135;
+          }
+        }
+      }
+
+      x += vx * dt;
+      y += vy * dt;
+
+      // Check impact on canal or roof eave
+      const ix = clamp(x | 0, 0, gw - 1);
+      const hitCanal = y >= waterY + 3 && hash01(i, (y | 0), 71) < 0.045;
+      const eave = S.eaveY[ix];
+      const hitEave = eave < waterY - 8 && Math.abs(y - eave) < 3.5 && hash01(i, ix, 73) < 0.05;
+
+      if (hitCanal || hitEave || y >= gh + 4 || x < -12) {
+        if ((hitCanal || hitEave) && S.splashes.length < 38) {
+          S.splashes.push({
+            x: ix,
+            y: hitEave ? eave : clamp(y | 0, waterY + 2, gh - 4),
+            age: 0,
+            maxAge: 0.34,
+            tint: hitEave ? PAL.rainBright : (ix < S.leftEdge + 26 || ix > S.rightEdge - 26 ? PAL.vermGlow : PAL.cyanHot),
+          });
+        }
+        S.rainX[i] = hash01(i, (S.t * 60) | 0, 83) * (gw + 70) - 10;
+        S.rainY[i] = -hash01(i, (S.t * 60) | 0, 89) * 35;
+      } else {
+        S.rainX[i] = x;
+        S.rainY[i] = y;
+      }
+    }
+
+    // Splashes aging
+    for (let i = S.splashes.length - 1; i >= 0; i--) {
+      S.splashes[i].age += dt;
+      if (S.splashes[i].age >= S.splashes[i].maxAge) S.splashes.splice(i, 1);
+    }
+
+    // Canal ripples aging
+    for (let i = S.ripples.length - 1; i >= 0; i--) {
+      S.ripples[i].age += dt;
+      if (S.ripples[i].age >= S.ripples[i].maxAge) S.ripples.splice(i, 1);
+    }
+
+    // Festival automatic periodic fireworks
+    if (S.weather === 'festival') {
+      S.festivalTimer -= dt;
+      if (S.festivalTimer <= 0) {
+        const fx = gw * (0.34 + hash01((S.t * 10) | 0, 4, 97) * 0.34);
+        const fy = waterY * (0.20 + hash01((S.t * 10) | 0, 9, 103) * 0.28);
+        spawnFirework(fx, fy, true);
+        S.festivalTimer = 2.1 + hash01((S.t * 10) | 0, 12, 107) * 1.1;
+      }
+    }
+
+    // Update active fireworks
+    for (let f = S.fireworks.length - 1; f >= 0; f--) {
+      const fw = S.fireworks[f];
+      fw.age += dt;
+      if (fw.age >= fw.maxAge) { S.fireworks.splice(f, 1); continue; }
+      const drag = Math.exp(-dt * 1.95);
+      const grav = S.landScale * 0.075;
+      for (let i = 0; i < fw.sparks.length; i++) {
+        const sp = fw.sparks[i];
+        sp.trail.push(sp.x, sp.y);
+        if (sp.trail.length > 10) sp.trail.splice(0, 2);
+        sp.vx *= drag;
+        sp.vy = sp.vy * drag + grav * dt;
+        sp.x += sp.vx * dt;
+        sp.y += sp.vy * dt;
+      }
+    }
+  }
+
+  /* ---------- Render Dynamic Upper Scene + Reflections + Weather ---------- */
+  function renderScene() {
+    const gw = S.gw, gh = S.gh, waterY = S.waterY, ls = S.landScale;
+    const pix = S.pixBuf, mat = S.matBuf, lum = S.lumBuf;
+
+    // Fast native copy of cached static architecture & sky
+    pix.set(S.basePix);
+    mat.set(S.baseMat);
+    lum.set(S.baseLum);
+
+    /* --- 1. Drifting Soft Night Clouds (behind pagoda/buildings, over sky!) --- */
+    for (let i = 0; i < S.clouds.length; i++) {
+      const c = S.clouds[i];
+      const cx = c.x | 0, cy = c.y | 0, hw = c.w >> 1, hh = c.h >> 1;
+      const x0 = Math.max(0, cx - hw), x1 = Math.min(gw - 1, cx + hw);
+      const y0 = Math.max(0, cy - hh), y1 = Math.min(waterY - 2, cy + hh);
+      for (let y = y0; y <= y1; y++) {
+        const ny = (y - cy) / Math.max(1, hh);
+        const row = y * gw;
+        for (let x = x0; x <= x1; x++) {
+          if (mat[row + x] !== MAT_SKY) continue;
+          const nx = (x - cx) / Math.max(1, hw);
+          const puff = Math.sin(nx * 4.5 + c.seed) * 0.24 + Math.cos(nx * 2.1 - c.seed) * 0.16;
+          const d = nx * nx + (ny + puff * 0.45) * (ny + puff * 0.45);
+          if (d >= 1) continue;
+          const dim = dimWeightAt(x, y);
+          const dens = (1 - d) * (1 - dim * 0.72);
+          const th = BAYER[((y & 3) << 2) | (x & 3)];
+          if (dens > th * 0.92) {
+            const col = ny < -0.2 ? PAL.cloudTop : ny > 0.25 ? PAL.cloudBelly : PAL.cloudDark;
+            blendCell(pix, mat, lum, x, y, col[0], col[1], col[2], 0.62, MAT_CLOUD);
+          }
+        }
+      }
+    }
+
+    /* --- 2. Gliding Golden-Windowed Commuter Train on Elevated Viaduct --- */
+    if (S.train.active) {
+      drawCommuterTrain();
+    }
+
+    /* --- 3. Soft Bayer Radial Glow Halos for Neon Signs & Swaying Lanterns --- */
+    const glowBoost = S.weather === 'mist' ? 1.25 : 1.0;
+    for (let i = 0; i < S.signs.length; i++) {
+      const sg = S.signs[i];
+      const hum = 0.88 + 0.12 * Math.sin(S.t * 5.2 + sg.phase);
+      const isCyan = sg.kind === 'cyan';
+      addGlowBayer(
+        sg.x, sg.y,
+        Math.max(14, Math.round(sg.h * 0.78)),
+        isCyan ? PAL.cyanMain : PAL.coralMain,
+        isCyan ? PAL.cyanDark : PAL.coralDark,
+        0.52 * hum * glowBoost,
+        waterY - 1
+      );
+    }
+
+    // Draw swaying vermilion paper lanterns + cast soft Bayer-dithered light pools
+    for (let i = 0; i < S.lanterns.length; i++) {
+      const L = S.lanterns[i];
+      let lx = L.ax, ly = L.ay;
+      if (!L.fixed) {
+        lx = L.ax + Math.sin(L.angle) * L.cordLen;
+        ly = L.ay + Math.cos(L.angle) * L.cordLen;
+        // Thin dark hanging cord
+        const steps = Math.max(2, L.cordLen | 0);
+        for (let s = 0; s <= steps; s++) {
+          const f = s / steps;
+          setCell(pix, mat, lum, Math.round(lerp(L.ax, lx, f)), Math.round(lerp(L.ay, ly, f)), PAL.archDark[0], PAL.archDark[1], PAL.archDark[2], MAT_WALL);
+        }
+        // Chochin lantern ellipse body
+        const cx = Math.round(lx), cy = Math.round(ly + L.ry * 0.65);
+        const rx = Math.max(2, Math.round(L.rx)), ry = Math.max(3, Math.round(L.ry));
+        // Dark caps top & bottom
+        fillRect(pix, mat, lum, cx - (rx >> 1), cy - ry - 1, Math.max(2, rx + 1), 1, PAL.archDark, MAT_WALL);
+        fillRect(pix, mat, lum, cx - (rx >> 1), cy + ry + 1, Math.max(2, rx + 1), 1, PAL.archDark, MAT_WALL);
+        for (let dy = -ry; dy <= ry; dy++) {
+          for (let dx = -rx; dx <= rx; dx++) {
+            const d2 = (dx * dx) / (rx * rx + 0.25) + (dy * dy) / (ry * ry + 0.25);
+            if (d2 > 1.0) continue;
+            const rib = (dy === 0 && Math.abs(dx) >= rx - 1);
+            const col = d2 < 0.22 ? PAL.vermCore : d2 < 0.52 ? PAL.vermGlow : rib ? PAL.vermDark : PAL.vermMain;
+            setCell(pix, mat, lum, cx + dx, cy + dy, col[0], col[1], col[2], MAT_LANTERN, d2 < 0.25 ? 255 : 236);
+          }
+        }
+        lx = cx; ly = cy;
+      }
+      const pulse = 0.92 + 0.08 * Math.sin(S.t * 3.8 + L.phase);
+      addGlowBayer(lx, ly, L.glowR * glowBoost, PAL.vermGlow, PAL.vermMain, 0.58 * pulse * glowBoost, waterY - 1);
+    }
+
+    /* --- 4. Delicate Rising Ramen-Stall Steam Wisps --- */
+    const steamH = Math.round(ls * (S.weather === 'mist' ? 0.16 : 0.115));
+    for (let i = 0; i < S.steams.length; i++) {
+      const st = S.steams[i];
+      for (let k = 0; k < 14; k++) {
+        const life = ((S.t * st.speed + st.phase + k / 14) % 1);
+        const sy = Math.round(st.baseY - life * steamH);
+        const sway = Math.sin(life * 7.2 + st.phase + S.t * 2.1) * (1.8 + life * 3.5) - life * 2.5;
+        const sx = Math.round(st.baseX + sway);
+        const alpha = Math.sin(life * Math.PI) * (S.weather === 'mist' ? 0.62 : 0.45);
+        const rad = life < 0.45 ? 1 : 2;
+        for (let dy = -rad; dy <= rad; dy++) {
+          for (let dx = -rad; dx <= rad; dx++) {
+            if (dx * dx + dy * dy > rad * rad) continue;
+            const px = sx + dx, py = sy + dy;
+            if (py >= waterY || py < 0 || px < 0 || px >= gw) continue;
+            const th = BAYER[((py & 3) << 2) | (px & 3)];
+            if (alpha > th * 0.72) {
+              const sc = alpha > 0.34 ? PAL.steamLight : PAL.steamMid;
+              blendCell(pix, mat, lum, px, py, sc[0], sc[1], sc[2], alpha * 0.72, MAT_STEAM);
+            }
+          }
+        }
+      }
+    }
+
+    /* --- 5. Active Polychromatic Bayer Pixel Fireworks --- */
+    for (let f = 0; f < S.fireworks.length; f++) {
+      const fw = S.fireworks[f];
+      const p = fw.age / fw.maxAge;
+      const fade = clamp(1 - Math.pow(p, 1.55), 0, 1);
+
+      // Soft Bayer flash bloom at burst center during early expansion
+      if (p < 0.58) {
+        const flashF = (1 - p / 0.58);
+        const rad = Math.max(16, ls * 0.145 * (0.45 + p * 1.1));
+        addGlowBayer(fw.x, fw.y, rad, fw.pal.mid, fw.pal.halo, 0.72 * flashF, waterY - 1);
+      }
+
+      // Draw each polychromatic spark ray + Bayer tail
+      for (let i = 0; i < fw.sparks.length; i++) {
+        const sp = fw.sparks[i];
+        const pal = sp.useAlt ? fw.pal2 : fw.pal;
+        const tw = 0.75 + 0.25 * Math.sin(S.t * 24 + sp.twinkle);
+        const bright = fade * tw;
+        if (bright < 0.08) continue;
+
+        // Trail dots dissolving via Bayer
+        for (let ti = 0; ti < sp.trail.length; ti += 2) {
+          const tf = ((ti + 2) / (sp.trail.length + 2)) * bright;
+          const tx = sp.trail[ti] | 0, ty = sp.trail[ti + 1] | 0;
+          if (ty >= waterY || ty < 0 || tx < 0 || tx >= gw) continue;
+          if (tf > BAYER[((ty & 3) << 2) | (tx & 3)] * 0.65) {
+            const col = tf > 0.55 ? pal.mid : pal.outer;
+            setCell(pix, mat, lum, tx, ty, col[0], col[1], col[2], MAT_FIREWORK, Math.round(170 + tf * 80));
+          }
+        }
+
+        // Crisp glowing spark head (3x3 cross when hot, 2x2 mid, 1x1 as ember)
+        const hx = Math.round(sp.x), hy = Math.round(sp.y);
+        if (hy >= 0 && hy < waterY && hx >= 0 && hx < gw) {
+          const hCol = bright > 0.52 ? pal.core : bright > 0.28 ? pal.mid : pal.outer;
+          setCell(pix, mat, lum, hx, hy, hCol[0], hCol[1], hCol[2], MAT_FIREWORK, 255);
+          if (bright > 0.28) {
+            setCell(pix, mat, lum, hx + 1, hy, pal.mid[0], pal.mid[1], pal.mid[2], MAT_FIREWORK, 244);
+            setCell(pix, mat, lum, hx - 1, hy, pal.mid[0], pal.mid[1], pal.mid[2], MAT_FIREWORK, 240);
+            setCell(pix, mat, lum, hx, hy + 1, pal.outer[0], pal.outer[1], pal.outer[2], MAT_FIREWORK, 234);
+            setCell(pix, mat, lum, hx, hy - 1, pal.mid[0], pal.mid[1], pal.mid[2], MAT_FIREWORK, 240);
+          }
+        }
+      }
+    }
+
+    /* --- 6. Plane 4: Glossy Dark Canal with Live Scanline-Displaced Sinusoidal Reflections --- */
+    renderCanalReflections();
+
+    /* --- 7. Plane 5: Diagonal Rain Streaks, Umbrella Pocket & Puddle/Eave Splash Rings --- */
+    renderRainAndSplashes();
+  }
+
+  function drawCommuterTrain() {
+    const tr = S.train;
+    const gw = S.gw, ls = S.landScale, vy = S.viaductY;
+    const pix = S.pixBuf, mat = S.matBuf, lum = S.lumBuf;
+    const cars = 4;
+    const carW = Math.max(18, Math.round(ls * 0.088));
+    const carH = Math.max(6, Math.round(ls * 0.031));
+    const gap = Math.max(2, Math.round(ls * 0.008));
+    const totalW = cars * carW + (cars - 1) * gap;
+    const headX = Math.round(tr.x * gw);
+    const startX = tr.dir > 0 ? headX - totalW : headX;
+
+    // Only draw train in the open viaduct corridor (behind foreground machiya facades!)
+    const clipL = S.leftEdge - 4;
+    const clipR = S.rightEdge + 4;
+
+    for (let c = 0; c < cars; c++) {
+      const cx0 = startX + c * (carW + gap);
+      const cy0 = vy - carH;
+      for (let dy = 0; dy < carH; dy++) {
+        for (let dx = 0; dx < carW; dx++) {
+          const px = cx0 + dx, py = cy0 + dy;
+          if (px < clipL || px > clipR || px < 0 || px >= gw || py < 0) continue;
+          const isRoof = dy === 0;
+          const isStripe = dy === carH - 2;
+          const col = isRoof ? PAL.archRim : isStripe ? PAL.cyanDark : [24, 32, 60];
+          setCell(pix, mat, lum, px, py, col[0], col[1], col[2], MAT_TRAIN);
+        }
+      }
+      // Illuminated golden commuter train windows!
+      const winY = cy0 + Math.max(1, Math.round(carH * 0.25));
+      const winH = Math.max(2, Math.round(carH * 0.42));
+      const winCount = 4;
+      const winStep = Math.max(3, Math.floor((carW - 4) / winCount));
+      const winW = Math.max(2, winStep - 2);
+      for (let w = 0; w < winCount; w++) {
+        const wx0 = cx0 + 2 + w * winStep;
+        for (let wy = 0; wy < winH; wy++) {
+          for (let wx = 0; wx < winW; wx++) {
+            const px = wx0 + wx, py = winY + wy;
+            if (px < clipL || px > clipR || px < 0 || px >= gw) continue;
+            const col = wy === 0 ? PAL.amberHot : PAL.amberMid;
+            setCell(pix, mat, lum, px, py, col[0], col[1], col[2], MAT_AMBER, 250);
+          }
+        }
+      }
+      // Coupling bar between cars
+      if (c < cars - 1) {
+        for (let gx = 0; gx < gap; gx++) {
+          const px = cx0 + carW + gx;
+          if (px >= clipL && px <= clipR) {
+            setCell(pix, mat, lum, px, vy - 2, PAL.archDark[0], PAL.archDark[1], PAL.archDark[2], MAT_TRAIN);
+          }
+        }
+      }
+    }
+
+    // Warm golden headlight cone + ruby tail lamp
+    const leadX = tr.dir > 0 ? startX + totalW : startX - 1;
+    const tailX = tr.dir > 0 ? startX : startX + totalW - 1;
+    const lampY = vy - Math.max(2, Math.round(carH * 0.36));
+    if (leadX >= clipL && leadX <= clipR) {
+      setCell(pix, mat, lum, leadX, lampY, PAL.vermCore[0], PAL.vermCore[1], PAL.vermCore[2], MAT_AMBER, 255);
+      // Forward headlight beam
+      const beamLen = Math.max(10, Math.round(ls * 0.055));
+      for (let b = 1; b <= beamLen; b++) {
+        const bx = leadX + tr.dir * b;
+        if (bx < clipL || bx > clipR) break;
+        const spread = 1 + Math.round((b / beamLen) * 3);
+        const f = 1 - b / beamLen;
+        for (let dy = -spread; dy <= spread; dy++) {
+          const by = lampY + dy;
+          if (by >= vy || by < 0) continue;
+          const th = BAYER[((by & 3) << 2) | (bx & 3)];
+          if (f * (1 - Math.abs(dy) / (spread + 1)) > th * 0.85) {
+            blendCell(pix, mat, lum, bx, by, PAL.amberHot[0], PAL.amberHot[1], PAL.amberHot[2], f * 0.45);
+          }
+        }
+      }
+    }
+    if (tailX >= clipL && tailX <= clipR) {
+      setCell(pix, mat, lum, tailX, lampY, PAL.vermMain[0], PAL.vermMain[1], PAL.vermMain[2], MAT_LANTERN, 245);
+    }
+  }
+
+  function renderCanalReflections() {
+    const gw = S.gw, gh = S.gh, waterY = S.waterY;
+    const pix = S.pixBuf, mat = S.matBuf, lum = S.lumBuf;
+    const t = S.t;
+    const calm = S.weather === 'mist' ? 0.55 : S.weather === 'festival' ? 0.78 : 1.0;
+
+    // Pre-fetch pointer ripple info in grid space
+    const ptrGX = S.ptrX >= 0 ? (S.ptrX / S.vw) * gw : -999;
+    const ptrGY = S.ptrY >= 0 ? (S.ptrY / S.vh) * gh : -999;
+
+    for (let y = waterY; y < gh; y++) {
+      const dy = y - waterY;
+      const depthF = dy / Math.max(1, gh - waterY);
+      const srcY = clamp(waterY - 1 - Math.round(dy * 0.90), 0, waterY - 1);
+      const srcRow = srcY * gw;
+      const dstRow = y * gw;
+
+      // Scanline sinusoidal ripple displacement (grows wider with depth)
+      const scanWave = Math.sin(dy * 0.44 - t * 3.3) * (1.2 + dy * 0.045) * calm
+                     + Math.sin(dy * 0.92 + t * 2.1) * 0.65 * calm;
+      // Horizontal scanline ripple shimmer band (breaks reflections into liquid ribbons!)
+      const ribbon = 0.5 + 0.5 * Math.sin(dy * 0.68 - t * 2.8);
+
+      // Base midnight canal tone
+      const baseR = lerp(11, 6, depthF);
+      const baseG = lerp(16, 9, depthF);
+      const baseB = lerp(40, 24, depthF);
+
+      for (let x = 0; x < gw; x++) {
+        // Horizontal micro-wave variation + active click ripples
+        let disp = scanWave + Math.sin(x * 0.055 + dy * 0.19 - t * 2.2) * 0.95 * calm;
+        let rippleGlow = 0;
+
+        for (let r = 0; r < S.ripples.length; r++) {
+          const rp = S.ripples[r];
+          const rdx = x - rp.x;
+          const rdy = (y - rp.y) * 2.3; // perspective foreshortening on water!
+          const dist = Math.hypot(rdx, rdy);
+          const curR = (rp.age / rp.maxAge) * rp.maxR;
+          const band = Math.abs(dist - curR);
+          if (band < 4.5) {
+            const rf = (1 - band / 4.5) * (1 - rp.age / rp.maxAge);
+            disp += Math.sin(dist * 1.4 - t * 12) * rf * 3.2;
+            rippleGlow = Math.max(rippleGlow, rf);
+          }
+        }
+
+        // Subtle pointer ripple when hovering over the canal
+        if (S.ptrActive > 0.05 && ptrGY > waterY - 25) {
+          const pdx = x - ptrGX, pdy = (y - ptrGY) * 2.2;
+          const pd = Math.hypot(pdx, pdy);
+          if (pd < 28) {
+            const pw = (1 - pd / 28) * S.ptrActive;
+            disp += Math.sin(pd * 0.9 - t * 8) * pw * 2.4;
+          }
+        }
+
+        const sx = clamp((x + Math.round(disp)) | 0, 0, gw - 1);
+        const sIdx = srcRow + sx;
+        const sMat = mat[sIdx];
+        const sp = pix[sIdx];
+        const sr = IS_LE ? (sp & 255) : ((sp >>> 24) & 255);
+        const sg = IS_LE ? ((sp >>> 8) & 255) : ((sp >>> 16) & 255);
+        const sb = IS_LE ? ((sp >>> 16) & 255) : ((sp >>> 8) & 255);
+
+        const isEmissive = (sMat === MAT_LANTERN || sMat === MAT_CYAN || sMat === MAT_CORAL ||
+                            sMat === MAT_AMBER || sMat === MAT_FIREWORK || sMat === MAT_MOON || sMat === MAT_GLOW);
+
+        let reflStrength;
+        if (isEmissive) {
+          // Vivid liquid color ribbons mirroring lanterns, neon signs, shoji windows, train & fireworks!
+          reflStrength = (0.84 - depthF * 0.28) * (0.62 + 0.38 * ribbon);
+        } else if (sMat === MAT_SKY || sMat === MAT_CLOUD) {
+          reflStrength = 0.40 - depthF * 0.16;
+        } else {
+          // Dark architecture casts deep glossy shadows into the canal
+          reflStrength = 0.26;
+        }
+
+        let nr = baseR + (sr - baseR) * reflStrength;
+        let ng = baseG + (sg - baseG) * reflStrength;
+        let nb = baseB + (sb - baseB) * reflStrength;
+
+        // Horizontal shimmering specular glints along canal ripples
+        const glintHash = Math.sin(x * 0.12 + dy * 0.52 - t * 3.1) * Math.cos(x * 0.045 - dy * 0.24 + t * 1.7);
+        const th = BAYER[((y & 3) << 2) | (x & 3)];
+        let outMat = isEmissive ? MAT_REFLECT : MAT_WATER;
+
+        if (isEmissive && ribbon > 0.62 && (0.85 - depthF * 0.35) > th * 0.9) {
+          // Boost vibrant reflected emissive streaks so they shimmer brilliantly in ASCII & Braille!
+          nr = Math.min(255, nr * 1.24 + 8);
+          ng = Math.min(255, ng * 1.18 + 6);
+          nb = Math.min(255, nb * 1.18 + 8);
+        } else if (glintHash > 0.78 && (glintHash - 0.72) * 3.5 > th) {
+          nr = Math.min(255, nr + 24);
+          ng = Math.min(255, ng + 42);
+          nb = Math.min(255, nb + 68);
+          outMat = MAT_REFLECT;
+        }
+
+        if (rippleGlow > 0.18 && rippleGlow > th * 0.85) {
+          nr = Math.min(255, nr + 40 * rippleGlow);
+          ng = Math.min(255, ng + 150 * rippleGlow);
+          nb = Math.min(255, nb + 175 * rippleGlow);
+          outMat = MAT_REFLECT;
+        }
+
+        // Crisp wet waterline dark seam at row waterY
+        if (dy === 0) {
+          nr *= 0.55; ng *= 0.6; nb *= 0.72;
+        }
+
+        const rI = nr | 0, gI = ng | 0, bI = nb | 0;
+        pix[dstRow + x] = packRGB(rI, gI, bI);
+        mat[dstRow + x] = outMat;
+        lum[dstRow + x] = (rI * 77 + gI * 150 + bI * 29) >> 8;
+      }
+    }
+  }
+
+  function renderRainAndSplashes() {
+    const gw = S.gw, gh = S.gh, waterY = S.waterY;
+    const pix = S.pixBuf, mat = S.matBuf, lum = S.lumBuf;
+    const activeRain = S.weather === 'monsoon' ? S.rainCount
+                     : S.weather === 'festival' ? Math.round(S.rainCount * 0.38)
+                     : Math.round(S.rainCount * 0.28);
+
+    const ptrGX = S.ptrX >= 0 ? (S.ptrX / S.vw) * gw : -999;
+    const ptrGY = S.ptrY >= 0 ? (S.ptrY / S.vh) * gh : -999;
+    const umbR = 54 * (gw / Math.max(1, S.vw));
+    const umbCX = ptrGX;
+    const umbCY = ptrGY - umbR * 0.12;
+
+    // Subtle pointer umbrella/wind pocket shimmer dome (only in non-lens mode so lens stays pure!)
+    if (S.ptrActive > 0.08 && S.mode !== 'lens') {
+      const arcR = Math.round(umbR);
+      const x0 = Math.max(0, Math.floor(umbCX - arcR - 3));
+      const x1 = Math.min(gw - 1, Math.ceil(umbCX + arcR + 3));
+      const y0 = Math.max(0, Math.floor(umbCY - arcR - 3));
+      const y1 = Math.min(gh - 1, Math.ceil(umbCY + 3));
+      for (let y = y0; y <= y1; y++) {
+        for (let x = x0; x <= x1; x++) {
+          const dx = x - umbCX, dy = y - umbCY;
+          if (dy > 2) continue;
+          const d = Math.hypot(dx, dy);
+          const rim = Math.abs(d - arcR);
+          if (rim < 3.0) {
+            const f = (1 - rim / 3.0) * S.ptrActive * 0.92;
+            const th = BAYER[((y & 3) << 2) | (x & 3)];
+            if (f > th * 0.62) {
+              blendCell(pix, mat, lum, x, y, PAL.cyanHot[0], PAL.cyanHot[1], PAL.cyanHot[2], f * 0.85, MAT_SPLASH);
+            }
+          }
+        }
+      }
+    }
+
+    // Diagonal animated rain streaks
+    for (let i = 0; i < activeRain; i++) {
+      const rx = S.rainX[i];
+      const ry = S.rainY[i];
+      const len = Math.max(3, S.rainLen[i] | 0);
+      const depth = S.rainDepth[i];
+
+      // Thin rain cleanly inside the sheltered umbrella cone below the cursor dome!
+      if (S.ptrActive > 0.08 && S.mode !== 'lens') {
+        const dx = rx - umbCX;
+        const dy = ry - umbCY;
+        if (dy > -umbR * 0.85 && dy < umbR * 1.45 && Math.abs(dx) < umbR * 0.88) {
+          const domeY = -Math.sqrt(Math.max(0, umbR * umbR - dx * dx));
+          if (dy > domeY) continue;
+        }
+      }
+
+      const nearBright = (rx < S.leftEdge + 28 || rx > S.rightEdge - 28) && ry > waterY * 0.45 && ry < waterY;
+      const baseCol = depth > 1.05 ? PAL.rainBright : PAL.rainDim;
+      const rCol = nearBright
+        ? [(baseCol[0] + 55) | 0, (baseCol[1] + 22) | 0, baseCol[2]]
+        : baseCol;
+      const alpha = (0.34 + depth * 0.28) * (S.weather === 'mist' ? 0.68 : 1.0);
+
+      for (let s = 0; s < len; s++) {
+        const px = Math.round(rx + s * 0.24);
+        const py = Math.round(ry - s);
+        if (px < 0 || px >= gw || py < 0 || py >= gh) continue;
+        // Keep rain subtle behind hero headline text
+        if (py < waterY * 0.35 && dimWeightAt(px, py) > 0.55 && (s & 1) === 1) continue;
+        const tipFade = (1 - s / len) * alpha;
+        blendCell(pix, mat, lum, px, py, rCol[0], rCol[1], rCol[2], tipFade, MAT_RAIN);
+      }
+    }
+
+    // 3-frame animated splash rings (· -> o -> v) on canal & roof eaves
+    for (let i = 0; i < S.splashes.length; i++) {
+      const sp = S.splashes[i];
+      const stage = Math.min(2, Math.floor((sp.age / sp.maxAge) * 3));
+      const sx = sp.x, sy = sp.y;
+      const c = sp.tint;
+      if (stage === 0) {
+        // Frame 0: crisp central droplet '·'
+        setCell(pix, mat, lum, sx, sy, 232, 248, 255, MAT_SPLASH, 244);
+      } else if (stage === 1) {
+        // Frame 1: expanding tiny ring 'o'
+        setCell(pix, mat, lum, sx - 1, sy, c[0], c[1], c[2], MAT_SPLASH, 230);
+        setCell(pix, mat, lum, sx + 1, sy, c[0], c[1], c[2], MAT_SPLASH, 230);
+        setCell(pix, mat, lum, sx, sy - 1, 224, 244, 255, MAT_SPLASH, 236);
+      } else {
+        // Frame 2: wider mist scatter 'v'
+        blendCell(pix, mat, lum, sx - 2, sy, c[0], c[1], c[2], 0.72, MAT_SPLASH);
+        blendCell(pix, mat, lum, sx + 2, sy, c[0], c[1], c[2], 0.72, MAT_SPLASH);
+        blendCell(pix, mat, lum, sx, sy + 1, c[0], c[1], c[2], 0.45, MAT_SPLASH);
+      }
+    }
+  }
+
+  /* ---------- Glyph Selection (Material-Aware SCENE_24) ---------- */
+  function pickGlyphAndColors(tx, ty) {
+    const gw = S.gw, gh = S.gh;
+    const x0 = tx * 6, y0 = ty * 9;
+    const x1 = Math.min(gw, x0 + 6), y1 = Math.min(gh, y0 + 9);
+    const pix = S.pixBuf, mat = S.matBuf, lum = S.lumBuf;
+
+    let sumL = 0, maxL = 0, count = 0;
+    let sumR = 0, sumG = 0, sumB = 0, sumW = 0;
+    let pkR = 0, pkG = 0, pkB = 0, pkMat = 0;
+    let rainCount = 0, splashCount = 0, reflectCount = 0, roofCount = 0, wallCount = 0, bridgeCount = 0;
+    let emissiveCount = 0, cloudCount = 0, steamCount = 0;
+
+    for (let y = y0; y < y1; y++) {
+      const row = y * gw;
+      for (let x = x0; x < x1; x++) {
+        const idx = row + x;
+        const l = lum[idx] / 255;
+        const m = mat[idx];
+        const p = pix[idx];
+        const r = IS_LE ? (p & 255) : ((p >>> 24) & 255);
+        const g = IS_LE ? ((p >>> 8) & 255) : ((p >>> 16) & 255);
+        const b = IS_LE ? ((p >>> 16) & 255) : ((p >>> 8) & 255);
+
+        sumL += l;
+        count++;
+
+        // Give vibrant emissive materials stronger color voting weight so lanterns/signs/sparks never wash out!
+        let w = 0.25 + l * 1.1;
+        if (m === MAT_LANTERN || m === MAT_CYAN || m === MAT_CORAL || m === MAT_AMBER || m === MAT_FIREWORK || m === MAT_MOON) {
+          w = 3.8 + l * 4.0;
+          emissiveCount++;
+        } else if (m === MAT_REFLECT) {
+          w = 2.4 + l * 2.5;
+          reflectCount++;
+        } else if (m === MAT_SPLASH) {
+          w = 2.8;
+          splashCount++;
+        } else if (m === MAT_RAIN) {
+          w = 1.6;
+          rainCount++;
+        } else if (m === MAT_ROOF) roofCount++;
+        else if (m === MAT_WALL || m === MAT_TRAIN) wallCount++;
+        else if (m === MAT_BRIDGE) bridgeCount++;
+        else if (m === MAT_CLOUD) cloudCount++;
+        else if (m === MAT_STEAM) steamCount++;
+
+        sumR += r * w;
+        sumG += g * w;
+        sumB += b * w;
+        sumW += w;
+
+        if (l > maxL) {
+          maxL = l;
+          pkR = r; pkG = g; pkB = b;
+          pkMat = m;
+        }
+      }
+    }
+
+    const meanL = sumL / Math.max(1, count);
+    const invW = 1 / Math.max(0.001, sumW);
+    let fgR = sumR * invW, fgG = sumG * invW, fgB = sumB * invW;
+    const th = BAYER[((ty & 3) << 2) | (tx & 3)];
+
+    // Default clean deep midnight indigo ground (zero dark void stipple!)
+    let bgP = PAL.groundP;
+    let gi = 0;
+
+    // 1. Highlight preservation (Law 5): isolated fireworks, stars, splashes, lantern sparks
+    if ((pkMat === MAT_FIREWORK || pkMat === MAT_STAR || pkMat === MAT_SPLASH) && (maxL - meanL > 0.22) && maxL > 0.52) {
+      gi = pkMat === MAT_FIREWORK ? (maxL > 0.85 ? 8 : 7)  // '*' / '+'
+         : pkMat === MAT_SPLASH ? (maxL > 0.85 ? 19 : 18)  // 'o' / 'v'
+         : (maxL > 0.84 ? 7 : 1);                           // '+' / '.'
+      fgR = pkR; fgG = pkG; fgB = pkB;
+    }
+    // 2. Dense Emissives (Lanterns, Neon Signs, Shoji Windows, Moon, Train Windows)
+    else if (emissiveCount >= 3 || pkMat === MAT_LANTERN || pkMat === MAT_CYAN || pkMat === MAT_CORAL || pkMat === MAT_AMBER || pkMat === MAT_MOON) {
+      if (pkMat === MAT_LANTERN) {
+        gi = emissiveCount > 14 ? 11 : emissiveCount > 6 ? 19 : 8; // '@' / 'o' / '*'
+      } else if (pkMat === MAT_MOON) {
+        gi = emissiveCount > 18 ? 11 : 19; // '@' / 'o'
+      } else if (pkMat === MAT_CYAN || pkMat === MAT_CORAL) {
+        const ramp = [22, 23, 9, 10, 11]; // '[', ']', '#', '%', '@'
+        gi = ramp[clamp(Math.floor((meanL * 3.8 + th * 0.9)), 0, ramp.length - 1)];
+      } else {
+        // Warm amber shoji windows / train windows
+        const ramp = [22, 6, 7, 9, 10]; // '[', '=', '+', '#', '%'
+        gi = ramp[clamp(Math.floor((meanL * 3.6 + th * 0.8)), 0, ramp.length - 1)];
+      }
+      // Subtle warm/cyan inner backing on bright cores so signs & windows radiate!
+      bgP = packRGB((fgR * 0.20 + 6) | 0, (fgG * 0.18 + 8) | 0, (fgB * 0.20 + 20) | 0);
+      fgR = Math.min(255, fgR * 1.12 + 12);
+      fgG = Math.min(255, fgG * 1.10 + 10);
+      fgB = Math.min(255, fgB * 1.10 + 10);
+    }
+    // 3. Canal Reflections & Water Waves (vivid liquid color ribbons mirroring lanterns, neon signs, windows & fireworks!)
+    else if (y0 >= S.waterY) {
+      if (reflectCount >= 2 || maxL > 0.24) {
+        const reflL = Math.max(meanL, maxL * 0.62);
+        const ramp = [3, 5, 4, 6, 7]; // ':', '-', '~', '=', '+'
+        const lv = clamp((reflL * 4.8 + (th - 0.5) * 0.65), 0, ramp.length - 1);
+        gi = ramp[Math.floor(lv)];
+        if (reflL > 0.22) {
+          bgP = packRGB((fgR * 0.14 + 5) | 0, (fgG * 0.14 + 8) | 0, (fgB * 0.18 + 18) | 0);
+        }
+        fgR = Math.min(255, fgR * 1.42 + 18);
+        fgG = Math.min(255, fgG * 1.38 + 16);
+        fgB = Math.min(255, fgB * 1.42 + 20);
+      } else if (rainCount >= 3) {
+        gi = 12; // '/'
+      } else if (meanL > 0.08 && (meanL * 4.5) > th) {
+        gi = ((tx + ty) & 1) === 0 ? 4 : 5; // subtle dark water '~' / '-'
+        fgR = Math.min(255, fgR * 1.42 + 16);
+        fgG = Math.min(255, fgG * 1.42 + 20);
+        fgB = Math.min(255, fgB * 1.52 + 32);
+      } else {
+        gi = 0; // clean obsidian-indigo water trough
+      }
+    }
+    // 4. Diagonal Rain Streaks
+    else if (rainCount >= 4 && meanL < 0.34) {
+      gi = rainCount >= 7 ? 12 : (th > 0.5 ? 21 : 2); // '/' / ';' / ','
+      fgR = Math.min(255, fgR * 1.22 + 18);
+      fgG = Math.min(255, fgG * 1.24 + 22);
+      fgB = Math.min(255, fgB * 1.28 + 30);
+    }
+    // 5. Architecture: Kawara Roofs, Machiya Walls, Arched Bridge & Viaduct
+    else if (roofCount >= 8) {
+      const ramp = [17, 12, 13, 6, 9]; // '^', '/', '\', '=', '#'
+      gi = ramp[((tx + ty) + Math.floor(meanL * 5)) % ramp.length];
+      fgR = Math.min(255, fgR * 1.48 + 18);
+      fgG = Math.min(255, fgG * 1.52 + 22);
+      fgB = Math.min(255, fgB * 1.65 + 36);
+    } else if (bridgeCount >= 8) {
+      const ramp = [15, 6, 14, 9]; // '_', '=', '|', '#'
+      gi = ramp[clamp(Math.floor(meanL * 4.5 + th * 0.6), 0, ramp.length - 1)];
+      fgR = Math.min(255, fgR * 1.45 + 18);
+      fgG = Math.min(255, fgG * 1.50 + 22);
+      fgB = Math.min(255, fgB * 1.60 + 34);
+    } else if (wallCount >= 10) {
+      const ramp = [14, 15, 22, 23, 9]; // '|', '_', '[', ']', '#'
+      gi = (meanL > 0.06 || ((tx + ty) & 1) === 0) ? ramp[(tx + ty) % 3] : 14;
+      fgR = Math.min(255, fgR * 1.38 + 14);
+      fgG = Math.min(255, fgG * 1.42 + 18);
+      fgB = Math.min(255, fgB * 1.52 + 28);
+    }
+    // 6. Ramen Steam & Night Clouds
+    else if (steamCount >= 4) {
+      gi = meanL > 0.28 ? 4 : 3; // '~' / ':'
+      fgR = Math.min(255, fgR * 1.2 + 16);
+      fgG = Math.min(255, fgG * 1.2 + 18);
+      fgB = Math.min(255, fgB * 1.25 + 24);
+    } else if (cloudCount >= 8) {
+      gi = meanL > 0.24 ? 6 : 4; // '=' / '~'
+      fgR = Math.min(255, fgR * 1.28 + 14);
+      fgG = Math.min(255, fgG * 1.24 + 12);
+      fgB = Math.min(255, fgB * 1.32 + 22);
+    }
+    // 7. Twilight Indigo-to-Violet-Magenta Sky (Law 3: gate Bayer on m > 0.08 -> ZERO void stipple!)
+    else {
+      if (meanL <= 0.085) {
+        gi = 0; // spotless deep twilight indigo zenith!
+      } else {
+        const skyT = clamp((meanL - 0.085) / 0.26, 0, 1);
+        const lv = skyT * 3.1 + (th - 0.5) * 0.75;
+        if (lv < 0.45) gi = 0;
+        else if (lv < 1.35) gi = 1; // '.'
+        else if (lv < 2.25) gi = 3; // ':'
+        else gi = 5;                // '-'
+        fgR = Math.min(255, fgR * 1.26 + 16);
+        fgG = Math.min(255, fgG * 1.18 + 12);
+        fgB = Math.min(255, fgB * 1.28 + 22);
+      }
+    }
+
+    return { gi, fgP: packRGB(fgR, fgG, fgB), bgP };
+  }
+
+  function stampAsciiTile(out, tx, ty, gi, fgP, bgP) {
+    const gw = S.gw, gh = S.gh;
+    const x0 = tx * 6, y0 = ty * 9;
+    const gOff = gi * 35;
+    for (let dy = 0; dy < 9; dy++) {
+      const py = y0 + dy;
+      if (py >= gh) break;
+      const row = py * gw;
+      const inGlyphY = dy < 7;
+      for (let dx = 0; dx < 6; dx++) {
+        const px = x0 + dx;
+        if (px >= gw) break;
+        const lit = inGlyphY && dx < 5 && GLYPH_BITS[gOff + dy * 5 + dx] === 1;
+        out[row + px] = lit ? fgP : bgP;
+      }
+    }
+  }
+
+  /* ---------- Composite Final Render Mode & Blit to Device Canvas ---------- */
+  function compositeAndBlit() {
+    const gw = S.gw, gh = S.gh;
+    const out = S.outU32;
+    const pix = S.pixBuf, mat = S.matBuf, lum = S.lumBuf;
+
+    if (S.mode === 'ascii') {
+      /* === Mode 1: Full-Color 5x7 ASCII Night === */
+      const cols = Math.ceil(gw / 6);
+      const rows = Math.ceil(gh / 9);
+      for (let ty = 0; ty < rows; ty++) {
+        for (let tx = 0; tx < cols; tx++) {
+          const { gi, fgP, bgP } = pickGlyphAndColors(tx, ty);
+          stampAsciiTile(out, tx, ty, gi, fgP, bgP);
+        }
+      }
+    } else if (S.mode === 'lens') {
+      /* === Mode 2: Bayer Pixel + Circular Color 5x7 ASCII Lens === */
+      out.set(pix);
+
+      if (S.ptrActive > 0.04 && S.ptrX >= 0) {
+        const lcx = (S.ptrX / S.vw) * gw;
+        const lcy = (S.ptrY / S.vh) * gh;
+        const lensRCss = S.vw < 760 ? 84 : 126;
+        const lensR = (lensRCss / S.cellCss) * S.ptrActive;
+        if (lensR > 8) {
+          const tx0 = Math.max(0, Math.floor((lcx - lensR - 6) / 6));
+          const tx1 = Math.min(Math.ceil(gw / 6) - 1, Math.ceil((lcx + lensR + 6) / 6));
+          const ty0 = Math.max(0, Math.floor((lcy - lensR - 9) / 9));
+          const ty1 = Math.min(Math.ceil(gh / 9) - 1, Math.ceil((lcy + lensR + 9) / 9));
+          const rimColP = packRGB(122, 247, 255);
+
+          for (let ty = ty0; ty <= ty1; ty++) {
+            for (let tx = tx0; tx <= tx1; tx++) {
+              const tcx = tx * 6 + 3, tcy = ty * 9 + 4.5;
+              const dTile = Math.hypot(tcx - lcx, tcy - lcy);
+              if (dTile > lensR + 10) continue;
+
+              const { gi, fgP, bgP } = pickGlyphAndColors(tx, ty);
+              const x0 = tx * 6, y0 = ty * 9;
+              const gOff = gi * 35;
+
+              for (let dy = 0; dy < 9; dy++) {
+                const py = y0 + dy;
+                if (py >= gh) break;
+                const row = py * gw;
+                const inGlyphY = dy < 7;
+                for (let dx = 0; dx < 6; dx++) {
+                  const px = x0 + dx;
+                  if (px >= gw) break;
+                  const dist = Math.hypot(px - lcx, py - lcy);
+                  const rNorm = dist / lensR;
+                  const th = BAYER[((py & 3) << 2) | (px & 3)];
+                  const edgeCut = 1.0 - (5.5 / lensR) * th;
+                  if (rNorm < edgeCut) {
+                    const lit = inGlyphY && dx < 5 && GLYPH_BITS[gOff + dy * 5 + dx] === 1;
+                    out[row + px] = lit ? fgP : bgP;
+                  } else if (Math.abs(dist - lensR) < 1.35 && th < 0.72) {
+                    // Crisp Bayer-dithered optical cyan lens ring!
+                    out[row + px] = rimColP;
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    } else {
+      /* === Mode 3: True-Color 2x4 Braille Night (with ~1.22x+ dot-area luminance compensation!) === */
+      out.fill(PAL.brailleBgP);
+      const bCols = Math.floor(gw / 5);
+      const bRows = Math.floor(gh / 9);
+
+      for (let byTile = 0; byTile < bRows; byTile++) {
+        const yBase = byTile * 9;
+        for (let bxTile = 0; bxTile < bCols; bxTile++) {
+          const xBase = bxTile * 5;
+          for (let by = 0; by < 4; by++) {
+            const dotY = yBase + 1 + by * 2;
+            const gSubY = byTile * 4 + by;
+            for (let bx = 0; bx < 2; bx++) {
+              const dotX = xBase + 1 + bx * 2;
+              const gSubX = bxTile * 2 + bx;
+
+              // Sample 2x2 sub-block in scene buffer
+              let valSum = 0, pk = 0, cR = 0, cG = 0, cB = 0, cW = 0;
+              let hasEmissive = false, hasRefl = false, hasArch = false;
+              for (let sy = 0; sy < 2; sy++) {
+                const yy = Math.min(gh - 1, dotY + sy);
+                const sRow = yy * gw;
+                for (let sx = 0; sx < 2; sx++) {
+                  const xx = Math.min(gw - 1, dotX + sx);
+                  const idx = sRow + xx;
+                  const l = lum[idx] / 255;
+                  const m = mat[idx];
+                  const p = pix[idx];
+                  const r = IS_LE ? (p & 255) : ((p >>> 24) & 255);
+                  const g = IS_LE ? ((p >>> 8) & 255) : ((p >>> 16) & 255);
+                  const b = IS_LE ? ((p >>> 16) & 255) : ((p >>> 8) & 255);
+                  const em = (m === MAT_LANTERN || m === MAT_CYAN || m === MAT_CORAL || m === MAT_AMBER || m === MAT_FIREWORK || m === MAT_MOON);
+                  const rf = (m === MAT_REFLECT);
+                  const ar = (m === MAT_ROOF || m === MAT_BRIDGE || m === MAT_WALL || m === MAT_TRAIN);
+                  if (em) hasEmissive = true;
+                  if (rf) hasRefl = true;
+                  if (ar) hasArch = true;
+                  // Lift subtle nocturnal silhouettes & liquid reflections so Braille renders full architectural depth!
+                  const adjL = em ? Math.min(1, l * 1.15 + 0.14)
+                             : rf ? Math.min(1, l * 1.45 + 0.12)
+                             : ar ? Math.min(1, l * 1.55 + 0.08)
+                             : l;
+                  valSum += adjL;
+                  if (adjL > pk) pk = adjL;
+                  const w = em ? (l + 0.45) * 3.6 : rf ? (l + 0.25) * 2.5 : (l + 0.04);
+                  cR += r * w; cG += g * w; cB += b * w; cW += w;
+                }
+              }
+
+              const val = Math.max(valSum * 0.25, pk * 0.78);
+              const th = BAYER[((gSubY & 3) << 2) | (gSubX & 3)];
+              const lit = (val > 0.065) && (Math.pow(val, 0.68) > th * 0.72);
+              if (lit) {
+                const inv = 1 / Math.max(0.001, cW);
+                // ~1.22x+ dot-area luminance compensation (3d-sdf-and-braille.md)
+                const boost = hasEmissive ? 1.28 : hasRefl ? 1.38 : hasArch ? 1.52 : 1.24;
+                const add = hasEmissive ? 18 : hasRefl ? 16 : hasArch ? 18 : 10;
+                const dr = Math.min(255, (cR * inv * boost + add) | 0);
+                const dg = Math.min(255, (cG * inv * boost + add) | 0);
+                const db = Math.min(255, (cB * inv * boost + add + (hasArch ? 12 : 0)) | 0);
+                out[dotY * gw + dotX] = packRGB(dr, dg, db);
+              }
+            }
+          }
+        }
+      }
+    }
+
+    offCtx.putImageData(S.outImg, 0, 0);
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(offCv, 0, 0, gw, gh, 0, 0, gw * S.cellDev, gh * S.cellDev);
+  }
+
+  /* ---------- Resize & Pixel-Locked Grid Synchronization ---------- */
+  function resize() {
+    const vw = Math.max(1, window.innerWidth);
+    const vh = Math.max(1, window.innerHeight);
+    let dpr = Math.max(1, Math.min(window.devicePixelRatio || 1, 3));
+    if (vw * vh * dpr * dpr > MAX_PIXELS) {
+      dpr = Math.max(1, Math.sqrt(MAX_PIXELS / (vw * vh)));
+    }
+
+    // Crisp integer pixel-locked cell sizing tuned to render mode & viewport!
+    const cellCss = S.mode === 'lens' ? (vw < 760 ? 2 : 3) : (vw < 760 ? 1 : 2);
+    const cellDev = Math.max(1, Math.round(cellCss * dpr));
+    const dw = Math.ceil(vw * dpr);
+    const dh = Math.ceil(vh * dpr);
+
+    canvas.width = dw;
+    canvas.height = dh;
+    canvas.style.width = (dw / dpr) + 'px';
+    canvas.style.height = (dh / dpr) + 'px';
+
+    const gw = Math.ceil(dw / cellDev);
+    const gh = Math.ceil(dh / cellDev);
+
+    S.vw = vw; S.vh = vh; S.dpr = dpr;
+    S.cellCss = cellCss; S.cellDev = cellDev;
+    S.dw = dw; S.dh = dh; S.gw = gw; S.gh = gh;
+
+    // Portrait vertical scaling rule (Law 6 & illustrated-scenes.md):
+    // Prevents pagodas, viaduct, and machiya roofs from stretching into skinny spikes on 390x844 mobile!
+    S.landScale = vw < 760 ? Math.min(gh, gw * 1.18) : gh;
+    S.waterY = Math.round(gh * (vw < 760 ? 0.67 : 0.65));
+    S.viaductY = S.waterY - Math.round(S.landScale * 0.185);
+    S.leftEdge = Math.round(gw * (vw < 760 ? 0.285 : 0.305));
+    S.rightEdge = Math.round(gw * (vw < 760 ? 0.715 : 0.695));
+
+    offCv.width = gw;
+    offCv.height = gh;
+
+    const total = gw * gh;
+    S.basePix = new Uint32Array(total);
+    S.baseMat = new Uint8Array(total);
+    S.baseLum = new Uint8Array(total);
+    S.pixBuf = new Uint32Array(total);
+    S.matBuf = new Uint8Array(total);
+    S.lumBuf = new Uint8Array(total);
+    S.outImg = offCtx.createImageData(gw, gh);
+    S.outU32 = new Uint32Array(S.outImg.data.buffer);
+
+    buildDitherTiles(Math.max(2, cellCss));
+    readDimRects();
+    buildStaticBase();
+    initDynamicEntities();
+
+    // Render immediately so mode switch / resize / reduced-motion never flashes blank
+    renderScene();
+    compositeAndBlit();
+  }
+
+  /* ---------- Controls & Interactive Gestures ---------- */
+  function setMode(nextMode) {
+    if (S.mode === nextMode) return;
+    S.mode = nextMode;
+    document.querySelectorAll('[data-mode]').forEach((b) => {
+      b.classList.toggle('active', b.dataset.mode === nextMode);
+    });
+    resize();
+  }
+
+  function setWeather(nextWeather) {
+    S.weather = nextWeather;
+    document.querySelectorAll('[data-weather]').forEach((b) => {
+      b.classList.toggle('active', b.dataset.weather === nextWeather);
+    });
+    if (nextWeather === 'festival') {
+      // Launch an immediate celebratory twin firework over the pagoda skyline!
+      spawnFirework(S.gw * 0.48, S.waterY * 0.28, true);
+      spawnFirework(S.gw * 0.66, S.waterY * 0.36, true);
+      S.festivalTimer = 2.2;
+    }
+    if (reducedMotion) {
+      renderScene();
+      compositeAndBlit();
+    }
+  }
+
+  document.querySelectorAll('[data-mode]').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      setMode(btn.dataset.mode);
+    });
+  });
+
+  document.querySelectorAll('[data-weather]').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      setWeather(btn.dataset.weather);
+    });
+  });
+
+  // Pointer hover tracking
+  window.addEventListener('pointermove', (e) => {
+    S.ptrRawX = e.clientX;
+    S.ptrRawY = e.clientY;
+    if (reducedMotion) {
+      S.ptrX = e.clientX;
+      S.ptrY = e.clientY;
+      S.ptrActive = 1;
+      renderScene();
+      compositeAndBlit();
+    }
+  });
+
+  window.addEventListener('pointerleave', () => {
+    S.ptrRawX = -999;
+    S.ptrRawY = -999;
+  });
+
+  // Interactive click magic on canvas: sky -> firework, viaduct -> train, canal -> liquid ripple!
+  canvas.addEventListener('click', (e) => {
+    const gx = (e.clientX / S.vw) * S.gw;
+    const gy = (e.clientY / S.vh) * S.gh;
+    const viaductBand = Math.max(12, S.landScale * 0.048);
+
+    if (gy >= S.waterY) {
+      spawnRipple(gx, gy);
+    } else if (Math.abs(gy - S.viaductY) <= viaductBand && gx > S.leftEdge && gx < S.rightEdge) {
+      dispatchTrain();
+    } else {
+      spawnFirework(gx, gy, true);
+    }
+
+    if (reducedMotion) {
+      renderScene();
+      compositeAndBlit();
+    }
+  });
+
+  // Keyboard shortcut: Press T to dispatch passing commuter train
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 't' || e.key === 'T') {
+      dispatchTrain();
+      if (reducedMotion) {
+        renderScene();
+        compositeAndBlit();
+      }
+    }
+  });
+
+  window.addEventListener('resize', () => {
+    clearTimeout(resize._t);
+    resize._t = setTimeout(resize, 90);
+  });
+
+  reducedMotionQuery.addEventListener('change', (e) => {
+    reducedMotion = e.matches;
+    if (!reducedMotion && !rafId) {
+      lastTs = performance.now();
+      rafId = requestAnimationFrame(loop);
+    }
+  });
+
+  /* ---------- Animation Loop ---------- */
+  let rafId = 0;
+  let lastTs = performance.now();
+
+  function loop(now) {
+    rafId = 0;
+    if (reducedMotion) return;
+    if (document.hidden) {
+      lastTs = now;
+      rafId = requestAnimationFrame(loop);
+      return;
+    }
+    const dt = Math.min(0.05, Math.max(0.001, (now - lastTs) / 1000));
+    lastTs = now;
+
+    stepSim(dt);
+    renderScene();
+    compositeAndBlit();
+
+    rafId = requestAnimationFrame(loop);
+  }
+
+  /* ---------- Boot ---------- */
+  setupKineticText();
+  resize();
+
+  if (reducedMotion) {
+    // Richly composed static night frame: train gliding mid-viaduct, swaying lanterns paused, crisp reflections!
+    S.t = 1.4;
+    S.train.active = true;
+    S.train.x = 0.56;
+    S.train.dir = 1;
+    renderScene();
+    compositeAndBlit();
+  } else {
+    // Start with the golden-windowed train already entering the viaduct corridor for instant visual delight!
+    S.train.active = true;
+    S.train.x = 0.42;
+    S.train.dir = 1;
+    lastTs = performance.now();
+    rafId = requestAnimationFrame(loop);
+  }
+})();
+</script>
+</body>
+</html>

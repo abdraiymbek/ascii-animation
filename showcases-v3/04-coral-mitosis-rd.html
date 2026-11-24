@@ -1,0 +1,1717 @@
+<!doctype html>
+<html lang="en" data-theme="dark" data-palette="reef">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Polychromatic Coral Mitosis — Live GPU Reaction-Diffusion</title>
+<style>
+  :root {
+    --ground: #06111C;
+    --ink: #FFF6E5;
+    --ink-dim: rgba(255, 246, 229, 0.76);
+    --eyebrow: #1AD1C9;
+    --accent: #FF5E7E;
+    --accent-2: #1AD1C9;
+    --dock-bg: rgba(6, 17, 28, 0.74);
+    --dock-border: rgba(26, 209, 201, 0.24);
+    --dock-btn: rgba(255, 246, 229, 0.72);
+    --dock-btn-hover: #FFF6E5;
+    --dock-active-bg: rgba(26, 209, 201, 0.18);
+    --dock-active-border: rgba(26, 209, 201, 0.52);
+    --dock-sep: rgba(255, 246, 229, 0.14);
+    --text-shadow: 0 1px 14px rgba(6, 17, 28, 0.94);
+    --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", system-ui, sans-serif;
+  }
+
+  [data-palette="monarch"] {
+    --ground: #07091A;
+    --ink: #FFF8E0;
+    --ink-dim: rgba(255, 248, 224, 0.76);
+    --eyebrow: #FFD447;
+    --accent: #FF7A1A;
+    --accent-2: #2F6BFF;
+    --dock-bg: rgba(7, 9, 26, 0.76);
+    --dock-border: rgba(255, 212, 71, 0.24);
+    --dock-btn: rgba(255, 248, 224, 0.72);
+    --dock-btn-hover: #FFF8E0;
+    --dock-active-bg: rgba(255, 122, 26, 0.22);
+    --dock-active-border: rgba(255, 212, 71, 0.56);
+    --dock-sep: rgba(255, 248, 224, 0.14);
+    --text-shadow: 0 1px 14px rgba(7, 9, 26, 0.94);
+  }
+
+  [data-palette="botanical"] {
+    --ground: #07100C;
+    --ink: #FFE8F7;
+    --ink-dim: rgba(255, 232, 247, 0.76);
+    --eyebrow: #C6F447;
+    --accent: #FF4FB8;
+    --accent-2: #2BD97C;
+    --dock-bg: rgba(7, 16, 12, 0.76);
+    --dock-border: rgba(198, 244, 71, 0.24);
+    --dock-btn: rgba(255, 232, 247, 0.72);
+    --dock-btn-hover: #FFE8F7;
+    --dock-active-bg: rgba(43, 217, 124, 0.20);
+    --dock-active-border: rgba(198, 244, 71, 0.52);
+    --dock-sep: rgba(255, 232, 247, 0.14);
+    --text-shadow: 0 1px 14px rgba(7, 16, 12, 0.94);
+  }
+
+  [data-palette="riso"] {
+    --ground: #F6F1E7;
+    --ink: #18181D;
+    --ink-dim: rgba(24, 24, 29, 0.72);
+    --eyebrow: #1B5BFF;
+    --accent: #F03A2F;
+    --accent-2: #1B5BFF;
+    --dock-bg: rgba(246, 241, 231, 0.84);
+    --dock-border: rgba(24, 24, 29, 0.18);
+    --dock-btn: rgba(24, 24, 29, 0.72);
+    --dock-btn-hover: #18181D;
+    --dock-active-bg: rgba(27, 91, 255, 0.13);
+    --dock-active-border: rgba(27, 91, 255, 0.54);
+    --dock-sep: rgba(24, 24, 29, 0.14);
+    --text-shadow: 0 1px 12px rgba(246, 241, 231, 0.96);
+  }
+
+  *, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--sans);
+    -webkit-font-smoothing: antialiased;
+    user-select: none;
+    touch-action: none;
+  }
+
+  #stage {
+    position: fixed;
+    inset: 0;
+    display: block;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    cursor: crosshair;
+    z-index: 1;
+  }
+
+  .editorial {
+    position: fixed;
+    top: max(20px, env(safe-area-inset-top, 20px));
+    left: max(24px, env(safe-area-inset-left, 24px));
+    z-index: 4;
+    pointer-events: none;
+    max-width: min(460px, calc(100vw - 40px));
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--eyebrow);
+    line-height: 1.3;
+    text-shadow: var(--text-shadow);
+    width: fit-content;
+  }
+
+  .title {
+    font-size: clamp(20px, 2.2vw, 29px);
+    font-weight: 560;
+    letter-spacing: -0.025em;
+    line-height: 1.08;
+    color: var(--ink);
+    text-shadow: var(--text-shadow);
+    width: fit-content;
+  }
+
+  .hint {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.02em;
+    color: var(--ink-dim);
+    line-height: 1.38;
+    margin-top: 2px;
+    text-shadow: var(--text-shadow);
+    width: fit-content;
+  }
+
+  .dock-wrap {
+    position: fixed;
+    left: 50%;
+    bottom: max(16px, env(safe-area-inset-bottom, 16px));
+    transform: translateX(-50%);
+    z-index: 6;
+    max-width: calc(100vw - 16px);
+  }
+
+  .dock {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    padding: 4px 6px;
+    border-radius: 999px;
+    background: var(--dock-bg);
+    border: 1px solid var(--dock-border);
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.28);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  .dock-group {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+  }
+
+  .dock-sep {
+    width: 1px;
+    height: 16px;
+    margin: 0 4px;
+    background: var(--dock-sep);
+    flex-shrink: 0;
+  }
+
+  .dock-btn {
+    appearance: none;
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--dock-btn);
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.02em;
+    line-height: 1;
+    padding: 7px 10px;
+    border-radius: 999px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    white-space: nowrap;
+    transition: color 140ms ease, background-color 140ms ease, border-color 140ms ease;
+  }
+
+  .dock-btn:hover {
+    color: var(--dock-btn-hover);
+  }
+
+  .dock-btn[aria-pressed="true"] {
+    color: var(--ink);
+    background: var(--dock-active-bg);
+    border-color: var(--dock-active-border);
+  }
+
+  .dock-btn:focus-visible {
+    outline: 2px solid var(--eyebrow);
+    outline-offset: 2px;
+  }
+
+  .swatch-btn {
+    padding: 5px;
+    width: 26px;
+    height: 26px;
+    justify-content: center;
+  }
+
+  .swatch-dot {
+    width: 13px;
+    height: 13px;
+    border-radius: 50%;
+    display: block;
+    border: 1px solid rgba(255, 255, 255, 0.28);
+  }
+
+  [data-palette="riso"] .swatch-dot {
+    border-color: rgba(24, 24, 29, 0.28);
+  }
+
+  .swatch-btn[aria-pressed="true"] .swatch-dot {
+    transform: scale(1.12);
+    border-color: var(--ink);
+  }
+
+  .kbd {
+    font-size: 9px;
+    opacity: 0.56;
+    letter-spacing: 0;
+  }
+
+  @media (max-width: 820px) {
+    .editorial {
+      top: max(14px, env(safe-area-inset-top, 14px));
+      left: max(16px, env(safe-area-inset-left, 16px));
+    }
+    .hint {
+      font-size: 10px;
+    }
+    .dock {
+      flex-wrap: wrap;
+      border-radius: 18px;
+      padding: 5px 7px;
+      row-gap: 4px;
+    }
+    .dock-sep {
+      display: none;
+    }
+    .dock-btn {
+      font-size: 10.5px;
+      padding: 6px 8px;
+    }
+    .swatch-btn {
+      width: 24px;
+      height: 24px;
+      padding: 4px;
+    }
+    .kbd,
+    .hint-keys {
+      display: none;
+    }
+  }
+</style>
+</head>
+<body>
+<canvas id="stage" aria-label="Live polychromatic Gray-Scott reaction-diffusion animation"></canvas>
+
+<header class="editorial">
+  <div class="eyebrow" data-dim>LIVE GPU GRAY-SCOTT PDE · <span id="preset-readout">CORAL BRANCHING</span></div>
+  <h1 class="title" data-dim>Polychromatic Coral Mitosis</h1>
+  <p class="hint" data-dim>Hover or drag to paint · Click to bloom<span class="hint-keys"> · 1–4 · Q W E · R</span></p>
+</header>
+
+<nav class="dock-wrap" aria-label="Simulation controls">
+  <div class="dock">
+    <div class="dock-group" role="group" aria-label="Biological presets">
+      <button class="dock-btn" type="button" data-preset="coral" aria-pressed="true"><span class="kbd">1</span>Coral</button>
+      <button class="dock-btn" type="button" data-preset="mitosis" aria-pressed="false"><span class="kbd">2</span>Mitosis</button>
+      <button class="dock-btn" type="button" data-preset="maze" aria-pressed="false"><span class="kbd">3</span>Maze</button>
+      <button class="dock-btn" type="button" data-preset="waves" aria-pressed="false"><span class="kbd">4</span>Waves</button>
+    </div>
+
+    <span class="dock-sep" aria-hidden="true"></span>
+
+    <div class="dock-group" role="group" aria-label="Render mode">
+      <button class="dock-btn" type="button" data-mode="ascii" aria-pressed="true"><span class="kbd">Q</span>ASCII</button>
+      <button class="dock-btn" type="button" data-mode="bayer" aria-pressed="false"><span class="kbd">W</span>Bayer+Lens</button>
+      <button class="dock-btn" type="button" data-mode="braille" aria-pressed="false"><span class="kbd">E</span>Braille</button>
+    </div>
+
+    <span class="dock-sep" aria-hidden="true"></span>
+
+    <div class="dock-group" role="group" aria-label="Polychromatic palettes">
+      <button class="dock-btn swatch-btn" type="button" data-palette="reef" aria-pressed="true" title="Reef Coral &amp; Electric Teal" aria-label="Reef Coral &amp; Electric Teal">
+        <span class="swatch-dot" style="background: linear-gradient(135deg, #1AD1C9 0%, #FF5E7E 55%, #FFB36B 100%);"></span>
+      </button>
+      <button class="dock-btn swatch-btn" type="button" data-palette="monarch" aria-pressed="false" title="Monarch Amber &amp; Ultramarine" aria-label="Monarch Amber &amp; Ultramarine">
+        <span class="swatch-dot" style="background: linear-gradient(135deg, #2F6BFF 0%, #FF7A1A 55%, #FFD447 100%);"></span>
+      </button>
+      <button class="dock-btn swatch-btn" type="button" data-palette="botanical" aria-pressed="false" title="Botanical Lime &amp; Orchid" aria-label="Botanical Lime &amp; Orchid">
+        <span class="swatch-dot" style="background: linear-gradient(135deg, #2BD97C 0%, #C6F447 48%, #FF4FB8 100%);"></span>
+      </button>
+      <button class="dock-btn swatch-btn" type="button" data-palette="riso" aria-pressed="false" title="Acid Risograph Paper" aria-label="Acid Risograph Paper">
+        <span class="swatch-dot" style="background: linear-gradient(135deg, #F6F1E7 0%, #1B5BFF 46%, #F03A2F 100%);"></span>
+      </button>
+    </div>
+
+    <span class="dock-sep" aria-hidden="true"></span>
+
+    <button class="dock-btn" type="button" data-action="reseed" title="Re-seed colony (R)"><span class="kbd">R</span>Re-Seed</button>
+  </div>
+</nav>
+
+<script>
+(() => {
+  'use strict';
+
+  const PRESETS = {
+    coral:   { name: 'CORAL BRANCHING', F: 0.0545, k: 0.0620, prewarm: 360, substeps: 8, seedStyle: 0 },
+    mitosis: { name: 'CELL MITOSIS',    F: 0.0367, k: 0.0649, prewarm: 500, substeps: 8, seedStyle: 1 },
+    maze:    { name: 'LABYRINTH MAZE',  F: 0.0290, k: 0.0570, prewarm: 360, substeps: 8, seedStyle: 2 },
+    waves:   { name: 'SOLITON WAVES',   F: 0.0180, k: 0.0510, prewarm: 280, substeps: 6, seedStyle: 3 },
+  };
+
+  const PALETTES = {
+    reef: {
+      name: 'Reef Coral & Electric Teal',
+      isLight: false,
+      stops: ['#06111C', '#0D3B4C', '#1AD1C9', '#FF5E7E', '#FFB36B', '#FFF6E5'],
+    },
+    monarch: {
+      name: 'Monarch Amber & Ultramarine',
+      isLight: false,
+      stops: ['#07091A', '#142B6F', '#2F6BFF', '#FF7A1A', '#FFD447', '#FFF8E0'],
+    },
+    botanical: {
+      name: 'Botanical Lime & Orchid',
+      isLight: false,
+      stops: ['#07100C', '#103A29', '#2BD97C', '#C6F447', '#FF4FB8', '#FFE8F7'],
+    },
+    riso: {
+      name: 'Acid Risograph Paper',
+      isLight: true,
+      stops: ['#F6F1E7', '#D9D1C3', '#1B5BFF', '#F03A2F', '#262530', '#18181D'],
+    },
+  };
+
+  const MODES = { ascii: 0, bayer: 1, braille: 2 };
+
+  function hexToRgb01(hex) {
+    const n = parseInt(hex.slice(1), 16);
+    return [(n >> 16 & 255) / 255, (n >> 8 & 255) / 255, (n & 255) / 255];
+  }
+
+  function hexToRgb255(hex) {
+    const n = parseInt(hex.slice(1), 16);
+    return [n >> 16 & 255, n >> 8 & 255, n & 255];
+  }
+
+  for (const p of Object.values(PALETTES)) {
+    p.rgb01 = p.stops.map(hexToRgb01);
+    p.rgb255 = p.stops.map(hexToRgb255);
+    p.flat01 = new Float32Array(p.rgb01.flat());
+  }
+
+  const MAX_PIXELS = 3840 * 2400;
+  const reducedMotionMQ = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : { matches: false };
+
+  const state = {
+    presetKey: 'coral',
+    paletteKey: 'reef',
+    modeKey: 'ascii',
+    reducedMotion: !!reducedMotionMQ.matches,
+    seedNonce: 1,
+    time: 0,
+    hidden: document.hidden,
+    vw: Math.max(1, window.innerWidth),
+    vh: Math.max(1, window.innerHeight),
+    dpr: 1,
+    dw: 1,
+    dh: 1,
+    cellCss: 2,
+    cellDev: 2,
+    cell: 2,
+    gw: 1,
+    gh: 1,
+    lw: 1,
+    lh: 1,
+    simW: 300,
+    simH: 188,
+    ptrActive: false,
+    ptrDown: false,
+    ptrX: window.innerWidth * 0.62,
+    ptrY: window.innerHeight * 0.48,
+    ptrSmoothX: window.innerWidth * 0.62,
+    ptrSmoothY: window.innerHeight * 0.48,
+    ptrPrevX: window.innerWidth * 0.62,
+    ptrPrevY: window.innerHeight * 0.48,
+    lensX: window.innerWidth * 0.62,
+    lensY: window.innerHeight * 0.48,
+    brushQueue: [],
+    dimRects: new Float32Array(8 * 4),
+    dimCount: 0,
+  };
+
+  function computeLayout(canvas) {
+    const vw = Math.max(1, window.innerWidth);
+    const vh = Math.max(1, window.innerHeight);
+    let dpr = Math.max(1, Math.min(window.devicePixelRatio || 1, 3));
+    if (vw * vh * dpr * dpr > MAX_PIXELS) {
+      dpr = Math.max(1, Math.sqrt(MAX_PIXELS / (vw * vh)));
+    }
+    const cellCss = vw < 760 ? 1 : 2;
+    const cellDev = Math.max(1, Math.round(cellCss * dpr));
+    const dw = Math.ceil(vw * dpr);
+    const dh = Math.ceil(vh * dpr);
+    canvas.width = dw;
+    canvas.height = dh;
+    canvas.style.width = (dw / dpr) + 'px';
+    canvas.style.height = (dh / dpr) + 'px';
+
+    const aspect = vw / vh;
+    const targetCells = 54000;
+    const simH = Math.max(140, Math.min(340, Math.round(Math.sqrt(targetCells / aspect))));
+    const simW = Math.max(140, Math.min(360, Math.round(simH * aspect)));
+
+    state.vw = vw;
+    state.vh = vh;
+    state.dpr = dpr;
+    state.dw = dw;
+    state.dh = dh;
+    state.cellCss = cellCss;
+    state.cellDev = cellDev;
+    state.cell = cellDev / dpr;
+    state.gw = Math.ceil(dw / cellDev);
+    state.gh = Math.ceil(dh / cellDev);
+    state.lw = Math.ceil(state.gw / 6);
+    state.lh = Math.ceil(state.gh / 9);
+    state.simW = simW;
+    state.simH = simH;
+  }
+
+  function readDimRects() {
+    const els = document.querySelectorAll('[data-dim]');
+    let count = 0;
+    for (let i = 0; i < els.length && count < 8; i++) {
+      const r = els[i].getBoundingClientRect();
+      if (r.width <= 0 || r.height <= 0) continue;
+      state.dimRects[count * 4 + 0] = r.left - 8;
+      state.dimRects[count * 4 + 1] = r.top - 6;
+      state.dimRects[count * 4 + 2] = r.right + 8;
+      state.dimRects[count * 4 + 3] = r.bottom + 6;
+      count++;
+    }
+    state.dimCount = count;
+  }
+
+  // ---------- Shaders ----------
+  const VS_FULL = `#version 300 es
+void main() {
+  vec2 p = vec2(float((gl_VertexID << 1) & 2), float(gl_VertexID & 2));
+  gl_Position = vec4(p * 2.0 - 1.0, 0.0, 1.0);
+}`;
+
+  const PACK_HELPERS = `
+uniform int uPacked8;
+
+vec4 packUV(vec2 uv) {
+  if (uPacked8 == 0) {
+    return vec4(clamp(uv.x, 0.0, 1.0), clamp(uv.y, 0.0, 1.0), 0.0, 1.0);
+  }
+  float u = clamp(uv.x, 0.0, 1.0) * 65535.0;
+  float v = clamp(uv.y, 0.0, 1.0) * 65535.0;
+  float uHi = floor(u / 256.0);
+  float uLo = floor(u - uHi * 256.0 + 0.5);
+  if (uLo >= 256.0) { uLo = 0.0; uHi = min(255.0, uHi + 1.0); }
+  float vHi = floor(v / 256.0);
+  float vLo = floor(v - vHi * 256.0 + 0.5);
+  if (vLo >= 256.0) { vLo = 0.0; vHi = min(255.0, vHi + 1.0); }
+  return vec4(uHi, uLo, vHi, vLo) / 255.0;
+}
+
+vec2 unpackUV(vec4 t) {
+  if (uPacked8 == 0) {
+    return clamp(t.rg, 0.0, 1.0);
+  }
+  vec4 b = floor(t * 255.0 + 0.5);
+  return vec2((b.r * 256.0 + b.g) / 65535.0, (b.b * 256.0 + b.a) / 65535.0);
+}
+`;
+
+  const FS_SEED = `#version 300 es
+precision highp float;
+precision highp int;
+out vec4 oc;
+
+uniform ivec2 uSimSize;
+uniform int uSeedStyle;
+uniform float uNonce;
+${PACK_HELPERS}
+
+uint pcg2(uvec2 v) {
+  v = v * 1664525u + 1013904223u;
+  v.x += v.y * 1664525u; v.y += v.x * 1664525u;
+  v ^= v >> 16u;
+  v.x += v.y * 1664525u; v.y += v.x * 1664525u;
+  v ^= v >> 16u;
+  return v.x ^ v.y;
+}
+
+float rnd(ivec2 p, uint salt) {
+  return float(pcg2(uvec2(p + ivec2(1024)) + uvec2(salt, salt * 7919u))) * (1.0 / 4294967296.0);
+}
+
+void main() {
+  ivec2 ic = ivec2(gl_FragCoord.xy);
+  vec2 sz = vec2(uSimSize);
+  vec2 uv = (vec2(ic) + 0.5) / sz;
+  float aspect = sz.x / max(sz.y, 1.0);
+  vec2 c = vec2(0.52, 0.50);
+  vec2 p = vec2((uv.x - c.x) * aspect, uv.y - c.y);
+
+  uint salt = uint(uNonce * 131.0 + 17.0);
+  float n1 = rnd(ic, salt);
+  float n2 = rnd(ic / 2, salt + 31u);
+
+  float seed = 0.0;
+  float r = length(p);
+  float ang = atan(p.y, p.x);
+
+  if (uSeedStyle == 1) {
+    // Cell Mitosis: cleanly separated nuclei across full viewport (incl. center) so reagent U
+    // never starves out the middle and every nucleus elongates & splits into daughter colonies!
+    for (int gy = -3; gy <= 3; gy++) {
+      for (int gx = -5; gx <= 5; gx++) {
+        float stagger = mod(float(gy + 4), 2.0) * 0.5;
+        vec2 cellPos = vec2((float(gx) + stagger) * 0.21, float(gy) * 0.19);
+        float jx = (rnd(ivec2(gx + 10, gy + 10), salt + 7u) - 0.5) * 0.075;
+        float jy = (rnd(ivec2(gx + 30, gy + 30), salt + 19u) - 0.5) * 0.075;
+        vec2 np = cellPos + vec2(jx, jy);
+        vec2 nuv = c + vec2(np.x / aspect, np.y);
+        if (nuv.x < 0.05 || nuv.x > 0.95 || nuv.y < 0.06 || nuv.y > 0.92) continue;
+        if (nuv.x < 0.30 && nuv.y < 0.21) continue;
+        float d = length(p - np);
+        float blob = exp(-pow(d / 0.017, 2.0));
+        seed = max(seed, blob * 0.98);
+      }
+    }
+  } else {
+    // Curated hero wreath + orbital harmonic nodes across full composition
+    float baseR = min(aspect, 1.0) * 0.24;
+    float ring = exp(-pow((r - baseR * (1.0 + 0.14 * sin(ang * 5.0 + uNonce))) / 0.026, 2.0));
+    seed = max(seed, ring * 0.92);
+
+    // Inner organic nucleus
+    float core = exp(-pow(r / (baseR * 0.26), 2.0));
+    seed = max(seed, core * 0.88);
+
+    // Radial satellite colonies distributed across both landscape and portrait canvases
+    for (int i = 0; i < 12; i++) {
+      float fi = float(i);
+      float a = fi * 2.3999632 + uNonce * 0.87;
+      float rr = sqrt((fi + 0.55) / 12.0) * 0.44;
+      vec2 np = vec2(cos(a) * rr * max(aspect, 0.92), sin(a) * rr * max(1.0 / aspect, 0.92));
+      // Keep top-left editorial corner lighter so title breathes cleanly
+      vec2 nuv = c + vec2(np.x / aspect, np.y);
+      if (nuv.x < 0.29 && nuv.y < 0.22) continue;
+      float d = length(p - np);
+      float rad = (uSeedStyle == 2) ? 0.032 : 0.028;
+      float blob = exp(-pow(d / rad, 2.0));
+      if (uSeedStyle == 2) {
+        // Labyrinth maze: crisp arcs and ridges
+        float arc = exp(-pow(abs(d - 0.055) / 0.015, 2.0));
+        blob = max(blob, arc * 0.85);
+      }
+      seed = max(seed, blob * 0.96);
+    }
+
+    // Secondary outer coral arc for rich edge-to-edge life
+    float outerR = max(aspect, 1.0) * 0.37;
+    float outerArc = exp(-pow((r - outerR * (0.94 + 0.1 * cos(ang * 7.0 - uNonce))) / 0.020, 2.0));
+    float arcMask = smoothstep(-0.2, 0.35, sin(ang * 3.0 + uNonce * 1.3));
+    if (!(uv.x < 0.28 && uv.y < 0.20)) {
+      seed = max(seed, outerArc * arcMask * 0.86);
+    }
+
+    // Soliton waves: concentric ripple seeds
+    if (uSeedStyle == 3) {
+      float waveRing = exp(-pow((r - baseR * 1.65) / 0.022, 2.0));
+      seed = max(seed, waveRing * 0.95);
+      float waveRing2 = exp(-pow((r - baseR * 0.62) / 0.022, 2.0));
+      seed = max(seed, waveRing2 * 0.92);
+    }
+  }
+
+  // Subtle aperiodic symmetry breaking
+  float jitter = (n1 * 0.65 + n2 * 0.35);
+  float seeded = smoothstep(0.32, 0.72, seed + (jitter - 0.45) * 0.24);
+  float uVal = mix(1.0, 0.42 + 0.14 * n1, seeded);
+  float vVal = seeded * (0.36 + 0.22 * jitter);
+
+  oc = packUV(vec2(uVal, vVal));
+}`;
+
+  const FS_SIM = `#version 300 es
+precision highp float;
+precision highp int;
+out vec4 oc;
+
+uniform sampler2D uSim;
+uniform ivec2 uSimSize;
+uniform float uF;
+uniform float uK;
+uniform vec2 uBrushA;
+uniform vec2 uBrushB;
+uniform vec4 uBrushParams; // x: radiusTexels, y: strength, z: isBurst, w: seedPhase
+${PACK_HELPERS}
+
+ivec2 wrapC(ivec2 p, ivec2 sz) {
+  return ((p % sz) + sz) % sz;
+}
+
+vec2 sampleUV(ivec2 p) {
+  return unpackUV(texelFetch(uSim, wrapC(p, uSimSize), 0));
+}
+
+float distToSeg(vec2 p, vec2 a, vec2 b) {
+  vec2 ab = b - a;
+  float len2 = dot(ab, ab);
+  if (len2 < 0.0001) return length(p - a);
+  float t = clamp(dot(p - a, ab) / len2, 0.0, 1.0);
+  return length(p - (a + ab * t));
+}
+
+void main() {
+  ivec2 p = ivec2(gl_FragCoord.xy);
+  vec2 c = sampleUV(p);
+
+  // 9-point isotropic Laplacian (-1.0 center, 0.20 cardinal, 0.05 diagonal)
+  vec2 lap = -c
+    + 0.20 * (
+      sampleUV(p + ivec2( 1,  0)) +
+      sampleUV(p + ivec2(-1,  0)) +
+      sampleUV(p + ivec2( 0,  1)) +
+      sampleUV(p + ivec2( 0, -1))
+    )
+    + 0.05 * (
+      sampleUV(p + ivec2( 1,  1)) +
+      sampleUV(p + ivec2(-1,  1)) +
+      sampleUV(p + ivec2( 1, -1)) +
+      sampleUV(p + ivec2(-1, -1))
+    );
+
+  // Gentle spatial organic modulation so large colonies stay lively & asymmetric
+  vec2 uv = (vec2(p) + 0.5) / vec2(uSimSize);
+  float F = uF + 0.0012 * sin(uv.x * 6.28318 + uv.y * 3.14159);
+  float k = uK;
+
+  float uvv = c.x * c.y * c.y;
+  float uNext = clamp(c.x + (1.0 * lap.x - uvv + F * (1.0 - c.x)), 0.0, 1.0);
+  float vNext = clamp(c.y + (0.5 * lap.y + uvv - (F + k) * c.y), 0.0, 1.0);
+
+  // Interactive chemical brush injection
+  if (uBrushParams.y > 0.001) {
+    vec2 fp = vec2(p) + 0.5;
+    float r = max(uBrushParams.x, 1.5);
+    float d = distToSeg(fp, uBrushA, uBrushB);
+    float mask = smoothstep(r, r * 0.15, d);
+
+    if (uBrushParams.z > 0.5) {
+      // Click bloom rosette: central seed + 5 dividing radial petals
+      for (int i = 0; i < 5; i++) {
+        float a = float(i) * 1.256637 + uBrushParams.w;
+        vec2 off = vec2(cos(a), sin(a)) * (r * 0.92);
+        float dp = length(fp - (uBrushB + off));
+        mask = max(mask, smoothstep(r * 0.62, r * 0.10, dp));
+      }
+    }
+
+    if (mask > 0.001) {
+      float str = clamp(mask * uBrushParams.y, 0.0, 1.0);
+      vNext = max(vNext, mix(vNext, 0.68, str));
+      uNext = min(uNext, mix(uNext, 0.30, str));
+    }
+  }
+
+  oc = packUV(vec2(uNext, vNext));
+}`;
+
+  const FS_SCENE = `#version 300 es
+precision highp float;
+precision highp int;
+out vec4 oc;
+
+uniform sampler2D uSim;
+uniform ivec2 uSimSize;
+uniform ivec2 uGrid;
+uniform float uCell;
+uniform float uTime;
+uniform vec3 uPal[6];
+uniform int uIsLight;
+uniform int uDimN;
+uniform vec4 uDim[8];
+${PACK_HELPERS}
+
+ivec2 wrapC(ivec2 p, ivec2 sz) {
+  return ((p % sz) + sz) % sz;
+}
+
+vec2 fetchUV(ivec2 p) {
+  return unpackUV(texelFetch(uSim, wrapC(p, uSimSize), 0));
+}
+
+// Artifact-free manual bilinear sample (works identically on RGBA16F and 16-bit RGBA8)
+vec2 sampleBilinear(vec2 uv) {
+  vec2 pos = uv * vec2(uSimSize) - 0.5;
+  vec2 fl = floor(pos);
+  vec2 fr = pos - fl;
+  ivec2 i0 = ivec2(fl);
+  vec2 a = fetchUV(i0);
+  vec2 b = fetchUV(i0 + ivec2(1, 0));
+  vec2 c = fetchUV(i0 + ivec2(0, 1));
+  vec2 d = fetchUV(i0 + ivec2(1, 1));
+  return mix(mix(a, b, fr.x), mix(c, d, fr.x), fr.y);
+}
+
+void main() {
+  ivec2 ic = ivec2(gl_FragCoord.xy);
+  vec2 P = (vec2(ic) + 0.5) * uCell; // Top-down CSS px
+  vec2 uv = (vec2(ic) + 0.5) / vec2(uGrid);
+
+  vec2 texel = 1.0 / vec2(uSimSize);
+  vec2 uvCenter = sampleBilinear(uv);
+  float U = uvCenter.x;
+  float V = uvCenter.y;
+
+  // Central-difference gradient & Laplacian curvature for biological membrane shading
+  float vL = sampleBilinear(uv - vec2(texel.x, 0.0)).y;
+  float vR = sampleBilinear(uv + vec2(texel.x, 0.0)).y;
+  float vU = sampleBilinear(uv - vec2(0.0, texel.y)).y;
+  float vD = sampleBilinear(uv + vec2(0.0, texel.y)).y;
+  vec2 gradV = vec2(vR - vL, vD - vU);
+  float edge = clamp(length(gradV) * 5.2, 0.0, 1.0);
+  float lapV = (vL + vR + vU + vD) * 0.25 - V;
+  float crest = clamp(-lapV * 7.5, 0.0, 1.0);
+
+  // [data-dim] legibility thinning behind editorial title & hints
+  float dim = 0.0;
+  for (int i = 0; i < 8; i++) {
+    if (i >= uDimN) break;
+    vec4 r = uDim[i];
+    vec2 a = max(max(r.xy - P, P - r.zw), 0.0);
+    dim = max(dim, exp(-dot(a, a) * (1.0 / 3800.0)));
+  }
+
+  // Normalized biological activity & polychromatic ramp position
+  float vNorm = clamp((V - 0.025) / 0.36, 0.0, 1.0);
+  float uDepl = clamp((0.88 - U) / 0.58, 0.0, 1.0);
+  float activity = clamp(max(vNorm, edge * 0.72), 0.0, 1.0);
+  activity *= (1.0 - 0.82 * dim);
+
+  vec3 col;
+  float density;
+
+  if (uIsLight == 0) {
+    // Dark-ground polychromatic biological shading:
+    // Outer halo -> Electric membrane (stop 2) -> Vivid coral/amber/lime body (stop 3)
+    // -> Active ridge crest (stop 4) -> Luminous mitotic core (stop 5)
+    float zone = clamp(
+      vNorm * 3.15 +
+      edge * 1.15 +
+      crest * 1.25 +
+      uDepl * 0.45,
+      0.0, 5.0
+    );
+    // Boost outer membrane hue separation so edge filaments glow brightly in stop 2
+    float membraneMask = smoothstep(0.04, 0.22, edge) * (1.0 - smoothstep(0.32, 0.62, vNorm));
+    zone = mix(zone, 2.05 + 0.35 * sin(uv.x * 12.0 + uv.y * 9.0 + uTime * 0.35), membraneMask * 0.62);
+    zone *= (1.0 - 0.68 * dim);
+
+    int idx = clamp(int(floor(zone)), 0, 4);
+    float frac = clamp(zone - float(idx), 0.0, 1.0);
+    col = mix(uPal[idx], uPal[idx + 1], frac);
+
+    // Clean void floor where biological activity is absent
+    float floorMask = smoothstep(0.035, 0.14, activity);
+    col = mix(uPal[0], col, floorMask);
+    density = clamp(activity * 0.88 + crest * 0.35 + edge * 0.22, 0.0, 1.0) * floorMask;
+  } else {
+    // Acid Risograph Paper: two-plate Cobalt + Vermilion ink with 1-texel print registration
+    // shift and bold Charcoal overprint where dense cores intersect!
+    vec2 shift = texel * vec2(1.15, -0.85);
+    float vPlateB = sampleBilinear(uv + shift).y;
+    float vPlateR = sampleBilinear(uv - shift * 0.75).y;
+
+    float cobaltInk = smoothstep(0.05, 0.24, max(vPlateB, edge * 0.48)) * (1.0 - 0.72 * dim);
+    float vermInk   = smoothstep(0.11, 0.33, vPlateR + crest * 0.16) * (1.0 - 0.72 * dim);
+    float overprint = smoothstep(0.24, 0.44, V + crest * 0.22) * cobaltInk * vermInk;
+
+    // Subtle paper grain / halo ring
+    float halo = smoothstep(0.025, 0.09, V + edge * 0.22) * (1.0 - 0.72 * dim);
+
+    col = uPal[0]; // Clean warm cream paper #F6F1E7
+    col = mix(col, uPal[1], halo * 0.48);
+    col = mix(col, uPal[2], cobaltInk * 0.92);       // Bold Cobalt #1B5BFF
+    col = mix(col, uPal[3], vermInk * 0.96);         // Vivid Vermilion #F03A2F
+    col = mix(col, uPal[5], overprint * 0.95);       // Crisp Charcoal #18181D core overprint
+
+    density = clamp(max(cobaltInk * 0.78, vermInk * 0.94) + overprint * 0.25, 0.0, 1.0);
+  }
+
+  oc = vec4(col, density);
+}`;
+
+  const FS_GLYPH = `#version 300 es
+precision highp float;
+precision highp int;
+out vec4 oc;
+
+uniform sampler2D uScene;
+uniform ivec2 uGrid;
+uniform int uIsLight;
+
+const int BAYER[16] = int[16](0,8,2,10, 12,4,14,6, 3,11,1,9, 15,7,13,5);
+
+void main() {
+  ivec2 gc = ivec2(gl_FragCoord.xy);
+  ivec2 c0 = gc * ivec2(6, 9);
+
+  float sumM = 0.0;
+  float maxM = 0.0;
+  vec3 colSum = vec3(0.0);
+  float colW = 0.0;
+  vec3 peakRgb = vec3(0.0);
+
+  for (int dy = 0; dy < 9; dy++) {
+    int y = min(c0.y + dy, uGrid.y - 1);
+    for (int dx = 0; dx < 6; dx++) {
+      int x = min(c0.x + dx, uGrid.x - 1);
+      vec4 s = texelFetch(uScene, ivec2(x, y), 0);
+      float d = s.a;
+      sumM += d;
+      if (d > maxM) {
+        maxM = d;
+        peakRgb = s.rgb;
+      }
+      // Weight tile RGB toward vibrant active pixels so filaments never wash into ground
+      float w = d * d + 0.0005;
+      colSum += s.rgb * w;
+      colW += w;
+    }
+  }
+
+  float m = sumM / 54.0;
+  vec3 tileRgb = colSum / max(colW, 0.0001);
+  // Subtle blend toward peak RGB on crisp coral crests for luminous pop
+  tileRgb = mix(tileRgb, peakRgb, smoothstep(0.25, 0.85, maxM) * 0.35);
+
+  float th = (float(BAYER[((gc.y & 3) << 2) | (gc.x & 3)]) + 0.5) / 16.0;
+  float floorCut = (uIsLight == 1) ? 0.06 : 0.08;
+
+  // Ramp indices into GLYPH_RAMP[13]: " .,:~-=+o*#%@"
+  int gi = 0;
+  if (m > floorCut || maxM > 0.42) {
+    float shaped = pow(clamp((m - floorCut * 0.5) / (1.0 - floorCut * 0.5), 0.0, 1.0), 0.78);
+    float idxF = shaped * 11.4 + (th - 0.5) * 1.15;
+    gi = clamp(int(floor(idxF + 0.5)), 1, 12);
+    // Preserve isolated bright tips / mitotic sparks instead of averaging away
+    if ((maxM - m) > 0.24 && maxM > 0.52) {
+      gi = max(gi, (maxM > 0.78) ? 9 : 7); // '*' or '+'
+      tileRgb = mix(tileRgb, peakRgb, 0.55);
+    }
+  }
+
+  oc = vec4(tileRgb, float(gi) / 255.0);
+}`;
+
+  const FS_BLIT = `#version 300 es
+precision highp float;
+precision highp int;
+out vec4 oc;
+
+uniform sampler2D uScene;
+uniform sampler2D uGly;
+uniform ivec2 uGrid;
+uniform ivec2 uGlyGrid;
+uniform int uCellDev;
+uniform int uTop;
+uniform float uCell;
+uniform int uMode; // 0: True-Color ASCII, 1: Bayer 4x4 + Color ASCII Lens, 2: Color 2x4 Braille
+uniform vec3 uPal[6];
+uniform int uIsLight;
+uniform vec4 uLens; // xy: CSS px center, z: CSS px radius, w: active
+
+const int BAYER[16] = int[16](0,8,2,10, 12,4,14,6, 3,11,1,9, 15,7,13,5);
+
+// 13-step organic bitmap ramp packed from pack-glyphs.mjs:
+// 0:' ', 1:'.', 2:',', 3:':', 4:'~', 5:'-', 6:'=', 7:'+', 8:'o', 9:'*', 10:'#', 11:'%', 12:'@'
+const uint GLYPH_RAMP[26] = uint[26](
+  0u, 0u,             /* " " */
+  0u, 128u,           /* "." */
+  0u, 4232u,          /* "," */
+  128u, 128u,         /* ":" */
+  310u, 0u,           /* "~" */
+  14u, 0u,            /* "-" */
+  992u, 31744u,       /* "=" */
+  4255u, 4224u,       /* "+" */
+  465u, 17856u,       /* "o" */
+  4782u, 21632u,      /* "*" */
+  338922u, 32074u,    /* "#" */
+  847052u, 28256u,    /* "%" */
+  476917u, 24078u     /* "@" */
+);
+
+bool glyphPixel(int gi, ivec2 q) {
+  if (gi <= 0 || q.x >= 5 || q.y >= 7) return false;
+  int b = q.y * 5 + q.x;
+  uint w = (b < 20) ? GLYPH_RAMP[gi * 2] : GLYPH_RAMP[gi * 2 + 1];
+  uint sh = uint((b < 20) ? (19 - b) : (34 - b));
+  return ((w >> sh) & 1u) != 0u;
+}
+
+vec3 renderAsciiCell(ivec2 c) {
+  ivec2 gc = min(c / ivec2(6, 9), uGlyGrid - 1);
+  ivec2 q = c - gc * ivec2(6, 9);
+  vec4 g = texelFetch(uGly, gc, 0);
+  int gi = clamp(int(g.a * 255.0 + 0.5), 0, 12);
+  bool lit = glyphPixel(gi, q);
+  vec3 ground = uPal[0];
+  if (gi == 0) return ground;
+  if (uIsLight == 0) {
+    vec3 litCol = clamp(g.rgb * 1.08 + vec3(0.02), 0.0, 1.0);
+    vec3 unlitCol = mix(ground, g.rgb * 0.24, 0.22);
+    return lit ? litCol : unlitCol;
+  } else {
+    // Acid Risograph Paper: crisp bold ink over pure warm cream ground
+    return lit ? g.rgb : ground;
+  }
+}
+
+vec3 renderBayerCell(ivec2 c) {
+  vec4 s = texelFetch(uScene, min(c, uGrid - 1), 0);
+  float th = (float(BAYER[((c.y & 3) << 2) | (c.x & 3)]) + 0.5) / 16.0;
+
+  if (uIsLight == 0) {
+    // Snap smoothly through the 6-stop polychromatic palette via ordered Bayer 4x4
+    float d = s.a;
+    if (d < 0.035) return uPal[0];
+    // Find nearest two palette stops to s.rgb for sharp woodblock color quantization
+    int best0 = 0, best1 = 1;
+    float d0 = 99.0, d1 = 99.0;
+    for (int i = 0; i < 6; i++) {
+      vec3 diff = s.rgb - uPal[i];
+      float dist = dot(diff, diff);
+      if (dist < d0) {
+        d1 = d0; best1 = best0;
+        d0 = dist; best0 = i;
+      } else if (dist < d1) {
+        d1 = dist; best1 = i;
+      }
+    }
+    float t = d0 / max(d0 + d1, 0.0001);
+    return (t > th * 0.92) ? uPal[best1] : uPal[best0];
+  } else {
+    // Crisp Risograph 4-ink Bayer halftoning (Paper, Cobalt, Vermilion, Charcoal)
+    if (s.a < 0.04) return uPal[0];
+    int picks[4] = int[4](0, 2, 3, 5);
+    int b0 = 0, b1 = 2;
+    float d0 = 99.0, d1 = 99.0;
+    for (int i = 0; i < 4; i++) {
+      vec3 diff = s.rgb - uPal[picks[i]];
+      float dist = dot(diff, diff);
+      if (dist < d0) {
+        d1 = d0; b1 = b0;
+        d0 = dist; b0 = picks[i];
+      } else if (dist < d1) {
+        d1 = dist; b1 = picks[i];
+      }
+    }
+    float t = d0 / max(d0 + d1, 0.0001);
+    return (t > th * 0.90) ? uPal[b1] : uPal[b0];
+  }
+}
+
+vec3 renderBrailleCell(ivec2 c) {
+  ivec2 tile = ivec2(5, 9);
+  ivec2 bc = c / tile;
+  ivec2 q = c - bc * tile;
+  bool isDot = ((q.x == 1 || q.x == 3) && (q.y == 1 || q.y == 3 || q.y == 5 || q.y == 7));
+  vec3 bg = uPal[0];
+  if (!isDot) return bg;
+
+  int bx = (q.x == 1) ? 0 : 1;
+  int by = (q.y - 1) / 2;
+  ivec2 subOrigin = bc * tile + ivec2(bx * 2 + 1, by * 2 + 1);
+  float val = 0.0;
+  float pk = 0.0;
+  vec3 colSum = vec3(0.0);
+  float colW = 0.0;
+  for (int dy = 0; dy < 2; dy++) {
+    for (int dx = 0; dx < 2; dx++) {
+      vec4 s = texelFetch(uScene, min(subOrigin + ivec2(dx, dy), uGrid - 1), 0);
+      val += s.a;
+      pk = max(pk, s.a);
+      float w = s.a * s.a + 0.004;
+      colSum += s.rgb * w;
+      colW += w;
+    }
+  }
+  val = max(val * 0.25, pk * 0.74);
+  ivec2 gSub = ivec2(bc.x * 2 + bx, bc.y * 4 + by);
+  float th = (float(BAYER[((gSub.y & 3) << 2) | (gSub.x & 3)]) + 0.5) / 16.0;
+  float cut = (uIsLight == 1) ? 0.045 : 0.05;
+  bool lit = (val > cut) && (pow(val, 0.62) > th * 0.76);
+  vec3 dotRgb = colSum / max(colW, 0.0001);
+  if (uIsLight == 0) {
+    dotRgb = clamp(dotRgb * 1.24 + vec3(0.05), 0.0, 1.0);
+  } else {
+    dotRgb = mix(dotRgb, dotRgb * 0.86, 0.32);
+  }
+  return lit ? dotRgb : bg;
+}
+
+void main() {
+  ivec2 f = ivec2(gl_FragCoord.xy);
+  // Flip Y once here from WebGL bottom-up screen space into top-down cell space
+  ivec2 c = ivec2(f.x / uCellDev, (uTop - 1 - f.y) / uCellDev);
+  c = clamp(c, ivec2(0), uGrid - 1);
+
+  vec3 outCol;
+  if (uMode == 0) {
+    outCol = renderAsciiCell(c);
+  } else if (uMode == 1) {
+    vec2 P = (vec2(c) + 0.5) * uCell;
+    float dist = length(P - uLens.xy);
+    float th = (float(BAYER[((c.y & 3) << 2) | (c.x & 3)]) + 0.5) / 16.0;
+    float rad = uLens.z;
+    float rimWidth = max(uCell * 2.2, 3.0);
+    if (uLens.w > 0.5 && dist < rad - rimWidth * (th - 0.5)) {
+      outCol = renderAsciiCell(c);
+    } else if (uLens.w > 0.5 && abs(dist - rad) < rimWidth * 0.85) {
+      vec3 rimCol = (uIsLight == 1) ? uPal[2] : uPal[5];
+      vec3 baseCol = renderBayerCell(c);
+      outCol = mix(baseCol, rimCol, 0.72);
+    } else {
+      outCol = renderBayerCell(c);
+    }
+  } else {
+    outCol = renderBrailleCell(c);
+  }
+
+  oc = vec4(outCol, 1.0);
+}`;
+
+  // ---------- WebGL2 Engine ----------
+  function compileShader(gl, type, src, label) {
+    const sh = gl.createShader(type);
+    gl.shaderSource(sh, src);
+    gl.compileShader(sh);
+    if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) {
+      const log = gl.getShaderInfoLog(sh) || 'Unknown compile error';
+      gl.deleteShader(sh);
+      throw new Error(`Shader ${label} compile error: ${log}`);
+    }
+    return sh;
+  }
+
+  function createProgram(gl, vsSrc, fsSrc, label) {
+    const vs = compileShader(gl, gl.VERTEX_SHADER, vsSrc, label + '.vs');
+    const fs = compileShader(gl, gl.FRAGMENT_SHADER, fsSrc, label + '.fs');
+    const prog = gl.createProgram();
+    gl.attachShader(prog, vs);
+    gl.attachShader(prog, fs);
+    gl.linkProgram(prog);
+    gl.deleteShader(vs);
+    gl.deleteShader(fs);
+    if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
+      const log = gl.getProgramInfoLog(prog) || 'Unknown link error';
+      gl.deleteProgram(prog);
+      throw new Error(`Program ${label} link error: ${log}`);
+    }
+    return prog;
+  }
+
+  function createFBO(gl, w, h, internalFormat, format, type, wrap) {
+    const tex = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, tex);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, wrap);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, wrap);
+    gl.texImage2D(gl.TEXTURE_2D, 0, internalFormat, w, h, 0, format, type, null);
+
+    const fb = gl.createFramebuffer();
+    gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, tex, 0);
+    const status = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    gl.bindTexture(gl.TEXTURE_2D, null);
+    return { tex, fb, w, h, complete: status === gl.FRAMEBUFFER_COMPLETE };
+  }
+
+  function destroyFBO(gl, fbo) {
+    if (!fbo) return;
+    if (fbo.fb) gl.deleteFramebuffer(fbo.fb);
+    if (fbo.tex) gl.deleteTexture(fbo.tex);
+  }
+
+  function initWebGL2(canvas) {
+    const gl = canvas.getContext('webgl2', {
+      alpha: false,
+      antialias: false,
+      depth: false,
+      stencil: false,
+      powerPreference: 'high-performance',
+      preserveDrawingBuffer: false,
+    });
+    if (!gl) return null;
+
+    const vao = gl.createVertexArray();
+    gl.bindVertexArray(vao);
+    gl.disable(gl.BLEND);
+    gl.disable(gl.DEPTH_TEST);
+
+    const progSeed = createProgram(gl, VS_FULL, FS_SEED, 'SEED');
+    const progSim = createProgram(gl, VS_FULL, FS_SIM, 'SIM');
+    const progScene = createProgram(gl, VS_FULL, FS_SCENE, 'SCENE');
+    const progGlyph = createProgram(gl, VS_FULL, FS_GLYPH, 'GLYPH');
+    const progBlit = createProgram(gl, VS_FULL, FS_BLIT, 'BLIT');
+
+    const getUniforms = (p, names) => {
+      const map = {};
+      for (const n of names) map[n] = gl.getUniformLocation(p, n);
+      return map;
+    };
+
+    const uSeed = getUniforms(progSeed, ['uSimSize', 'uSeedStyle', 'uNonce', 'uPacked8']);
+    const uSim = getUniforms(progSim, ['uSim', 'uSimSize', 'uF', 'uK', 'uBrushA', 'uBrushB', 'uBrushParams', 'uPacked8']);
+    const uScene = getUniforms(progScene, ['uSim', 'uSimSize', 'uGrid', 'uCell', 'uTime', 'uPal', 'uIsLight', 'uDimN', 'uDim', 'uPacked8']);
+    const uGlyph = getUniforms(progGlyph, ['uScene', 'uGrid', 'uIsLight']);
+    const uBlit = getUniforms(progBlit, ['uScene', 'uGly', 'uGrid', 'uGlyGrid', 'uCellDev', 'uTop', 'uCell', 'uMode', 'uPal', 'uIsLight', 'uLens']);
+
+    // Check RGBA16F render target support; automatically fall back to 16-bit-packed RGBA8
+    let useFloat16 = false;
+    const extFloat = gl.getExtension('EXT_color_buffer_float');
+    if (extFloat) {
+      const probe = createFBO(gl, 8, 8, gl.RGBA16F, gl.RGBA, gl.HALF_FLOAT, gl.REPEAT);
+      useFloat16 = probe.complete;
+      destroyFBO(gl, probe);
+    }
+
+    let simA = null, simB = null, sceneFbo = null, glyFbo = null;
+    let simIdx = 0;
+
+    function allocSimFBOs() {
+      destroyFBO(gl, simA);
+      destroyFBO(gl, simB);
+      const ifmt = useFloat16 ? gl.RGBA16F : gl.RGBA8;
+      const type = useFloat16 ? gl.HALF_FLOAT : gl.UNSIGNED_BYTE;
+      simA = createFBO(gl, state.simW, state.simH, ifmt, gl.RGBA, type, gl.REPEAT);
+      simB = createFBO(gl, state.simW, state.simH, ifmt, gl.RGBA, type, gl.REPEAT);
+      if (!simA.complete || !simB.complete) {
+        destroyFBO(gl, simA);
+        destroyFBO(gl, simB);
+        useFloat16 = false;
+        simA = createFBO(gl, state.simW, state.simH, gl.RGBA8, gl.RGBA, gl.UNSIGNED_BYTE, gl.REPEAT);
+        simB = createFBO(gl, state.simW, state.simH, gl.RGBA8, gl.RGBA, gl.UNSIGNED_BYTE, gl.REPEAT);
+      }
+      simIdx = 0;
+    }
+
+    function allocScreenFBOs() {
+      destroyFBO(gl, sceneFbo);
+      destroyFBO(gl, glyFbo);
+      sceneFbo = createFBO(gl, state.gw, state.gh, gl.RGBA8, gl.RGBA, gl.UNSIGNED_BYTE, gl.CLAMP_TO_EDGE);
+      glyFbo = createFBO(gl, state.lw, state.lh, gl.RGBA8, gl.RGBA, gl.UNSIGNED_BYTE, gl.CLAMP_TO_EDGE);
+    }
+
+    function stepOnce(preset, brush) {
+      const src = simIdx === 0 ? simA : simB;
+      const dst = simIdx === 0 ? simB : simA;
+      gl.bindFramebuffer(gl.FRAMEBUFFER, dst.fb);
+      gl.viewport(0, 0, state.simW, state.simH);
+      gl.useProgram(progSim);
+      gl.activeTexture(gl.TEXTURE0);
+      gl.bindTexture(gl.TEXTURE_2D, src.tex);
+      gl.uniform1i(uSim.uSim, 0);
+      gl.uniform2i(uSim.uSimSize, state.simW, state.simH);
+      gl.uniform1f(uSim.uF, preset.F);
+      gl.uniform1f(uSim.uK, preset.k);
+      gl.uniform1i(uSim.uPacked8, useFloat16 ? 0 : 1);
+      if (brush) {
+        gl.uniform2f(uSim.uBrushA, brush.ax, brush.ay);
+        gl.uniform2f(uSim.uBrushB, brush.bx, brush.by);
+        gl.uniform4f(uSim.uBrushParams, brush.radius, brush.strength, brush.burst ? 1.0 : 0.0, brush.phase || 0.0);
+      } else {
+        gl.uniform2f(uSim.uBrushA, 0, 0);
+        gl.uniform2f(uSim.uBrushB, 0, 0);
+        gl.uniform4f(uSim.uBrushParams, 0, 0, 0, 0);
+      }
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
+      simIdx = 1 - simIdx;
+    }
+
+    function seedAndPrewarm() {
+      const preset = PRESETS[state.presetKey];
+      gl.bindVertexArray(vao);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, simA.fb);
+      gl.viewport(0, 0, state.simW, state.simH);
+      gl.useProgram(progSeed);
+      gl.uniform2i(uSeed.uSimSize, state.simW, state.simH);
+      gl.uniform1i(uSeed.uSeedStyle, preset.seedStyle);
+      gl.uniform1f(uSeed.uNonce, state.seedNonce);
+      gl.uniform1i(uSeed.uPacked8, useFloat16 ? 0 : 1);
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
+      simIdx = 0;
+
+      for (let i = 0; i < preset.prewarm; i++) {
+        stepOnce(preset, null);
+      }
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    }
+
+    function resize(reseedIfChanged = false) {
+      const prevW = state.simW, prevH = state.simH;
+      computeLayout(canvas);
+      allocScreenFBOs();
+      if (!simA || !simB || (reseedIfChanged && (Math.abs(prevW - state.simW) > 24 || Math.abs(prevH - state.simH) > 24))) {
+        allocSimFBOs();
+        seedAndPrewarm();
+      }
+    }
+
+    function stepSimulation() {
+      const preset = PRESETS[state.presetKey];
+      gl.bindVertexArray(vao);
+      const pendingBrush = state.brushQueue.length > 0 ? state.brushQueue.shift() : null;
+      const steps = preset.substeps;
+      for (let i = 0; i < steps; i++) {
+        stepOnce(preset, i === 0 ? pendingBrush : null);
+      }
+    }
+
+    function renderFrame() {
+      const pal = PALETTES[state.paletteKey];
+      const curSim = simIdx === 0 ? simA : simB;
+      gl.bindVertexArray(vao);
+
+      // Pass 2: SCENE (top-down gw x gh)
+      gl.bindFramebuffer(gl.FRAMEBUFFER, sceneFbo.fb);
+      gl.viewport(0, 0, state.gw, state.gh);
+      gl.useProgram(progScene);
+      gl.activeTexture(gl.TEXTURE0);
+      gl.bindTexture(gl.TEXTURE_2D, curSim.tex);
+      gl.uniform1i(uScene.uSim, 0);
+      gl.uniform2i(uScene.uSimSize, state.simW, state.simH);
+      gl.uniform2i(uScene.uGrid, state.gw, state.gh);
+      gl.uniform1f(uScene.uCell, state.cell);
+      gl.uniform1f(uScene.uTime, state.time);
+      gl.uniform3fv(uScene.uPal, pal.flat01);
+      gl.uniform1i(uScene.uIsLight, pal.isLight ? 1 : 0);
+      gl.uniform1i(uScene.uDimN, state.dimCount);
+      gl.uniform4fv(uScene.uDim, state.dimRects);
+      gl.uniform1i(uScene.uPacked8, useFloat16 ? 0 : 1);
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
+
+      // Pass 3: GLYPHPASS (top-down lw x lh) — needed for ASCII and Bayer+Lens modes
+      const modeInt = MODES[state.modeKey];
+      if (modeInt === 0 || modeInt === 1) {
+        gl.bindFramebuffer(gl.FRAMEBUFFER, glyFbo.fb);
+        gl.viewport(0, 0, state.lw, state.lh);
+        gl.useProgram(progGlyph);
+        gl.activeTexture(gl.TEXTURE0);
+        gl.bindTexture(gl.TEXTURE_2D, sceneFbo.tex);
+        gl.uniform1i(uGlyph.uScene, 0);
+        gl.uniform2i(uGlyph.uGrid, state.gw, state.gh);
+        gl.uniform1i(uGlyph.uIsLight, pal.isLight ? 1 : 0);
+        gl.drawArrays(gl.TRIANGLES, 0, 3);
+      }
+
+      // Pass 4: BLIT -> Screen (single Y flip)
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+      gl.viewport(0, 0, state.dw, state.dh);
+      gl.useProgram(progBlit);
+      gl.activeTexture(gl.TEXTURE0);
+      gl.bindTexture(gl.TEXTURE_2D, sceneFbo.tex);
+      gl.uniform1i(uBlit.uScene, 0);
+      gl.activeTexture(gl.TEXTURE1);
+      gl.bindTexture(gl.TEXTURE_2D, glyFbo.tex);
+      gl.uniform1i(uBlit.uGly, 1);
+      gl.uniform2i(uBlit.uGrid, state.gw, state.gh);
+      gl.uniform2i(uBlit.uGlyGrid, state.lw, state.lh);
+      gl.uniform1i(uBlit.uCellDev, state.cellDev);
+      gl.uniform1i(uBlit.uTop, state.dh);
+      gl.uniform1f(uBlit.uCell, state.cell);
+      gl.uniform1i(uBlit.uMode, modeInt);
+      gl.uniform3fv(uBlit.uPal, pal.flat01);
+      gl.uniform1i(uBlit.uIsLight, pal.isLight ? 1 : 0);
+      const lensRad = Math.min(state.vw, state.vh) * (state.vw < 760 ? 0.24 : 0.19);
+      gl.uniform4f(uBlit.uLens, state.lensX, state.lensY, lensRad, modeInt === 1 ? 1.0 : 0.0);
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
+    }
+
+    resize(true);
+    return {
+      mode: 'webgl2',
+      precision: useFloat16 ? 'RGBA16F' : 'RGBA8-16bit',
+      resize,
+      seedAndPrewarm,
+      stepSimulation,
+      renderFrame,
+      destroy() {
+        destroyFBO(gl, simA);
+        destroyFBO(gl, simB);
+        destroyFBO(gl, sceneFbo);
+        destroyFBO(gl, glyFbo);
+        gl.deleteProgram(progSeed);
+        gl.deleteProgram(progSim);
+        gl.deleteProgram(progScene);
+        gl.deleteProgram(progGlyph);
+        gl.deleteProgram(progBlit);
+        gl.deleteVertexArray(vao);
+      },
+    };
+  }
+
+  // ---------- Safe Cloned-Canvas 2D CPU PDE Fallback ----------
+  function init2DFallback(canvas) {
+    const ctx = canvas.getContext('2d', { alpha: false });
+    const BAYER = [0,8,2,10, 12,4,14,6, 3,11,1,9, 15,7,13,5];
+    const RAMP = ' .,:~-=+o*#%@';
+    let sw = 128, sh = 80;
+    let U0 = null, V0 = null, U1 = null, V1 = null;
+
+    function alloc() {
+      const aspect = state.vw / state.vh;
+      sh = Math.max(64, Math.min(116, Math.round(Math.sqrt(9600 / aspect))));
+      sw = Math.max(64, Math.min(144, Math.round(sh * aspect)));
+      state.simW = sw;
+      state.simH = sh;
+      U0 = new Float32Array(sw * sh);
+      V0 = new Float32Array(sw * sh);
+      U1 = new Float32Array(sw * sh);
+      V1 = new Float32Array(sw * sh);
+    }
+
+    function stepOnce2D(preset, brush) {
+      const F = preset.F, k = preset.k;
+      for (let y = 0; y < sh; y++) {
+        const ym = (y - 1 + sh) % sh, yp = (y + 1) % sh;
+        const row = y * sw, rowM = ym * sw, rowP = yp * sw;
+        for (let x = 0; x < sw; x++) {
+          const xm = (x - 1 + sw) % sw, xp = (x + 1) % sw;
+          const idx = row + x;
+          const u = U0[idx], v = V0[idx];
+          const lapU = -u
+            + 0.20 * (U0[row + xp] + U0[row + xm] + U0[rowP + x] + U0[rowM + x])
+            + 0.05 * (U0[rowP + xp] + U0[rowP + xm] + U0[rowM + xp] + U0[rowM + xm]);
+          const lapV = -v
+            + 0.20 * (V0[row + xp] + V0[row + xm] + V0[rowP + x] + V0[rowM + x])
+            + 0.05 * (V0[rowP + xp] + V0[rowP + xm] + V0[rowM + xp] + V0[rowM + xm]);
+          const uvv = u * v * v;
+          let un = u + (lapU - uvv + F * (1 - u));
+          let vn = v + (0.5 * lapV + uvv - (F + k) * v);
+          if (brush) {
+            const dx = x + 0.5 - brush.bx, dy = y + 0.5 - brush.by;
+            const d = Math.hypot(dx, dy);
+            if (d < brush.radius) {
+              const str = (1 - d / brush.radius) * brush.strength;
+              vn = Math.max(vn, vn + (0.68 - vn) * str);
+              un = Math.min(un, un + (0.30 - un) * str);
+            }
+          }
+          U1[idx] = un < 0 ? 0 : un > 1 ? 1 : un;
+          V1[idx] = vn < 0 ? 0 : vn > 1 ? 1 : vn;
+        }
+      }
+      const tU = U0; U0 = U1; U1 = tU;
+      const tV = V0; V0 = V1; V1 = tV;
+    }
+
+    function seedAndPrewarm() {
+      const preset = PRESETS[state.presetKey];
+      const aspect = sw / sh;
+      const baseR = Math.min(aspect, 1) * 0.24;
+      for (let y = 0; y < sh; y++) {
+        for (let x = 0; x < sw; x++) {
+          const uvx = (x + 0.5) / sw, uvy = (y + 0.5) / sh;
+          const px = (uvx - 0.52) * aspect, py = uvy - 0.5;
+          const r = Math.hypot(px, py);
+          const ang = Math.atan2(py, px);
+          let seed = Math.exp(-Math.pow((r - baseR * (1 + 0.14 * Math.sin(ang * 5 + state.seedNonce))) / 0.032, 2));
+          seed = Math.max(seed, Math.exp(-Math.pow(r / (baseR * 0.28), 2)));
+          for (let i = 0; i < 10; i++) {
+            const a = i * 2.39996 + state.seedNonce * 0.87;
+            const rr = Math.sqrt((i + 0.65) / 10) * 0.42;
+            const d = Math.hypot(px - Math.cos(a) * rr * aspect, py - Math.sin(a) * rr);
+            seed = Math.max(seed, Math.exp(-Math.pow(d / 0.034, 2)));
+          }
+          const idx = y * sw + x;
+          const active = seed > 0.42 ? 1 : 0;
+          U0[idx] = active ? 0.46 : 1.0;
+          V0[idx] = active ? 0.42 : 0.0;
+        }
+      }
+      for (let i = 0; i < 180; i++) stepOnce2D(preset, null);
+    }
+
+    function resize(reseedIfChanged = false) {
+      computeLayout(canvas);
+      if (!U0 || reseedIfChanged) {
+        alloc();
+        seedAndPrewarm();
+      }
+    }
+
+    function stepSimulation() {
+      const preset = PRESETS[state.presetKey];
+      const brush = state.brushQueue.length > 0 ? state.brushQueue.shift() : null;
+      for (let i = 0; i < 4; i++) stepOnce2D(preset, i === 0 ? brush : null);
+    }
+
+    function renderFrame() {
+      const pal = PALETTES[state.paletteKey];
+      const modeInt = MODES[state.modeKey];
+      ctx.fillStyle = pal.stops[0];
+      ctx.fillRect(0, 0, state.dw, state.dh);
+
+      const cols = Math.max(36, Math.round(state.vw / (state.vw < 760 ? 7 : 12)));
+      const cellW = state.dw / cols;
+      const cellH = cellW * 1.5;
+      const rows = Math.ceil(state.dh / cellH);
+      const fontSize = Math.max(8, Math.round(cellH * 0.92));
+      ctx.font = `${fontSize}px ui-monospace, Menlo, Consolas, monospace`;
+      ctx.textBaseline = 'top';
+
+      const buckets = Array.from({ length: 6 }, () => []);
+      for (let r = 0; r < rows; r++) {
+        const sy = Math.min(sh - 1, Math.floor((r + 0.5) / rows * sh));
+        for (let c = 0; c < cols; c++) {
+          const sx = Math.min(sw - 1, Math.floor((c + 0.5) / cols * sw));
+          const v = V0[sy * sw + sx];
+          if (v < 0.06) continue;
+          const th = (BAYER[((r & 3) << 2) | (c & 3)] + 0.5) / 16;
+          const stopIdx = Math.max(1, Math.min(5, Math.floor(v * 11 + th)));
+          if (modeInt === 2) {
+            let bits = 0;
+            const dotMap = [0x01, 0x08, 0x02, 0x10, 0x04, 0x20, 0x40, 0x80];
+            for (let by = 0; by < 4; by++) {
+              for (let bx = 0; bx < 2; bx++) {
+                const vx = Math.min(sw - 1, Math.floor(((c + bx * 0.5) / cols) * sw));
+                const vy = Math.min(sh - 1, Math.floor(((r + by * 0.25) / rows) * sh));
+                if (V0[vy * sw + vx] > 0.14 + th * 0.12) bits |= dotMap[by * 2 + bx];
+              }
+            }
+            if (bits) buckets[stopIdx].push([String.fromCharCode(0x2800 | bits), c * cellW, r * cellH]);
+          } else {
+            const gi = Math.max(1, Math.min(RAMP.length - 1, Math.floor(v * 26 + th)));
+            buckets[stopIdx].push([RAMP[gi], c * cellW, r * cellH]);
+          }
+        }
+      }
+      for (let i = 1; i < 6; i++) {
+        if (!buckets[i].length) continue;
+        ctx.fillStyle = pal.stops[i];
+        for (const [ch, x, y] of buckets[i]) ctx.fillText(ch, x, y);
+      }
+    }
+
+    resize(true);
+    return { mode: '2d', resize, seedAndPrewarm, stepSimulation, renderFrame, destroy() {} };
+  }
+
+  function initEngineWithFallback(canvasEl) {
+    let ctrl = null;
+    try {
+      ctrl = initWebGL2(canvasEl);
+    } catch (err) {
+      console.error('[ascii-animation] WebGL2 init failed, falling back to 2D:', err);
+      ctrl = null;
+    }
+    if (ctrl) return { ctrl, canvas: canvasEl };
+    const fresh = canvasEl.cloneNode(false);
+    canvasEl.replaceWith(fresh);
+    return { ctrl: init2DFallback(fresh), canvas: fresh };
+  }
+
+  // ---------- Boot & Controls ----------
+  let stageCanvas = document.getElementById('stage');
+  let engine = initEngineWithFallback(stageCanvas);
+  stageCanvas = engine.canvas;
+
+  const presetReadout = document.getElementById('preset-readout');
+
+  function syncDockUI() {
+    document.documentElement.dataset.palette = state.paletteKey;
+    document.documentElement.dataset.theme = PALETTES[state.paletteKey].isLight ? 'light' : 'dark';
+    presetReadout.textContent = PRESETS[state.presetKey].name;
+
+    document.querySelectorAll('[data-preset]').forEach((b) => {
+      b.setAttribute('aria-pressed', String(b.dataset.preset === state.presetKey));
+    });
+    document.querySelectorAll('[data-mode]').forEach((b) => {
+      b.setAttribute('aria-pressed', String(b.dataset.mode === state.modeKey));
+    });
+    document.querySelectorAll('[data-palette]').forEach((b) => {
+      b.setAttribute('aria-pressed', String(b.dataset.palette === state.paletteKey));
+    });
+  }
+
+  function setPreset(key) {
+    if (!PRESETS[key]) return;
+    state.presetKey = key;
+    state.seedNonce += 1.37;
+    syncDockUI();
+    engine.ctrl.seedAndPrewarm();
+    readDimRects();
+    engine.ctrl.renderFrame();
+  }
+
+  function setMode(key) {
+    if (!(key in MODES)) return;
+    state.modeKey = key;
+    syncDockUI();
+    readDimRects();
+    engine.ctrl.renderFrame();
+  }
+
+  function setPalette(key) {
+    if (!PALETTES[key]) return;
+    state.paletteKey = key;
+    syncDockUI();
+    readDimRects();
+    engine.ctrl.renderFrame();
+  }
+
+  function reseed() {
+    state.seedNonce += 1.618;
+    engine.ctrl.seedAndPrewarm();
+    readDimRects();
+    engine.ctrl.renderFrame();
+  }
+
+  function clientToSim(cx, cy) {
+    return {
+      x: Math.max(0, Math.min(state.simW, (cx / Math.max(1, state.vw)) * state.simW)),
+      y: Math.max(0, Math.min(state.simH, (cy / Math.max(1, state.vh)) * state.simH)),
+    };
+  }
+
+  function enqueueBrush(ax, ay, bx, by, radiusFrac, strength, burst) {
+    const a = clientToSim(ax, ay);
+    const b = clientToSim(bx, by);
+    const radius = Math.max(2.6, Math.min(state.simW, state.simH) * radiusFrac);
+    state.brushQueue.push({
+      ax: a.x,
+      ay: a.y,
+      bx: b.x,
+      by: b.y,
+      radius,
+      strength,
+      burst: !!burst,
+      phase: (state.time * 2.1 + bx * 0.03) % 6.28318,
+    });
+    if (state.brushQueue.length > 10) state.brushQueue.shift();
+  }
+
+  function bindCanvasEvents(c) {
+    c.addEventListener('pointerdown', (e) => {
+      if (e.target !== c) return;
+      state.ptrDown = true;
+      state.ptrActive = true;
+      state.ptrX = e.clientX;
+      state.ptrY = e.clientY;
+      state.ptrPrevX = e.clientX;
+      state.ptrPrevY = e.clientY;
+      enqueueBrush(e.clientX, e.clientY, e.clientX, e.clientY, 0.056, 1.0, true);
+      if (state.reducedMotion) {
+        engine.ctrl.stepSimulation();
+        engine.ctrl.renderFrame();
+      }
+    });
+
+    window.addEventListener('pointermove', (e) => {
+      const overDock = e.target && e.target.closest && e.target.closest('.dock-wrap');
+      const inInterior = e.clientX > 24 && e.clientY > 24 && e.clientY < state.vh - 76 && !overDock;
+      state.ptrX = e.clientX;
+      state.ptrY = e.clientY;
+      state.ptrActive = inInterior;
+
+      if (overDock) return;
+      if (state.ptrDown) {
+        enqueueBrush(state.ptrPrevX, state.ptrPrevY, e.clientX, e.clientY, 0.044, 0.98, false);
+      } else if (inInterior) {
+        const dist = Math.hypot(e.clientX - state.ptrPrevX, e.clientY - state.ptrPrevY);
+        if (dist > 2.5) {
+          enqueueBrush(state.ptrPrevX, state.ptrPrevY, e.clientX, e.clientY, 0.028, 0.72, false);
+        }
+      }
+      state.ptrPrevX = e.clientX;
+      state.ptrPrevY = e.clientY;
+    }, { passive: true });
+
+    window.addEventListener('pointerup', () => {
+      state.ptrDown = false;
+    });
+
+    c.addEventListener('webglcontextlost', (e) => {
+      e.preventDefault();
+      state.hidden = true;
+    });
+
+    c.addEventListener('webglcontextrestored', () => {
+      state.hidden = false;
+      engine = initEngineWithFallback(stageCanvas);
+      stageCanvas = engine.canvas;
+      readDimRects();
+      engine.ctrl.renderFrame();
+    });
+  }
+
+  bindCanvasEvents(stageCanvas);
+
+  document.querySelectorAll('[data-preset]').forEach((b) => {
+    b.addEventListener('click', () => setPreset(b.dataset.preset));
+  });
+  document.querySelectorAll('[data-mode]').forEach((b) => {
+    b.addEventListener('click', () => setMode(b.dataset.mode));
+  });
+  document.querySelectorAll('[data-palette]').forEach((b) => {
+    b.addEventListener('click', () => setPalette(b.dataset.palette));
+  });
+  document.querySelector('[data-action="reseed"]').addEventListener('click', reseed);
+
+  window.addEventListener('keydown', (e) => {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    const k = e.key.toLowerCase();
+    if (k === '1') setPreset('coral');
+    else if (k === '2') setPreset('mitosis');
+    else if (k === '3') setPreset('maze');
+    else if (k === '4') setPreset('waves');
+    else if (k === 'q') setMode('ascii');
+    else if (k === 'w') setMode('bayer');
+    else if (k === 'e') setMode('braille');
+    else if (k === 'r') reseed();
+  });
+
+  document.addEventListener('visibilitychange', () => {
+    state.hidden = document.hidden;
+  });
+
+  if (reducedMotionMQ.addEventListener) {
+    reducedMotionMQ.addEventListener('change', (e) => {
+      state.reducedMotion = e.matches;
+      readDimRects();
+      engine.ctrl.renderFrame();
+    });
+  }
+
+  let resizeTimer = 0;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      engine.ctrl.resize(true);
+      state.lensX = state.vw * 0.62;
+      state.lensY = state.vh * 0.48;
+      readDimRects();
+      engine.ctrl.renderFrame();
+    }, 120);
+  });
+
+  syncDockUI();
+  readDimRects();
+  engine.ctrl.renderFrame();
+
+  let lastTs = performance.now();
+  function tick(ts) {
+    requestAnimationFrame(tick);
+    const dt = Math.min(0.05, Math.max(0.001, (ts - lastTs) * 0.001));
+    lastTs = ts;
+    if (state.hidden || state.reducedMotion) return;
+
+    state.time = (state.time + dt) % 3600;
+    const ease = 1 - Math.exp(-dt * 9);
+    const targetLensX = state.ptrActive ? state.ptrX : state.vw * 0.60;
+    const targetLensY = state.ptrActive ? state.ptrY : state.vh * 0.48;
+    state.lensX += (targetLensX - state.lensX) * ease;
+    state.lensY += (targetLensY - state.lensY) * ease;
+
+    readDimRects();
+    engine.ctrl.stepSimulation();
+    engine.ctrl.renderFrame();
+  }
+  requestAnimationFrame(tick);
+})();
+</script>
+</body>
+</html>
